@@ -1,0 +1,26 @@
+# Local survey microdata and derived databases/artifacts must not be committed.
+dataset/**
+!dataset/README.md
+*.sqlite
+*.sqlite3
+*.db
+*.sqlite-*
+*.sqlite3-*
+*.db-*
+artifacts/**
+!artifacts/README.md
+
+# Python caches and local environments.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Frontend dependencies and build output.
+node_modules/
+dist/
+
+# Local configuration.
+.env
+.env.*
+!.env.example
