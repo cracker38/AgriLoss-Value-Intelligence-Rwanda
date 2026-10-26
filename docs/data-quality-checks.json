@@ -1,0 +1,239 @@
+{
+  "generated_from": "dataset/nisrdataset/*.json",
+  "dataset_checks": [
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonA_agricultural_practice.json",
+      "rows": 17506,
+      "columns": 59,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonA_fertilizer_pesticide.json",
+      "rows": 22105,
+      "columns": 64,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonA_production.json",
+      "rows": 39330,
+      "columns": 96,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": 0
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonA_screening.json",
+      "rows": 54382,
+      "columns": 46,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonB_agricultural_practice.json",
+      "rows": 17261,
+      "columns": 53,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonB_fertilizer_pesticide.json",
+      "rows": 19965,
+      "columns": 64,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonB_production.json",
+      "rows": 35584,
+      "columns": 98,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": 0
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonB_screening.json",
+      "rows": 28562,
+      "columns": 46,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonC_agricultural_practice.json",
+      "rows": 1632,
+      "columns": 48,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonC_fertilizer_pesticide.json",
+      "rows": 2307,
+      "columns": 61,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": null
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonC_production.json",
+      "rows": 1949,
+      "columns": 97,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 0,
+      "duplicate_production_key_count": 0
+    },
+    {
+      "file": "dataset/nisrdataset/sas_2024_seasonC_screening.json",
+      "rows": 8195,
+      "columns": 42,
+      "json_null_value_count": 0,
+      "non_string_value_count": 0,
+      "duplicate_id_count": 0,
+      "duplicate_rows_ignoring_id_count": 4,
+      "duplicate_production_key_count": null
+    }
+  ],
+  "season_b_production_csv_mirror": {
+    "file": "dataset/publicdataset/sas_2024_seasonB_production.csv",
+    "json_source": "dataset/nisrdataset/sas_2024_seasonB_production.json",
+    "header_matches": true,
+    "json_rows": 35584,
+    "csv_rows": 35584,
+    "compared_rows": 35584,
+    "cell_mismatches": 0,
+    "matches": true
+  },
+  "production_screening_linkage_diagnostics": [
+    {
+      "season": "A",
+      "production_file": "dataset/nisrdataset/sas_2024_seasonA_production.json",
+      "screening_file": "dataset/nisrdataset/sas_2024_seasonA_screening.json",
+      "candidate_join_fields": {
+        "production": [
+          "Segment_ID",
+          "s2q1",
+          "s2q4"
+        ],
+        "screening": [
+          "Segment_ID",
+          "s2q1",
+          "s3q1"
+        ]
+      },
+      "production_rows": 39330,
+      "production_unique_plot_keys": 17506,
+      "production_plot_keys_matching_screening": 17506,
+      "screening_rows": 54382,
+      "screening_rows_with_plot_keys": 54381,
+      "screening_unique_plot_keys": 25242,
+      "screening_duplicate_plot_key_rows": 29139,
+      "candidate_crop_key_matched_rows": 39306,
+      "candidate_crop_key_match_percent": "99.9390",
+      "screening_duplicate_candidate_crop_key_rows": 3564,
+      "matched_rows_with_plot_weight_mismatch": 0,
+      "crop_area_field": "crop_area",
+      "crop_area_formula": "Plot_size_ha * s3q2_1 / 100",
+      "crop_area_rows_with_all_inputs": 47919,
+      "crop_area_formula_tolerance_ha": "0.0005",
+      "crop_area_formula_mismatch_count": 0,
+      "crop_area_formula_max_abs_difference_ha": "0.00046"
+    },
+    {
+      "season": "B",
+      "production_file": "dataset/nisrdataset/sas_2024_seasonB_production.json",
+      "screening_file": "dataset/nisrdataset/sas_2024_seasonB_screening.json",
+      "candidate_join_fields": {
+        "production": [
+          "Segment_ID",
+          "s2q1",
+          "s2q4"
+        ],
+        "screening": [
+          "Segment_ID",
+          "s2q1",
+          "s3q1"
+        ]
+      },
+      "production_rows": 35584,
+      "production_unique_plot_keys": 17261,
+      "production_plot_keys_matching_screening": 17220,
+      "screening_rows": 28562,
+      "screening_rows_with_plot_keys": 28562,
+      "screening_unique_plot_keys": 28562,
+      "screening_duplicate_plot_key_rows": 0,
+      "candidate_crop_key_matched_rows": 15691,
+      "candidate_crop_key_match_percent": "44.0957",
+      "screening_duplicate_candidate_crop_key_rows": 0,
+      "matched_rows_with_plot_weight_mismatch": 0,
+      "crop_area_field": "crop_area",
+      "crop_area_formula": "Plot_size_ha * s3q2_1 / 100",
+      "crop_area_rows_with_all_inputs": 21591,
+      "crop_area_formula_tolerance_ha": "0.0005",
+      "crop_area_formula_mismatch_count": 0,
+      "crop_area_formula_max_abs_difference_ha": "0.0004"
+    },
+    {
+      "season": "C",
+      "production_file": "dataset/nisrdataset/sas_2024_seasonC_production.json",
+      "screening_file": "dataset/nisrdataset/sas_2024_seasonC_screening.json",
+      "candidate_join_fields": {
+        "production": [
+          "Segment_ID",
+          "s2q1",
+          "s2q4"
+        ],
+        "screening": [
+          "Segment_ID",
+          "s2q1",
+          "s3q1"
+        ]
+      },
+      "production_rows": 1949,
+      "production_unique_plot_keys": 1632,
+      "production_plot_keys_matching_screening": 1632,
+      "screening_rows": 8195,
+      "screening_rows_with_plot_keys": 8195,
+      "screening_unique_plot_keys": 7362,
+      "screening_duplicate_plot_key_rows": 833,
+      "candidate_crop_key_matched_rows": 1949,
+      "candidate_crop_key_match_percent": "100.0000",
+      "screening_duplicate_candidate_crop_key_rows": 4,
+      "matched_rows_with_plot_weight_mismatch": 0,
+      "crop_area_field": "Crop_Area",
+      "crop_area_formula": "Plot_size_ha * s3q2_1 / 100",
+      "crop_area_rows_with_all_inputs": 4385,
+      "crop_area_formula_tolerance_ha": "0.0005",
+      "crop_area_formula_mismatch_count": 0,
+      "crop_area_formula_max_abs_difference_ha": "0.0000006"
+    }
+  ]
+}

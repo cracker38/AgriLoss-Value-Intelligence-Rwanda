@@ -6,6 +6,7 @@
       "rows": 17506,
       "columns": 59,
       "file_size_bytes": 22005307,
+      "sha256": "d75c8fa31b45ebbc76a9bd8ea387a764b839b64fb9a1fe7abc5ab93abdd1aeb9",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -73,6 +74,7 @@
       "rows": 22105,
       "columns": 64,
       "file_size_bytes": 29305974,
+      "sha256": "f7029dbb2143fa4eea302c5eb44530fd2b14e78fbd1952bb5bc9aa921d335b9e",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -145,6 +147,7 @@
       "rows": 39330,
       "columns": 96,
       "file_size_bytes": 79527036,
+      "sha256": "2bc7ac3bbd04378f35daa8117daf30b3fde87b5d21c892b68d5164d6abeba84e",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -249,6 +252,7 @@
       "rows": 54382,
       "columns": 46,
       "file_size_bytes": 58376239,
+      "sha256": "723527411ab286258aed0ab0f34c36aef2b260aed0c05b3f1c057738bc840116",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -303,6 +307,7 @@
       "rows": 17261,
       "columns": 53,
       "file_size_bytes": 19492917,
+      "sha256": "d34a579f04173457a4a62b70f5a93f41fbf5dbc95e0651c7cbbfd9835ea064df",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -364,6 +369,7 @@
       "rows": 19965,
       "columns": 64,
       "file_size_bytes": 26265332,
+      "sha256": "5cc25b63f3139421d86bdfa636ad823dbf6e2f75b6469c15140f16e87bcbac54",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -436,6 +442,7 @@
       "rows": 35584,
       "columns": 98,
       "file_size_bytes": 73467757,
+      "sha256": "41a9357cae15e8209d438afa176d324f9d72b0b780d21b204aa2f980ad61dc74",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -542,6 +549,7 @@
       "rows": 28562,
       "columns": 46,
       "file_size_bytes": 30127624,
+      "sha256": "bf57546406c7cefd2b4ca525216c8af1ba04f8d3dfd7311572f7337bc3aa5f0f",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -596,6 +604,7 @@
       "rows": 1632,
       "columns": 48,
       "file_size_bytes": 1722026,
+      "sha256": "de2baef7dd18eea4faaf814b4c38661f4efc412f0b5cd723838526f400562a3b",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -652,6 +661,7 @@
       "rows": 2307,
       "columns": 61,
       "file_size_bytes": 2971089,
+      "sha256": "342274da3b2ef1ea93cb0e313a11b107ea0dc9f786a3e098f751626cd860aadc",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -721,6 +731,7 @@
       "rows": 1949,
       "columns": 97,
       "file_size_bytes": 4015312,
+      "sha256": "83e103b363ee9b5061c84c65ac862acd4971edf68bb368e022591f8da7cccd6e",
       "ordered_columns": [
         "id",
         "Segment_ID",
@@ -826,6 +837,7 @@
       "rows": 8195,
       "columns": 42,
       "file_size_bytes": 7574836,
+      "sha256": "ef0d35ce458a1f6099943f92f8bffd53bb1ec7de6ba2d888dc0354dac4405767",
       "ordered_columns": [
         "id",
         "Segment_ID",
