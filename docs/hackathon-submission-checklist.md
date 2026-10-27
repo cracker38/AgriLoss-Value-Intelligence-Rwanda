@@ -38,10 +38,10 @@ Check the official page again before submitting in case NISR updates its dates o
 
 | Criterion | Current evidence | Last-mile improvement |
 |---|---|---|
-| Problem understanding and relevance | NISR SAS 2024 crop production and reported loss; aligned to Track 1. | Explain the specific follow-up question and validate it with intended users. |
+| Problem understanding and relevance | The project asks which named crop groups have reported-loss patterns or missing responses that merit verification; aligned to Track 1. | Validate the question and its usefulness with intended Rwandan users. |
 | Data use and methodology | Source audit, documented cleaning, aggregate release, grouped local model evaluation. | No external dataset or survey-weighted estimates are implemented. Explain why the current scope is descriptive and avoid population claims. |
 | Tech innovation | Python, Streamlit, Plotly, scikit-learn, and reproducible scripts. | Keep the model clearly exploratory; do not describe it as a forecast or alert system. |
-| Usability and design | Public dashboard with independent season, province, and crop filters and interpretation notes. | Complete a short user check and screen recording; test a small screen if possible. |
+| Usability and design | Guided crop follow-up workspace with three review lenses, response counts and missingness, a downloadable evidence brief, and separate exploration/methods views. | Complete a short user check and screen recording; test a small screen if possible. |
 | Tangible impact | Aggregates can help analysts identify possible agricultural productivity and post-harvest follow-up topics. | Follow the [impact and validation plan](impact-and-validation-plan.md); no measured impact exists yet. |
 
 ## Submission-day checks

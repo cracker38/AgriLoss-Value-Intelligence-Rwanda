@@ -10,13 +10,13 @@ Record the browser screen with a desktop recorder. Keep the pointer visible whil
 
 | Time | Screen action | Suggested narration |
 |---|---|---|
-| 0:00–0:15 | Show the AgriLoss title and NISR track caption. | “AgriLoss explores reported crop-loss and harvest patterns from the 2024 Rwanda Seasonal Agricultural Survey. It is aligned with NISR's Agricultural Productivity track.” |
-| 0:15–0:35 | Show the provisional release notice and headline measures. | “These are unweighted sample descriptions. The reported-loss unit is unconfirmed, so the dashboard does not label it in kilograms or as a loss rate. The release status is shown openly.” |
-| 0:35–1:00 | Use the season filter in the sidebar; point to the season chart and methods table. | “The season selector filters the season summaries. The headline figures describe the full released sample.” |
-| 1:00–1:25 | Use the crop filter; open Crop & loss analysis and show the chart/table. | “Crop summaries show the share of valid records with a positive reported-loss value. Missing responses remain separate from zeros, and small source groups are pooled.” |
-| 1:25–1:45 | Use the province filter; return to Overview and show the province chart. | “Province summaries are a separate view. The published file does not cross-tabulate crop, province, and season.” |
-| 1:45–2:10 | Open Data quality & methods. | “The methods tab explains the restricted Season C sample, missingness, unweighted design, and the limits on interpretation.” |
-| 2:10–2:30 | Show the Model lab and close on the app title. | “This public aggregate edition does not score individual farmers. The dashboard helps identify questions for validation; it is not a forecast or an intervention recommendation.” |
+| 0:00–0:15 | Show the title and research problem statement. | “AgriLoss helps researchers identify crop-group patterns in the NISR SAS 2024 sample that deserve verification before planning use.” |
+| 0:15–0:35 | Show the provisional-release notice and sample metrics. | “These are unweighted production-record descriptions. The unit for reported-loss field s2q39 is unconfirmed, so its positive share is not a loss rate. The release status is visible.” |
+| 0:35–1:00 | In Follow-up workspace, switch from positive-response share to missing-response share. | “The workspace has separate, transparent review lenses. It does not combine them into an opaque score. Counts and missingness help interpret each share.” |
+| 1:00–1:25 | Select a crop group and point to its response and harvest summaries. | “This crop summary pools seasons and provinces. Median reported harvest is context, not yield. The dashboard does not claim the difference is nationally representative.” |
+| 1:25–1:50 | Show the verification steps and download the crop follow-up brief. | “The brief gives concrete next checks: verify the questionnaire measure, re-estimate with the survey design, and consult intended users.” |
+| 1:50–2:10 | Open Explore patterns and use season/province selectors. | “These are independent marginal summaries. Changing season or province does not cross-filter the crop analysis; Season C is restricted.” |
+| 2:10–2:30 | Open Data & methods and close on the title. | “AgriLoss supports research triage only. It does not estimate national loss, identify causes, recommend interventions, or score individual farmers.” |
 
 ## Before recording
 

@@ -32,15 +32,17 @@ st.markdown(
     """
     <style>
     .stApp { background: #f5f7f6; }
+    .block-container { max-width: 1320px; padding-top: 1.4rem; padding-bottom: 3rem; }
     [data-testid="stSidebar"] { background: #102b25; }
     [data-testid="stSidebar"] * { color: #eef6f1; }
     .hero {
-        padding: 1.6rem 1.9rem;
+        padding: 1.7rem 2rem;
         border-radius: 18px;
         color: #f6fbf7;
         background: linear-gradient(115deg, #123b30 0%, #17664e 60%, #278a67 100%);
-        margin: 0.4rem 0 1.2rem 0;
+        margin: 0.2rem 0 1rem 0;
     }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.035em; margin-bottom: 0.3rem; }
     .hero p { color: #d6e8df; margin-bottom: 0; }
     .callout {
         padding: 0.9rem 1rem;
@@ -51,13 +53,19 @@ st.markdown(
         margin: 0.7rem 0 1rem 0;
     }
     .status-card {
-        background: linear-gradient(135deg, rgba(22,128,93,0.12), rgba(138,191,67,0.12));
+        background: linear-gradient(135deg, rgba(22,128,93,0.10), rgba(138,191,67,0.10));
         border: 1px solid rgba(22,128,93,0.2);
-        border-radius: 14px;
-        padding: 1rem 1.2rem;
-        margin: 0.8rem 0 1.2rem 0;
+        border-radius: 12px;
+        padding: 0.85rem 1.1rem;
+        margin: 0.7rem 0 0.8rem 0;
     }
     .status-card p { margin: 0; color: #164d3d; }
+    [data-testid="stMetric"] { background: #ffffff; border: 1px solid #e2eae5; border-radius: 12px; padding: 0.9rem 1rem; }
+    [data-testid="stTabs"] button { font-weight: 600; }
+    @media (max-width: 640px) {
+        .block-container { padding-left: 1rem; padding-right: 1rem; }
+        .hero { padding: 1.2rem 1.25rem; }
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -129,14 +137,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    '<div class="status-card"><p><strong>Purpose:</strong> Make selected NISR SAS 2024 crop-production and reported-loss patterns easier to explore for research and planning. The prototype supports questions for follow-up; it does not estimate national loss or predict future events.</p></div>',
+    '<div class="status-card"><p><strong>Research problem:</strong> Identify which crop groups in the NISR SAS 2024 sample have reported-loss patterns that merit verification. <strong>Solution:</strong> compare transparent sample indicators, inspect response coverage, and prepare a follow-up brief. This does not estimate national loss or recommend interventions.</p></div>',
     unsafe_allow_html=True,
 )
 st.markdown("**NISR 2026 Big Data Hackathon · Track 1: Agricultural Productivity**")
 st.caption(
-    "Project question: What crop-loss and harvest patterns in the SAS 2024 sample merit follow-up on "
-    "agricultural productivity and post-harvest practices? The views are descriptive sample summaries, "
-    "not official estimates or recommendations."
+    "The dashboard helps research and planning teams decide what to validate next. All published indicators "
+    "describe unweighted survey records, not Rwanda-wide estimates or proven intervention effects."
 )
 
 try:
