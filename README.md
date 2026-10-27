@@ -2,6 +2,12 @@
 
 AgriLoss is an evidence-led dashboard for exploring crop production and reported crop-loss patterns in the 2024 Rwanda Seasonal Agricultural Survey (SAS). It provides interactive, aggregated descriptions and a clearly bounded exploratory classification experiment. It does **not** currently produce official survey estimates, causal findings, or validated forecasts.
 
+## Purpose and potential relevance
+
+Crop losses can affect household livelihoods, food availability, and agricultural planning. AgriLoss makes selected SAS 2024 production patterns easier to explore so analysts, public planners, researchers, civil society, and development partners can identify questions for further investigation. Its potential thematic relevance is to agricultural transformation, productivity, resilience, and evidence-informed planning discussed in Rwanda's NST2 and Vision 2050; this is a project rationale, **not** an official policy assessment, endorsement, or measurement of progress against either framework.
+
+The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system. Its current outputs describe the available sample and do not establish the impact of an intervention or predict future loss.
+
 ## What is in the dashboard
 
 - Filter production records by season, province, and crop.
@@ -11,6 +17,16 @@ AgriLoss is an evidence-led dashboard for exploring crop production and reported
 - Optionally calculate an illustrative model score from selected crop and survey-context fields. This is not a calibrated probability or a future-loss prediction and must not be used to make decisions about individual farmers.
 
 The app aggregates rows for display and does not render respondent-level records. The project still requires a public-release and disclosure review before deployment.
+
+## Evaluation-criteria readiness
+
+| Criterion | Current evidence | Readiness and remaining work |
+|---|---|---|
+| Problem understanding and relevance | A focused question about crop production and reported-loss patterns, grounded in NISR SAS 2024; intended relevance to agricultural planning and resilience is stated above. | The alignment is thematic, not an official NST2/Vision 2050 mapping. Validate the priority question and indicators with intended Rwandan users. |
+| Data use and methodology | Local NISR survey extracts, a reproducible source audit, explicit missing-data handling, plot-grouped model evaluation, and stated survey-design limitations. | The dashboard currently reads production extracts only. No external dataset, verified survey-weighted estimates, uncertainty intervals, or external model validation are implemented. |
+| Technology and innovation | Python, Streamlit, pandas, Plotly, scikit-learn, and a provenance-preserving SQLite staging workflow. | The classifier is a retrospective experiment, not a forecast or alert system. Integrate external data only after source, licensing, geographic/time alignment, and validation are agreed. |
+| Usability and design | Interactive filters, charts, model-baseline comparison, data-quality view, and visible interpretation cautions. | Conduct user testing, including accessibility, small-screen layout, and language preferences, before public deployment. |
+| Tangible impact | The aggregated views could support exploratory discussion by planners, researchers, civil society, and development partners. | No real-world outcome or user impact has yet been measured. Stakeholder validation, disclosure review, and a monitored pilot are prerequisites to operational use. |
 
 ## Data sources and interpretation
 
@@ -34,14 +50,20 @@ Accuracy, precision, recall, F1, balanced accuracy, ROC AUC, and average precisi
 
 ## Run locally
 
-Use Python 3.10 or later. From the repository root:
+Use Python 3.10 or later. From the repository root, install runtime dependencies and launch the app:
 
 ```powershell
-py -3 -m pip install -r requirements-dev.txt
+py -3 -m pip install -r requirements.txt
 py -3 -m streamlit run app.py
 ```
 
 The dashboard reads the JSON production extracts from `dataset/nisrdataset/` and displays only aggregates.
+
+For tests and audit development, install the development dependencies instead:
+
+```powershell
+py -3 -m pip install -r requirements-dev.txt
+```
 
 ## Train or retrain the model
 

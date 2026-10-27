@@ -113,6 +113,15 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+st.markdown(
+    "**Purpose:** Make selected NISR SAS 2024 crop-production and reported-loss patterns easier to explore "
+    "for research and planning. The prototype supports questions for follow-up; it does not estimate "
+    "national loss or predict future events."
+)
+st.caption(
+    "Potential thematic relevance: agricultural transformation, productivity, resilience, and evidence-informed "
+    "planning under NST2 and Vision 2050. This is not an official policy assessment or endorsement."
+)
 
 try:
     data = load_data()
@@ -177,6 +186,11 @@ overview_tab, loss_tab, model_tab, methods_tab = st.tabs(
 
 with overview_tab:
     st.subheader("What the survey records")
+    st.write(
+        "Intended users include public planners, researchers, civil society, and development partners. "
+        "Use these aggregate views to identify questions for deeper analysis—not to rank farmers, allocate "
+        "support, or claim that a particular intervention works."
+    )
     season_counts = (
         filtered.groupby("season", as_index=False)
         .size()

@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from scripts.dashboard_data import filter_production_data
-from scripts.train_loss_model import FEATURES, prepare_model_data
+from scripts.train_loss_model import (
+    FEATURES,
+    _grouped_cv_splits,
+    prepare_model_data,
+)
 
 
 def _model_rows() -> pd.DataFrame:
@@ -53,7 +58,7 @@ def test_model_target_excludes_missing_values_and_identifiers_from_features() ->
     assert "id" not in features
     assert "Segment_ID" not in features
     assert "s2q39" not in features
-    assert groups.nunique() == 5
+    assert groups.nunique() == 10
 
 
 def test_plot_group_is_identical_across_seasons() -> None:
@@ -65,6 +70,23 @@ def test_plot_group_is_identical_across_seasons() -> None:
     _, _, groups = prepare_model_data(data)
 
     assert groups.iloc[0] == groups.iloc[1]
+
+
+def test_plot_group_key_does_not_collide_when_values_contain_separator() -> None:
+    data = _model_rows().iloc[:2].copy()
+    data.loc[data.index[0], ["Segment_ID", "s2q1"]] = ["segment::a", "b"]
+    data.loc[data.index[1], ["Segment_ID", "s2q1"]] = ["segment", "a::b"]
+
+    _, _, groups = prepare_model_data(data)
+
+    assert groups.iloc[0] != groups.iloc[1]
+
+
+def test_grouped_cross_validation_checks_fold_count_before_training() -> None:
+    features, target, groups = prepare_model_data(_model_rows().iloc[:2])
+
+    with pytest.raises(ValueError, match="At least 5 distinct plot groups"):
+        _grouped_cv_splits(features, target, groups)
 
 
 def test_dashboard_filters_only_selected_season_province_and_crop() -> None:

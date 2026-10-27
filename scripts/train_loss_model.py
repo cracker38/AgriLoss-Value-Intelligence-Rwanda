@@ -58,17 +58,40 @@ def prepare_model_data(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series, pd.
     frame = frame.dropna(subset=["s2q39", "Segment_ID", "s2q1"])
     target = frame["s2q39"].gt(0).astype("int8")
 
-    groups = (
-        frame["Segment_ID"].astype(str)
-        + "::"
-        + frame["s2q1"].astype(str)
+    plot_keys = pd.MultiIndex.from_frame(
+        frame[["Segment_ID", "s2q1"]].astype(str)
+    )
+    groups = pd.Series(
+        pd.factorize(plot_keys, sort=False)[0],
+        index=frame.index,
+        name="plot_group",
     )
     features = frame.loc[:, FEATURES].copy()
     if target.nunique() != 2:
         raise ValueError("Both zero and positive reported-loss records are required")
+    return features, target, groups
+
+
+def _grouped_cv_splits(
+    features: pd.DataFrame, target: pd.Series, groups: pd.Series
+) -> list[tuple[np.ndarray, np.ndarray]]:
     if groups.nunique() < FOLDS:
         raise ValueError(f"At least {FOLDS} distinct plot groups are required")
-    return features, target, groups
+
+    splitter = StratifiedGroupKFold(
+        n_splits=FOLDS, shuffle=True, random_state=RANDOM_STATE
+    )
+    splits = list(splitter.split(features, target, groups))
+    for fold_number, (train_indices, test_indices) in enumerate(splits, start=1):
+        if (
+            target.iloc[train_indices].nunique() != 2
+            or target.iloc[test_indices].nunique() != 2
+        ):
+            raise ValueError(
+                f"Both target classes must appear in the training and test data "
+                f"for every fold; fold {fold_number} does not meet this requirement"
+            )
+    return splits
 
 
 def build_classifier() -> Pipeline:
@@ -135,16 +158,14 @@ def _classification_metrics(
 def train_and_evaluate() -> dict[str, Any]:
     data = load_production_data(("A", "B"))
     features, target, groups = prepare_model_data(data)
-    splitter = StratifiedGroupKFold(
-        n_splits=FOLDS, shuffle=True, random_state=RANDOM_STATE
-    )
+    splits = _grouped_cv_splits(features, target, groups)
     classifier = build_classifier()
     probabilities = cross_val_predict(
         classifier,
         features,
         target,
         groups=groups,
-        cv=splitter,
+        cv=splits,
         method="predict_proba",
         n_jobs=1,
     )[:, 1]
