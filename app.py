@@ -181,9 +181,9 @@ metric_columns[3].metric("Positive reported loss", f"{positive_loss_count:,}")
 metric_columns[4].metric("Median harvest reported", f"{reported_harvest.median():,.0f} kg" if len(reported_harvest) else "—")
 
 st.markdown(
-    '<div class="callout"><strong>Interpret carefully:</strong> These are unweighted sample descriptions, '
-    'not Rwanda population estimates. The published loss field s2q39 has no confirmed unit; '
-    'we therefore report it as a value and do not label it kg or calculate a loss rate.</div>',
+    '<div class="callout"><strong>A quick note about these numbers:</strong> They describe the survey records '
+    'shown here and are not estimates for Rwanda’s whole population. The unit for the reported-loss field '
+    '<code>s2q39</code> has not been confirmed, so we show it as reported—not as kilograms or a loss rate.</div>',
     unsafe_allow_html=True,
 )
 
@@ -260,7 +260,6 @@ with loss_tab:
     if not loss_by_crop.empty:
         st.plotly_chart(
             _bar_chart(loss_by_crop, "s2q4", "positive_share", "Share of valid records with positive reported loss"),
-            use_container_width=True,
             width="stretch",
         )
         display_loss = loss_by_crop.rename(
