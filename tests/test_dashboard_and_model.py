@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import pandas as pd
 import pytest
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 from scripts.dashboard_data import filter_production_data
 from scripts.train_loss_model import (
     FEATURES,
     _grouped_cv_splits,
+    build_classifier,
     prepare_model_data,
 )
 
@@ -87,6 +89,14 @@ def test_grouped_cross_validation_checks_fold_count_before_training() -> None:
 
     with pytest.raises(ValueError, match="At least 5 distinct plot groups"):
         _grouped_cv_splits(features, target, groups)
+
+
+def test_classifier_uses_dense_categorical_inputs_for_gradient_boosting() -> None:
+    classifier = build_classifier()
+    categorical_pipeline = classifier.named_steps["preprocess"].transformers[0][1]
+
+    assert isinstance(classifier.named_steps["classifier"], HistGradientBoostingClassifier)
+    assert categorical_pipeline.named_steps["encode"].sparse_output is False
 
 
 def test_dashboard_filters_only_selected_season_province_and_crop() -> None:

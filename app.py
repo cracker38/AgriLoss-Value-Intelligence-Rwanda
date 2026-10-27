@@ -277,7 +277,7 @@ with model_tab:
     model = load_trained_model()
     if not metrics or model is None:
         st.warning("The model has not been trained yet.")
-        st.code("py -3 scripts/train_loss_model.py", language="powershell")
+        st.code("py -3 -m scripts.train_loss_model", language="powershell")
     else:
         st.markdown(
             '<div class="callout"><strong>Research use only:</strong> This retrospective classifier distinguishes '
@@ -316,6 +316,16 @@ with model_tab:
             "Always-negative baseline"
         ].map(_format_percent)
         st.dataframe(metric_table, hide_index=True, use_container_width=True)
+        st.info(
+            f"Accuracy is {_format_percent(model_metrics['accuracy'])}, compared with "
+            f"{_format_percent(baseline['accuracy'])} for the always-negative baseline. "
+            f"The model detects {_format_percent(model_metrics['recall'])} of positive records; "
+            "because positive records are uncommon, accuracy alone is not a measure of useful loss detection."
+        )
+        st.caption(
+            "Validation caveat: candidate models were compared during development on this same SAS 2024 sample. "
+            "These cross-validation results are exploratory, not independent validation."
+        )
 
         confusion = model_metrics["confusion_matrix"]
         c1, c2, c3, c4 = st.columns(4)

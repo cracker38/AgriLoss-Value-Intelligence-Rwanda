@@ -9,8 +9,8 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -23,7 +23,7 @@ from sklearn.metrics import (
 )
 from sklearn.model_selection import StratifiedGroupKFold, cross_val_predict
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder
 
 from scripts.dashboard_data import ROOT, load_production_data
 
@@ -102,19 +102,19 @@ def build_classifier() -> Pipeline:
                 Pipeline(
                     steps=[
                         ("impute", SimpleImputer(strategy="most_frequent")),
-                        ("encode", OneHotEncoder(handle_unknown="ignore")),
+                        (
+                            "encode",
+                            OneHotEncoder(
+                                handle_unknown="ignore", sparse_output=False
+                            ),
+                        ),
                     ]
                 ),
                 list(CATEGORICAL_FEATURES),
             ),
             (
                 "numeric",
-                Pipeline(
-                    steps=[
-                        ("impute", SimpleImputer(strategy="median")),
-                        ("scale", StandardScaler()),
-                    ]
-                ),
+                SimpleImputer(strategy="median"),
                 list(NUMERIC_FEATURES),
             ),
         ]
@@ -124,9 +124,11 @@ def build_classifier() -> Pipeline:
             ("preprocess", preprocessing),
             (
                 "classifier",
-                LogisticRegression(
-                    class_weight="balanced",
-                    max_iter=1000,
+                HistGradientBoostingClassifier(
+                    max_iter=120,
+                    learning_rate=0.08,
+                    max_leaf_nodes=15,
+                    l2_regularization=2.0,
                     random_state=RANDOM_STATE,
                 ),
             ),
@@ -185,7 +187,7 @@ def train_and_evaluate() -> dict[str, Any]:
 
     result: dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "model": "Class-weighted logistic regression",
+        "model": "Histogram gradient boosting",
         "target": "s2q39 > 0: a positive reported-loss value, not a loss rate",
         "target_unit": "Unconfirmed; do not interpret as kilograms",
         "training_seasons": ["A", "B"],
@@ -205,6 +207,13 @@ def train_and_evaluate() -> dict[str, Any]:
             "Excluded row identifiers and grouping keys from model features.",
             "Survey weights are not applied; scores are not population estimates.",
         ],
+        "model_configuration": {
+            "max_iter": 120,
+            "learning_rate": 0.08,
+            "max_leaf_nodes": 15,
+            "l2_regularization": 2.0,
+            "positive_class_weighting": False,
+        },
         "metrics": model_metrics,
         "majority_class_baseline": baseline_metrics,
         "model_file": str(MODEL_PATH.relative_to(ROOT)),
