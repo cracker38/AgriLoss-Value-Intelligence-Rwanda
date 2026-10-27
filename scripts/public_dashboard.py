@@ -298,6 +298,10 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         st.caption(
             "The tool supports research triage only. It does not estimate national loss, explain causes, select interventions, or rank farmers."
         )
+        st.info(
+            "The public aggregate edition does not include respondent-level model inputs or an interactive score. "
+            "This hosted view does not score or rank farmers."
+        )
 
         metric_columns = st.columns(4)
         metric_columns[0].metric("Production records", f"{overall['records']:,}")

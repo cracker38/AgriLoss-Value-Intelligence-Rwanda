@@ -14,7 +14,7 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 - Compare each crop group's positive share with its valid response count and missingness, then review median reported harvest as context. The app does not create an opaque composite score.
 - Select a crop group and download a follow-up brief containing the sample summary, interpretation limits, and next evidence checks.
 - Explore independent season and province record summaries, and review survey and interpretation limits in **Data & methods**. These dimensions are not cross-filtered.
-- The local research edition includes an exploratory classifier for a positive `s2q39` value. The public aggregate edition omits individual model scores.
+- The local research edition includes an exploratory classifier for a positive `s2q39` value. **The public aggregate edition does not include respondent-level model inputs or an interactive score. This hosted view does not score or rank farmers.**
 
 The hosted dashboard contains aggregate summaries only. Its current release is marked provisional because NISR disclosure review is not recorded; the app displays this status. The local respondent-level extracts and SQLite database are excluded from the public repository.
 
