@@ -179,6 +179,26 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
                 ),
                 width="stretch",
             )
+        else:
+            st.info("Select at least one province summary in the sidebar.")
+
+        with st.expander("Potential use and validation pathway"):
+            impact_steps = st.columns(3)
+            impact_steps[0].markdown(
+                "**1. Identify questions**\n\n"
+                "Use the separate summaries to spot crop-loss patterns that merit further analysis."
+            )
+            impact_steps[1].markdown(
+                "**2. Validate the evidence**\n\n"
+                "Re-analyze candidate findings with survey weights, design-aware uncertainty, and verified loss-stage definitions."
+            )
+            impact_steps[2].markdown(
+                "**3. Test with intended users**\n\n"
+                "Ask agricultural planners and extension teams whether verified findings help them prioritize a follow-up study or pilot."
+            )
+            st.caption(
+                "This prototype completes only the exploratory step. It has not measured policy, farmer, or productivity outcomes."
+            )
 
     with crop_tab:
         st.subheader("Reported loss patterns by crop")
@@ -263,7 +283,10 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
                 "loss_missing_records": "Missing loss values",
             }
         )
-        st.dataframe(quality, hide_index=True, width="stretch")
+        if quality.empty:
+            st.info("Select at least one season summary in the sidebar.")
+        else:
+            st.dataframe(quality, hide_index=True, width="stretch")
         st.markdown(
             """
             **Interpretation and known limits**

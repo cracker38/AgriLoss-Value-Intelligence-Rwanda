@@ -42,7 +42,7 @@ Check the official page again before submitting in case NISR updates its dates o
 | Data use and methodology | Source audit, documented cleaning, aggregate release, grouped local model evaluation. | No external dataset or survey-weighted estimates are implemented. Explain why the current scope is descriptive and avoid population claims. |
 | Tech innovation | Python, Streamlit, Plotly, scikit-learn, and reproducible scripts. | Keep the model clearly exploratory; do not describe it as a forecast or alert system. |
 | Usability and design | Public dashboard with independent season, province, and crop filters and interpretation notes. | Complete a short user check and screen recording; test a small screen if possible. |
-| Tangible impact | Aggregates can help analysts identify possible agricultural productivity and post-harvest follow-up topics. | Present a realistic path to validation and stakeholder use; no measured impact exists yet. |
+| Tangible impact | Aggregates can help analysts identify possible agricultural productivity and post-harvest follow-up topics. | Follow the [impact and validation plan](impact-and-validation-plan.md); no measured impact exists yet. |
 
 ## Submission-day checks
 

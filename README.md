@@ -29,6 +29,7 @@ See the [official NISR 2026 competition rules and timeline](https://www.statisti
 - **Original NISR data source:** [Rwanda Seasonal Agricultural Survey 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113). The local source extracts are not committed.
 - **Screen recording:** required by the submission instructions and limited to three minutes. It is not included yet; use the [demo recording script](docs/demo-recording-script.md).
 - **AI-use disclosure:** a draft is in [`docs/ai-use-disclosure.md`](docs/ai-use-disclosure.md); the team must verify it against all tools and work used.
+- **Impact pathway:** [`docs/impact-and-validation-plan.md`](docs/impact-and-validation-plan.md) describes intended users, validation tasks, and evidence needed before making impact claims.
 - **Submission checks:** eligibility, registration, originality, IP terms, and deadline are tracked in [`docs/hackathon-submission-checklist.md`](docs/hackathon-submission-checklist.md).
 
 NISR's current page lists the registration deadline as 20 October 2026 and the submission deadline as 30 October 2026 at 11:59 PM. The registration date has passed. If the team did not register, contact the organizer rather than assuming late entry is allowed. Read the official rules before submitting, including the IP assignment requirement.
@@ -41,7 +42,7 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 | Data Use & Methodology (20) | NISR SAS 2024 production extracts, source audit, explicit missing-value handling, grouped model evaluation, and documented limits. | No external dataset or verified survey-weighted estimates are included. NISR allows Track 1 solutions with or without other open data. |
 | Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, and reproducible source audit. | The classifier is a local retrospective experiment, not a forecast or alert system; it is not exposed as a score in the public edition. |
 | Usability & Design (20) | Streamlit dashboard, independent season/province/crop filters, charts, methods tab, and visible interpretation notes. | A team-recorded demo video and user testing remain to be completed. |
-| Tangible Impact (20) | Aggregate patterns may help analysts identify topics for agricultural productivity or post-harvest follow-up. | No real-world outcome or stakeholder validation has been measured. Do not present this prototype as an operational recommendation tool. |
+| Tangible Impact (20) | The stated use pathway is to help analysts identify questions for agricultural productivity or post-harvest follow-up. | No real-world outcome or stakeholder validation has been measured. The proposed usability and impact checks are in `docs/impact-and-validation-plan.md`; do not present this prototype as an operational recommendation tool. |
 
 ## Data sources and interpretation
 
@@ -133,6 +134,7 @@ The SQLite database created by the raw staging loader contains respondent-level 
 - `docs/hackathon-submission-checklist.md` — NISR 2026 requirements and last-mile checklist
 - `docs/demo-recording-script.md` — timed plan for the required short app demonstration
 - `docs/ai-use-disclosure.md` — draft disclosure for team review
+- `docs/impact-and-validation-plan.md` — intended users and proposed evidence checks
 - `artifacts/` — generated local database, model, and metrics
 - `public_data/` — aggregate-only dashboard release; current release status is stated in the data file and app
 - `tests/` — audit, ingestion, and dashboard/model tests
