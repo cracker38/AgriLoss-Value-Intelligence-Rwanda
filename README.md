@@ -87,7 +87,7 @@ py -3 -m scripts.build_public_dashboard
 
 This writes `artifacts/dashboard_release_candidate.json`, which remains Git-ignored. The candidate contains only independent season, province, and crop summaries, pools small groups, and omits respondent rows and individual model scores. Its group-size suppression is a preliminary safeguard, **not** disclosure approval. Confirm NISR's current data-use conditions and complete the required disclosure review before publishing any derived data.
 
-After that review, place the approved file at `public_data/dashboard_aggregates.json`, record its review status and reference in the JSON, and commit that aggregate file with the app code. The public app checks for the recorded approval before serving aggregate mode. It intentionally does not support combined season/province/crop filtering in that mode. Do not add `dataset/`, SQLite staging databases, or row-level source files to the hosted repository.
+After that review, place the approved file at `public_data/dashboard_aggregates.json`, record its review status and reference in the JSON, and commit that aggregate file with the app code. The public app checks for the recorded approval before serving aggregate mode. A repository owner may explicitly authorize publication before review is recorded; the app then displays a provisional-release warning and does not label the data NISR-approved. The aggregate view intentionally omits combined season/province/crop filtering. Do not add `dataset/`, SQLite staging databases, or row-level source files to the hosted repository.
 
 ## Deploy on Hugging Face Spaces
 

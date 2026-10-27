@@ -45,15 +45,23 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     provinces = pd.DataFrame(payload["by_province"])
     crops = pd.DataFrame(payload["by_crop"])
 
-    st.info(
-        "This hosted view uses an approved aggregate release. It contains no respondent-level rows. "
-        "Tables are unweighted sample descriptions, not population estimates."
-    )
     review = payload["review"]
-    st.caption(
-        f"Disclosure review: {review['reviewed_by']} · {review['reviewed_on']} · "
-        f"Reference: {review['reference']}"
-    )
+    if payload["release_status"] == "owner_authorized_unreviewed":
+        st.warning(
+            "This aggregate dashboard was published at the project owner's direction before "
+            "NISR disclosure review was recorded. It contains grouped summaries only; treat "
+            "the release as provisional and do not interpret it as NISR-approved statistics."
+        )
+        st.caption("Disclosure review status: not recorded.")
+    else:
+        st.info(
+            "This hosted view uses an approved aggregate release. It contains no respondent-level rows. "
+            "Tables are unweighted sample descriptions, not population estimates."
+        )
+        st.caption(
+            f"Disclosure review: {review['reviewed_by']} · {review['reviewed_on']} · "
+            f"Reference: {review['reference']}"
+        )
 
     overview_tab, crop_tab, model_tab, methods_tab = st.tabs(
         ["Overview", "Crop & loss analysis", "Model lab", "Data quality & methods"]

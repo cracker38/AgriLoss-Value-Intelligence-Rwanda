@@ -50,15 +50,24 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
         raise ValueError("Public dashboard data must be a JSON object")
     if payload.get("schema_version") != 1:
         raise ValueError("Unsupported public dashboard data schema")
-    if payload.get("release_status") != "approved":
-        raise ValueError("The aggregate release has not been marked approved")
-
+    status = payload.get("release_status")
     review = payload.get("review")
-    if not isinstance(review, dict) or review.get("status") != "approved":
-        raise ValueError("The aggregate release does not include an approval record")
-    for field in ("reviewed_by", "reviewed_on", "reference"):
-        if not isinstance(review.get(field), str) or not review[field].strip():
-            raise ValueError(f"The aggregate release approval is missing {field}")
+    if status == "approved":
+        if not isinstance(review, dict) or review.get("status") != "approved":
+            raise ValueError("The aggregate release does not include an approval record")
+        for field in ("reviewed_by", "reviewed_on", "reference"):
+            if not isinstance(review.get(field), str) or not review[field].strip():
+                raise ValueError(f"The aggregate release approval is missing {field}")
+    elif status == "owner_authorized_unreviewed":
+        authorization = payload.get("publication_authorization")
+        if (
+            not isinstance(authorization, dict)
+            or authorization.get("authorized") is not True
+            or authorization.get("review_status") != "not_recorded"
+        ):
+            raise ValueError("The owner-authorized release record is incomplete")
+    else:
+        raise ValueError("The aggregate release is not authorized for hosted display")
 
     for section in ("overall", "by_season", "by_province", "by_crop"):
         if section not in payload:

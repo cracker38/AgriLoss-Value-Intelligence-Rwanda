@@ -1,0 +1,447 @@
+{
+  "schema_version": 1,
+  "release_status": "owner_authorized_unreviewed",
+  "generated_at_utc": "2026-10-27T15:54:24+00:00",
+  "source": "NISR SAS 2024 production extracts",
+  "review": {
+    "status": "required",
+    "reviewed_by": null,
+    "reviewed_on": null,
+    "reference": null
+  },
+  "aggregation": {
+    "minimum_group_records": 100,
+    "grouping": "Independent one-dimensional season, province, and crop summaries; no respondent rows or cross-tabulations.",
+    "notes": [
+      "Groups below the minimum size are pooled without their original labels.",
+      "The group-size rule is a coarse suppression measure, not NISR disclosure approval.",
+      "Obtain the required data-use and disclosure review before placing this file in a public repository."
+    ]
+  },
+  "interpretation": {
+    "population_estimates": false,
+    "survey_weights_applied": false,
+    "s2q39_unit_confirmed": false,
+    "s2q39_note": "Reported values are shown without a unit; the unit is unconfirmed."
+  },
+  "overall": {
+    "records": 76863,
+    "loss_reported_records": 70977,
+    "loss_missing_records": 5886,
+    "positive_reported_loss_records": 5521,
+    "harvest_reported_records": 70977,
+    "positive_reported_loss_share": 0.0778,
+    "median_reported_loss_value": 0,
+    "median_reported_harvest_kg": 78,
+    "distinct_crop_values": 83
+  },
+  "by_season": [
+    {
+      "records": 39330,
+      "loss_reported_records": 34349,
+      "loss_missing_records": 4981,
+      "positive_reported_loss_records": 3165,
+      "harvest_reported_records": 34349,
+      "positive_reported_loss_share": 0.0921,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 70,
+      "season": "A",
+      "distinct_crop_values": 79
+    },
+    {
+      "records": 35584,
+      "loss_reported_records": 34679,
+      "loss_missing_records": 905,
+      "positive_reported_loss_records": 2192,
+      "harvest_reported_records": 34679,
+      "positive_reported_loss_share": 0.0632,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 80,
+      "season": "B",
+      "distinct_crop_values": 78
+    },
+    {
+      "records": 1949,
+      "loss_reported_records": 1949,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 164,
+      "harvest_reported_records": 1949,
+      "positive_reported_loss_share": 0.0841,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 167,
+      "season": "C",
+      "distinct_crop_values": 25
+    }
+  ],
+  "by_province": [
+    {
+      "records": 25682,
+      "province": "East"
+    },
+    {
+      "records": 4429,
+      "province": "Kigali"
+    },
+    {
+      "records": 11323,
+      "province": "North"
+    },
+    {
+      "records": 20728,
+      "province": "South"
+    },
+    {
+      "records": 14701,
+      "province": "West"
+    }
+  ],
+  "by_crop": [
+    {
+      "records": 186,
+      "loss_reported_records": 186,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 11,
+      "harvest_reported_records": 186,
+      "positive_reported_loss_share": 0.0591,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 131.5,
+      "crop": "Amaranth"
+    },
+    {
+      "records": 147,
+      "loss_reported_records": 134,
+      "loss_missing_records": 13,
+      "positive_reported_loss_records": 23,
+      "harvest_reported_records": 134,
+      "positive_reported_loss_share": 0.1716,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 788,
+      "crop": "Avocado"
+    },
+    {
+      "records": 6318,
+      "loss_reported_records": 6262,
+      "loss_missing_records": 56,
+      "positive_reported_loss_records": 387,
+      "harvest_reported_records": 6262,
+      "positive_reported_loss_share": 0.0618,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 250,
+      "crop": "Banana for beer"
+    },
+    {
+      "records": 10934,
+      "loss_reported_records": 10932,
+      "loss_missing_records": 2,
+      "positive_reported_loss_records": 1481,
+      "harvest_reported_records": 10932,
+      "positive_reported_loss_share": 0.1355,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 35,
+      "crop": "Bush bean"
+    },
+    {
+      "records": 238,
+      "loss_reported_records": 236,
+      "loss_missing_records": 2,
+      "positive_reported_loss_records": 14,
+      "harvest_reported_records": 236,
+      "positive_reported_loss_share": 0.0593,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 345,
+      "crop": "Cabbage"
+    },
+    {
+      "records": 150,
+      "loss_reported_records": 149,
+      "loss_missing_records": 1,
+      "positive_reported_loss_records": 3,
+      "harvest_reported_records": 149,
+      "positive_reported_loss_share": 0.0201,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 302,
+      "crop": "Carrot"
+    },
+    {
+      "records": 7275,
+      "loss_reported_records": 3527,
+      "loss_missing_records": 3748,
+      "positive_reported_loss_records": 105,
+      "harvest_reported_records": 3527,
+      "positive_reported_loss_share": 0.0298,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 386,
+      "crop": "Cassava"
+    },
+    {
+      "records": 6371,
+      "loss_reported_records": 6370,
+      "loss_missing_records": 1,
+      "positive_reported_loss_records": 587,
+      "harvest_reported_records": 6370,
+      "positive_reported_loss_share": 0.0922,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 30,
+      "crop": "Climbing bean"
+    },
+    {
+      "records": 724,
+      "loss_reported_records": 651,
+      "loss_missing_records": 73,
+      "positive_reported_loss_records": 7,
+      "harvest_reported_records": 651,
+      "positive_reported_loss_share": 0.0108,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 41,
+      "crop": "Coffee"
+    },
+    {
+      "records": 5622,
+      "loss_reported_records": 5512,
+      "loss_missing_records": 110,
+      "positive_reported_loss_records": 16,
+      "harvest_reported_records": 5512,
+      "positive_reported_loss_share": 0.0029,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 225,
+      "crop": "Cooking banana"
+    },
+    {
+      "records": 4994,
+      "loss_reported_records": 4941,
+      "loss_missing_records": 53,
+      "positive_reported_loss_records": 75,
+      "harvest_reported_records": 4941,
+      "positive_reported_loss_share": 0.0152,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 62,
+      "crop": "Dessert banana"
+    },
+    {
+      "records": 424,
+      "loss_reported_records": 411,
+      "loss_missing_records": 13,
+      "positive_reported_loss_records": 16,
+      "harvest_reported_records": 411,
+      "positive_reported_loss_share": 0.0389,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 189,
+      "crop": "Eggplant"
+    },
+    {
+      "records": 1165,
+      "loss_reported_records": 1165,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 21,
+      "harvest_reported_records": 1165,
+      "positive_reported_loss_share": 0.018,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 15,
+      "crop": "Groundnut"
+    },
+    {
+      "records": 2974,
+      "loss_reported_records": 2971,
+      "loss_missing_records": 3,
+      "positive_reported_loss_records": 248,
+      "harvest_reported_records": 2971,
+      "positive_reported_loss_share": 0.0835,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 346,
+      "crop": "Irish potato"
+    },
+    {
+      "records": 11464,
+      "loss_reported_records": 11438,
+      "loss_missing_records": 26,
+      "positive_reported_loss_records": 1230,
+      "harvest_reported_records": 11438,
+      "positive_reported_loss_share": 0.1075,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 46,
+      "crop": "Maize"
+    },
+    {
+      "records": 390,
+      "loss_reported_records": 384,
+      "loss_missing_records": 6,
+      "positive_reported_loss_records": 0,
+      "harvest_reported_records": 384,
+      "positive_reported_loss_share": 0,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 1050,
+      "crop": "Napia grass for fodder"
+    },
+    {
+      "records": 118,
+      "loss_reported_records": 118,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 15,
+      "harvest_reported_records": 118,
+      "positive_reported_loss_share": 0.1271,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 276,
+      "crop": "Onion"
+    },
+    {
+      "records": 110,
+      "loss_reported_records": 108,
+      "loss_missing_records": 2,
+      "positive_reported_loss_records": 1,
+      "harvest_reported_records": 108,
+      "positive_reported_loss_share": 0.0093,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 7250,
+      "crop": "Other fodder crop (specify)"
+    },
+    {
+      "records": 420,
+      "loss_reported_records": 418,
+      "loss_missing_records": 2,
+      "positive_reported_loss_records": 224,
+      "harvest_reported_records": 418,
+      "positive_reported_loss_share": 0.5359,
+      "median_reported_loss_value": 10,
+      "median_reported_harvest_kg": 71218.5,
+      "crop": "Paddy rice"
+    },
+    {
+      "records": 885,
+      "loss_reported_records": 884,
+      "loss_missing_records": 1,
+      "positive_reported_loss_records": 19,
+      "harvest_reported_records": 884,
+      "positive_reported_loss_share": 0.0215,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 10,
+      "crop": "Pea"
+    },
+    {
+      "records": 103,
+      "loss_reported_records": 97,
+      "loss_missing_records": 6,
+      "positive_reported_loss_records": 19,
+      "harvest_reported_records": 97,
+      "positive_reported_loss_share": null,
+      "median_reported_loss_value": null,
+      "median_reported_harvest_kg": null,
+      "crop": "Pepper"
+    },
+    {
+      "records": 128,
+      "loss_reported_records": 80,
+      "loss_missing_records": 48,
+      "positive_reported_loss_records": 0,
+      "harvest_reported_records": 80,
+      "positive_reported_loss_share": null,
+      "median_reported_loss_value": null,
+      "median_reported_harvest_kg": null,
+      "crop": "Pyrethrum"
+    },
+    {
+      "records": 3021,
+      "loss_reported_records": 3021,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 517,
+      "harvest_reported_records": 3021,
+      "positive_reported_loss_share": 0.1711,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 96,
+      "crop": "Sorghum"
+    },
+    {
+      "records": 2413,
+      "loss_reported_records": 2413,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 144,
+      "harvest_reported_records": 2413,
+      "positive_reported_loss_share": 0.0597,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 12,
+      "crop": "Soybean"
+    },
+    {
+      "records": 182,
+      "loss_reported_records": 170,
+      "loss_missing_records": 12,
+      "positive_reported_loss_records": 3,
+      "harvest_reported_records": 170,
+      "positive_reported_loss_share": 0.0176,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 400,
+      "crop": "Sugar cane"
+    },
+    {
+      "records": 261,
+      "loss_reported_records": 261,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 14,
+      "harvest_reported_records": 261,
+      "positive_reported_loss_share": 0.0536,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 7,
+      "crop": "Sun flower"
+    },
+    {
+      "records": 6368,
+      "loss_reported_records": 5543,
+      "loss_missing_records": 825,
+      "positive_reported_loss_records": 91,
+      "harvest_reported_records": 5543,
+      "positive_reported_loss_share": 0.0164,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 180,
+      "crop": "Sweet potato"
+    },
+    {
+      "records": 1856,
+      "loss_reported_records": 1042,
+      "loss_missing_records": 814,
+      "positive_reported_loss_records": 3,
+      "harvest_reported_records": 1042,
+      "positive_reported_loss_share": 0.0029,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 100,
+      "crop": "Taro"
+    },
+    {
+      "records": 381,
+      "loss_reported_records": 378,
+      "loss_missing_records": 3,
+      "positive_reported_loss_records": 138,
+      "harvest_reported_records": 378,
+      "positive_reported_loss_share": 0.3651,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 420,
+      "crop": "Tomato"
+    },
+    {
+      "records": 194,
+      "loss_reported_records": 194,
+      "loss_missing_records": 0,
+      "positive_reported_loss_records": 22,
+      "harvest_reported_records": 194,
+      "positive_reported_loss_share": 0.1134,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 83,
+      "crop": "Wheat"
+    },
+    {
+      "records": 1047,
+      "loss_reported_records": 981,
+      "loss_missing_records": 66,
+      "positive_reported_loss_records": 87,
+      "harvest_reported_records": 981,
+      "positive_reported_loss_share": 0.0887,
+      "median_reported_loss_value": 0,
+      "median_reported_harvest_kg": 340,
+      "crop": "Other or unreported crops (pooled)"
+    }
+  ],
+  "publication_authorization": {
+    "authorized": true,
+    "authorization_basis": "Explicit user instruction to force-push the aggregate dashboard candidate.",
+    "authorized_on": "2026-10-27",
+    "review_status": "not_recorded"
+  }
+}
