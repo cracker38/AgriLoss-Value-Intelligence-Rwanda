@@ -237,6 +237,11 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
 
     with methods_tab:
         st.subheader("Data quality and analytical safeguards")
+        st.markdown(
+            "**Data source:** [NISR Rwanda Seasonal Agricultural Survey 2024 catalog]"
+            "(https://microdata.statistics.gov.rw/index.php/catalog/113). "
+            "This hosted view uses the project's aggregate dashboard file; it does not load the source rows."
+        )
         quality_columns = [
             "season",
             "records",

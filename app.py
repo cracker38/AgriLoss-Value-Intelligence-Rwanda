@@ -132,9 +132,11 @@ st.markdown(
     '<div class="status-card"><p><strong>Purpose:</strong> Make selected NISR SAS 2024 crop-production and reported-loss patterns easier to explore for research and planning. The prototype supports questions for follow-up; it does not estimate national loss or predict future events.</p></div>',
     unsafe_allow_html=True,
 )
+st.markdown("**NISR 2026 Big Data Hackathon · Track 1: Agricultural Productivity**")
 st.caption(
-    "Potential thematic relevance: agricultural transformation, productivity, resilience, and evidence-informed "
-    "planning under NST2 and Vision 2050. This is not an official policy assessment or endorsement."
+    "Project question: What crop-loss and harvest patterns in the SAS 2024 sample merit follow-up on "
+    "agricultural productivity and post-harvest practices? The views are descriptive sample summaries, "
+    "not official estimates or recommendations."
 )
 
 try:
@@ -416,6 +418,11 @@ with model_tab:
 
 with methods_tab:
     st.subheader("Data quality and analytical safeguards")
+    st.markdown(
+        "**Data source:** [NISR Rwanda Seasonal Agricultural Survey 2024 catalog]"
+        "(https://microdata.statistics.gov.rw/index.php/catalog/113). "
+        "This local edition reads the production extracts and displays aggregated descriptions."
+    )
     quality = (
         data.groupby("season", as_index=False)
         .agg(

@@ -1,46 +1,53 @@
----
-title: AgriLoss Rwanda
-emoji: 🌱
-colorFrom: green
-colorTo: yellow
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # AgriLoss Rwanda — SAS 2024 Crop Intelligence
 
-AgriLoss is an evidence-led dashboard for exploring crop production and reported crop-loss patterns in the 2024 Rwanda Seasonal Agricultural Survey (SAS). It provides interactive, aggregated descriptions and a clearly bounded exploratory classification experiment. It does **not** currently produce official survey estimates, causal findings, or validated forecasts.
+AgriLoss is a Streamlit prototype aligned with **Track 1: Agricultural Productivity** in the NISR 2026 Big Data Hackathon. It uses NISR's 2024 Rwanda Seasonal Agricultural Survey (SAS) production data to summarize reported crop loss and harvest patterns. Its question is: **Which crop-loss and harvest patterns in the SAS 2024 sample merit follow-up on agricultural productivity and post-harvest practices?** The app does not produce official survey estimates, causal findings, or validated forecasts.
 
 ## Purpose and potential relevance
 
-Crop losses can affect household livelihoods, food availability, and agricultural planning. AgriLoss makes selected SAS 2024 production patterns easier to explore so analysts, public planners, researchers, civil society, and development partners can identify questions for further investigation. Its potential thematic relevance is to agricultural transformation, productivity, resilience, and evidence-informed planning discussed in Rwanda's NST2 and Vision 2050; this is a project rationale, **not** an official policy assessment, endorsement, or measurement of progress against either framework.
+NISR's Agricultural Productivity track includes challenges related to crop production, post-harvest collection and storage, and value addition. AgriLoss uses the survey's reported production and loss fields to help planners and researchers identify questions for follow-up. Its relevance to NST2 and Vision 2050 is thematic; this project is **not** an official policy assessment, NISR endorsement, or measure of progress against either framework.
 
-The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system. Its current outputs describe the available sample and do not establish the impact of an intervention or predict future loss.
+The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system. Its outputs describe the available sample and do not establish the impact of an intervention or predict future loss.
 
 ## What is in the dashboard
 
-- Filter production records by season, province, and crop.
-- Compare production-record counts, reported harvest values, and reported-loss patterns.
-- Review missingness, sample sizes, and the model's evaluation protocol.
-- Examine an exploratory classifier for whether a production record has a positive `s2q39` value.
-- Optionally calculate an illustrative model score from selected crop and survey-context fields. This is not a calibrated probability or a future-loss prediction and must not be used to make decisions about individual farmers.
+- In the public aggregate edition, independently filter season, province, and crop summaries. These controls do not combine dimensions.
+- Compare record counts, reported harvest values, positive reported-loss shares, and missingness.
+- Review survey and interpretation limits in the methods tab.
+- The local research edition includes an exploratory classifier for a positive `s2q39` value. The public aggregate edition omits individual model scores.
 
-The app aggregates rows for display and does not render respondent-level records. The project still requires a public-release and disclosure review before deployment.
+The hosted dashboard contains aggregate summaries only. Its current release is marked provisional because NISR disclosure review is not recorded; the app displays this status. The local respondent-level extracts and SQLite database are excluded from the public repository.
+
+## NISR 2026 hackathon submission package
+
+The project is aligned with **Track 1: Agricultural Productivity**. NISR's track includes crop production and post-harvest topics; the app offers exploratory survey summaries, not intervention recommendations.
+
+See the [official NISR 2026 competition rules and timeline](https://www.statistics.gov.rw/about/hackathon/2026-hackathon-competition).
+
+- **Public GitHub repository:** [AgriLoss Rwanda](https://github.com/cracker38/AgriLoss-Value-Intelligence-Rwanda)
+- **Deployed app:** [agriloss-rwanda.streamlit.app](https://agriloss-rwanda.streamlit.app/)
+- **Data artifact:** [`public_data/dashboard_aggregates.json`](public_data/dashboard_aggregates.json), a derived, aggregate-only file.
+- **Original NISR data source:** [Rwanda Seasonal Agricultural Survey 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113). The local source extracts are not committed.
+- **Screen recording:** required by the submission instructions and limited to three minutes. It is not included yet; use the [demo recording script](docs/demo-recording-script.md).
+- **AI-use disclosure:** a draft is in [`docs/ai-use-disclosure.md`](docs/ai-use-disclosure.md); the team must verify it against all tools and work used.
+- **Submission checks:** eligibility, registration, originality, IP terms, and deadline are tracked in [`docs/hackathon-submission-checklist.md`](docs/hackathon-submission-checklist.md).
+
+NISR's current page lists the registration deadline as 20 October 2026 and the submission deadline as 30 October 2026 at 11:59 PM. The registration date has passed. If the team did not register, contact the organizer rather than assuming late entry is allowed. Read the official rules before submitting, including the IP assignment requirement.
 
 ## Evaluation-criteria readiness
 
-| Criterion | Current evidence | Readiness and remaining work |
+| NISR judging criterion | Current evidence | Readiness and remaining work |
 |---|---|---|
-| Problem understanding and relevance | A focused question about crop production and reported-loss patterns, grounded in NISR SAS 2024; intended relevance to agricultural planning and resilience is stated above. | The alignment is thematic, not an official NST2/Vision 2050 mapping. Validate the priority question and indicators with intended Rwandan users. |
-| Data use and methodology | Local NISR survey extracts, a reproducible source audit, explicit missing-data handling, plot-grouped model evaluation, and stated survey-design limitations. | The dashboard currently reads production extracts only. No external dataset, verified survey-weighted estimates, uncertainty intervals, or external model validation are implemented. |
-| Technology and innovation | Python, Streamlit, pandas, Plotly, scikit-learn, and a provenance-preserving SQLite staging workflow. | The classifier is a retrospective experiment, not a forecast or alert system. Integrate external data only after source, licensing, geographic/time alignment, and validation are agreed. |
-| Usability and design | Interactive filters, charts, model-baseline comparison, data-quality view, and visible interpretation cautions. | Conduct user testing, including accessibility, small-screen layout, and language preferences, before public deployment. |
-| Tangible impact | The aggregated views could support exploratory discussion by planners, researchers, civil society, and development partners. | No real-world outcome or user impact has yet been measured. Stakeholder validation, disclosure review, and a monitored pilot are prerequisites to operational use. |
+| Problem Understanding & Relevance (20) | SAS 2024 crop production and reported-loss patterns; project fit is NISR Track 1, Agricultural Productivity. | Relevance is a plausible research direction, not a demonstrated intervention. Validate the question with intended Rwandan users. |
+| Data Use & Methodology (20) | NISR SAS 2024 production extracts, source audit, explicit missing-value handling, grouped model evaluation, and documented limits. | No external dataset or verified survey-weighted estimates are included. NISR allows Track 1 solutions with or without other open data. |
+| Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, and reproducible source audit. | The classifier is a local retrospective experiment, not a forecast or alert system; it is not exposed as a score in the public edition. |
+| Usability & Design (20) | Streamlit dashboard, independent season/province/crop filters, charts, methods tab, and visible interpretation notes. | A team-recorded demo video and user testing remain to be completed. |
+| Tangible Impact (20) | Aggregate patterns may help analysts identify topics for agricultural productivity or post-harvest follow-up. | No real-world outcome or stakeholder validation has been measured. Do not present this prototype as an operational recommendation tool. |
 
 ## Data sources and interpretation
 
-The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural practice, and fertilizer/pesticide modules across Seasons A, B, and C. This app reads only the production extracts. The data audit and research design are in `docs/`.
+The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural practice, and fertilizer/pesticide modules across Seasons A, B, and C. The dashboard reads the production extracts; the other modules are retained for audit/research work and are not currently joined into the app. The [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113) is the source link for the data used. The data audit and research design are in `docs/`.
+
+No external dataset is currently integrated. NISR's Track 1 permits solutions using NISR data with or without other open/public datasets. An external weather, climate, or geospatial dataset should be added only with verified source terms, spatial/time alignment, and a clear analytical purpose.
 
 Important boundaries:
 
@@ -87,18 +94,7 @@ py -3 -m scripts.build_public_dashboard
 
 This writes `artifacts/dashboard_release_candidate.json`, which remains Git-ignored. The candidate contains only independent season, province, and crop summaries, pools small groups, and omits respondent rows and individual model scores. Its group-size suppression is a preliminary safeguard, **not** disclosure approval. Confirm NISR's current data-use conditions and complete the required disclosure review before publishing any derived data.
 
-After that review, place the approved file at `public_data/dashboard_aggregates.json`, record its review status and reference in the JSON, and commit that aggregate file with the app code. The public app checks for the recorded approval before serving aggregate mode. A repository owner may explicitly authorize publication before review is recorded; the app then displays a provisional-release warning and does not label the data NISR-approved. The aggregate view intentionally omits combined season/province/crop filtering. Do not add `dataset/`, SQLite staging databases, or row-level source files to the hosted repository.
-
-## Deploy on Hugging Face Spaces
-
-This project uses a server-side Docker Space. Do not use a static/browser/Pyodide runtime: Streamlit and the scikit-learn model need a Python server process, and browser-side `micropip` dependency resolution is not supported.
-
-1. Create a new Hugging Face Space and select **Docker** as its SDK.
-2. Push the project source, including `Dockerfile`, `requirements.txt`, and this README.
-3. Before making a Space public, confirm NISR permits hosting the data and complete a disclosure review. `dataset/` is deliberately Git-ignored because it contains respondent-level survey extracts. Do not force-add or upload those files to a public Space. The app's public mode requires the approved aggregate file at `public_data/dashboard_aggregates.json`; the local candidate builder writes to Git-ignored `artifacts/` and does not approve the release.
-4. If you have authorization to use derived data in a hosted environment, record the disclosure-review approval in the aggregate file and commit only that file with the app. A private Space does not replace data-use approval.
-
-The reported `micropip` error is a browser-runtime package conflict (`huggingface-hub` is already installed at a version outside a requested constraint). This project's `requirements.txt` does not request `huggingface-hub`; deploying through the Docker Space runtime avoids that browser package installation path.
+After that review, place the approved file at `public_data/dashboard_aggregates.json`, record its review status and reference in the JSON, and commit that aggregate file with the app code. The public app checks for the recorded approval before serving approved mode. A repository owner may explicitly authorize a provisional release before review is recorded; the app then displays a warning and does not label the data NISR-approved. The currently published file uses that provisional status. The aggregate view intentionally omits combined season/province/crop filtering. Do not add `dataset/`, SQLite staging databases, or row-level source files to the hosted repository.
 
 ## Train or retrain the model
 
@@ -134,6 +130,9 @@ The SQLite database created by the raw staging loader contains respondent-level 
 - `scripts/ingest_sas_2024.py` — provenance-preserving raw SQLite staging
 - `dataset/nisrdataset/` — local SAS JSON extracts
 - `docs/` — audit findings, schema, and research design
+- `docs/hackathon-submission-checklist.md` — NISR 2026 requirements and last-mile checklist
+- `docs/demo-recording-script.md` — timed plan for the required short app demonstration
+- `docs/ai-use-disclosure.md` — draft disclosure for team review
 - `artifacts/` — generated local database, model, and metrics
-- `public_data/` — only a disclosure-reviewed aggregate release may be committed here
+- `public_data/` — aggregate-only dashboard release; current release status is stated in the data file and app
 - `tests/` — audit, ingestion, and dashboard/model tests
