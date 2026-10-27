@@ -1,42 +1,78 @@
-# AgriLoss & Value Intelligence Rwanda
+# AgriLoss Rwanda: Hackathon Dashboard Prototype
 
-AgriLoss is an evidence-led agricultural data project for Rwanda. It is currently in its data-audit stage: the workspace contains NISR SAS 2024 extracts and audit artifacts, plus a local raw-staging loader. It does not yet have a canonical analytical database, backend, frontend, trained model, or notebook.
+AgriLoss Rwanda is a public-facing analytics prototype for the NISR 2026 Big Data Hackathon. It turns the raw SAS 2024 seasonal agricultural data into an aggregated, evidence-led dashboard that communicates agricultural production, crop concentration, and reported loss patterns without exposing respondent-level microdata.
 
-## Verified starting point
+## What this project does
 
-- `dataset/nisrdataset/` contains 12 JSON extracts for screening, production, agricultural practices, and fertilizer/pesticide modules across Seasons A, B, and C. The extracts contain 248,778 rows in total.
-- `dataset/publicdataset/sas_2024_seasonB_production.csv` is a second representation of the Season B production JSON, not an extra sample.
-- `docs/dataset-audit-2024.md` records the current field interpretation, sampling caveats, quality findings, and analysis limits.
-- `docs/research-design-2024.md` defines the initial questions, indicator gates, and rules for separating observations from scenarios and future predictions.
-- `docs/schema-inventory.json` and `docs/field-quality-summary.csv` describe the local schemas and field-level missingness/value checks.
-- NISR's catalog lists 11 matching SAS 2024 files. The local Season B agricultural-practice extract is not listed in that dictionary and needs provenance confirmation.
+This repository combines:
+- the verified NISR SAS 2024 source extracts in `dataset/nisrdataset/`
+- the raw staging and audit logic in `scripts/`
+- an interactive Streamlit dashboard in `app.py`
+- a local summary snapshot in `artifacts/dashboard_snapshot.json`
+- a lightweight demo GIF in `demo/agri_loss_dashboard_demo.gif`
 
-The data supports descriptive analysis of crop production, reported crop losses, storage, sales, current transformation/use, and agricultural practices. The published label for `s2q39` does not state a unit. Survey weights, strata, clusters, and the restricted Season C design must be handled before results are described as population estimates. These files do not include verified processor capacity, conversion yields, costs, or demand, so they do not support profit prediction.
+The dashboard is intentionally designed to be descriptive and aggregated. It focuses on the kinds of questions the project can responsibly answer from local, audit-verified survey records while staying clear on the limits of the data.
 
-## Reproduce the source audit
+## Data sources and usage limits
 
-The audit uses Python 3.10+ and only the standard library. Its tests use pytest. Neither the audit nor its tests modify raw survey files.
+The local data package includes 12 seasonal JSON extracts from the SAS 2024 survey, plus a Season B production CSV mirror. These are source files used for audit, validation, and descriptive analysis only.
+
+Important boundaries:
+- Raw microdata stays local and is not exposed through the dashboard.
+- The app reports aggregated patterns only.
+- It does not present weighted national estimates or causal findings.
+- It is designed for public communication and hackathon demonstration, not for production decision-making without additional survey-design validation.
+
+## App overview
+
+The dashboard includes:
+- total production rows by season
+- top crops by reported counts
+- distribution across provinces
+- summary trends for reported loss values
+- a clear interpretation note explaining the public-safe nature of the output
+
+This makes the project suitable for a hackathon submission where the goal is to demonstrate relevance, clarity, and data use while staying transparent about method limits.
+
+## Repository structure
+
+- `app.py` — Streamlit dashboard entry point
+- `scripts/build_dashboard_snapshot.py` — prepares aggregated summary data
+- `scripts/generate_demo_gif.py` — creates a demo GIF for the repository
+- `dataset/nisrdataset/` — NISR JSON source files
+- `dataset/publicdataset/` — public mirror for Season B production CSV
+- `docs/` — audit, schema, and research design notes
+- `artifacts/` — generated outputs such as the raw SQLite DB and dashboard snapshot
+- `demo/agri_loss_dashboard_demo.gif` — proof-of-concept visual demo
+
+## Run the app locally
 
 ```powershell
 py -3 -m pip install -r requirements-dev.txt
-py -3 scripts/audit_sas_2024.py
-py -3 -m scripts.ingest_sas_2024
+py -3 scripts/build_dashboard_snapshot.py
+py -3 -m streamlit run app.py
+```
+
+## Generate the demo GIF
+
+```powershell
+py -3 scripts/generate_demo_gif.py
+```
+
+## Run the validation checks
+
+```powershell
 py -3 -m pytest tests -v
 ```
 
-The audit regenerates the schema inventory and field-quality CSV, and writes `docs/data-quality-checks.json` with checksums, row-level structural checks, duplicate-key diagnostics, crop-area formula checks, candidate production-screening linkage coverage, and the JSON/CSV mirror comparison. The module-linkage output is diagnostic; it does not authorize a join where coverage or cardinality is unresolved.
+## Project intent
 
-The SQLite command creates a local raw staging database at `artifacts/agri_loss_sas_2024.sqlite`. It stores each JSON record unchanged in meaning, with its source filename and row number, and records the source hash and row count. Re-running it skips unchanged files and replaces changed files in one transaction. It does not normalize values, merge modules, or calculate indicators. The database contains respondent-level microdata; keep it local and out of public deployments.
+This prototype is designed to show a strong data-science and public-information story for Rwanda's agricultural sector:
+- diagnose patterns in reported crop production and loss
+- turn raw survey data into a visual narrative
+- support policy relevance and user-friendly interpretation
+- keep all outputs disclosure-aware and transparent about statistical limits
 
-## Current implementation sequence
+## Data access note
 
-1. Reproduce and finalize the source audit and complete the variable dictionary.
-2. Resolve questionnaire definitions, response codes, join grain, survey weights, and the Season B practice file's provenance.
-3. Define canonical season-aware data mappings and validated descriptive indicators.
-4. Extend raw staging into a canonical SQLite model and verify it against the raw sources.
-5. Evaluate whether the verified data supports a supervised-learning task; keep scenario estimates separate from predictions.
-6. Implement the FastAPI API and React/TypeScript client around validated, disclosure-reviewed indicators.
-
-Raw SQLite staging is available before these analysis gates because it preserves the source rows without assigning statistical meaning to them. The audit, metadata, and mapping gates still block analytical outputs.
-
-Raw respondent-level files must not be exposed through a public API or dashboard. Keep derived public outputs aggregated and review them for disclosure risk.
+The source datasets are retained locally for audit and analytical preparation. Any public deployment must use aggregated results only and must remain consistent with NISR dissemination rules and the project's disclosure safeguards.

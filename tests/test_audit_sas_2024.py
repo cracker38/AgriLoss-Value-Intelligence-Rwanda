@@ -192,7 +192,8 @@ def test_reports_crop_area_formula_and_candidate_linkage(tmp_path: Path) -> None
     assert result["production_unique_plot_keys"] == 2
     assert result["production_plot_keys_matching_screening"] == 2
     assert result["screening_duplicate_plot_key_rows"] == 2
-    assert result["candidate_crop_key_matched_rows"] == 2
+    # All three production crop keys appear in screening, including Rice.
+    assert result["candidate_crop_key_matched_rows"] == 3
     assert result["screening_duplicate_candidate_crop_key_rows"] == 1
     assert result["matched_rows_with_plot_weight_mismatch"] == 1
     assert result["crop_area_rows_with_all_inputs"] == 4

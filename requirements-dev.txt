@@ -1,1 +1,5 @@
-gitpytest==9.1.1
+pytest==9.1.1
+streamlit>=1.36.0
+pandas>=2.2.0
+plotly>=5.24.0
+pillow>=10.4.0
