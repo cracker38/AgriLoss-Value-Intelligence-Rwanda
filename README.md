@@ -1,3 +1,13 @@
+---
+title: AgriLoss Rwanda
+emoji: 🌱
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # AgriLoss Rwanda — SAS 2024 Crop Intelligence
 
 AgriLoss is an evidence-led dashboard for exploring crop production and reported crop-loss patterns in the 2024 Rwanda Seasonal Agricultural Survey (SAS). It provides interactive, aggregated descriptions and a clearly bounded exploratory classification experiment. It does **not** currently produce official survey estimates, causal findings, or validated forecasts.
@@ -64,6 +74,17 @@ For tests and audit development, install the development dependencies instead:
 ```powershell
 py -3 -m pip install -r requirements-dev.txt
 ```
+
+## Deploy on Hugging Face Spaces
+
+This project uses a server-side Docker Space. Do not use a static/browser/Pyodide runtime: Streamlit and the scikit-learn model need a Python server process, and browser-side `micropip` dependency resolution is not supported.
+
+1. Create a new Hugging Face Space and select **Docker** as its SDK.
+2. Push the project source, including `Dockerfile`, `requirements.txt`, and this README.
+3. Before making a Space public, confirm NISR permits hosting the data and complete a disclosure review. `dataset/` is deliberately Git-ignored because it contains respondent-level survey extracts. Do not force-add or upload those files to a public Space. The Docker build excludes local datasets and generated artifacts; as currently implemented, the app needs the three production JSON extracts at runtime and reports an error when they are absent. Therefore, the Docker setup addresses the Python runtime conflict, but the Space is not ready to serve dashboard data until an approved, disclosure-reviewed data product and corresponding app data loader are provided.
+4. If you have authorization to use data in a hosted environment, configure access and storage according to NISR's terms and your organization's data-protection requirements. A private Space does not replace those approvals.
+
+The reported `micropip` error is a browser-runtime package conflict (`huggingface-hub` is already installed at a version outside a requested constraint). This project's `requirements.txt` does not request `huggingface-hub`; deploying through the Docker Space runtime avoids that browser package installation path.
 
 ## Train or retrain the model
 
