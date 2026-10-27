@@ -18,7 +18,7 @@ st.set_page_config(
     page_title="AgriLoss | Rwanda crop intelligence",
     page_icon="🌱",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
