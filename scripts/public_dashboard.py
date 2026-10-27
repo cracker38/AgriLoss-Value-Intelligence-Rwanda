@@ -45,6 +45,34 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     provinces = pd.DataFrame(payload["by_province"])
     crops = pd.DataFrame(payload["by_crop"])
 
+    season_options = sorted(seasons["season"].astype(str).unique().tolist())
+    province_options = sorted(provinces["province"].astype(str).unique().tolist())
+    crop_options = sorted(crops["crop"].astype(str).unique().tolist())
+    with st.sidebar:
+        st.markdown("## Explore the published summaries")
+        selected_seasons = st.multiselect(
+            "Season summaries",
+            options=season_options,
+            default=season_options,
+            help="Filters the season chart and data-quality table only.",
+        )
+        selected_provinces = st.multiselect(
+            "Province summaries",
+            options=province_options,
+            default=province_options,
+            help="Filters the province chart only.",
+        )
+        selected_crops = st.multiselect(
+            "Crop summaries",
+            options=crop_options,
+            default=crop_options,
+            help="Filters the crop charts and table only.",
+        )
+        st.caption(
+            "These controls filter separate one-dimensional summaries. "
+            "They do not combine season, province, and crop selections."
+        )
+
     review = payload["review"]
     if payload["release_status"] == "owner_authorized_unreviewed":
         st.warning(
@@ -83,6 +111,10 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             "Median harvest reported",
             f"{harvest_median:,.0f} kg" if harvest_median is not None else "—",
         )
+        st.caption(
+            "Headline metrics describe the full published release. Sidebar filters affect only "
+            "their matching charts and tables."
+        )
 
         st.markdown(
             '<div class="callout"><strong>Interpretation:</strong> These are unweighted sample '
@@ -97,18 +129,24 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
 
         left, right = st.columns(2)
         with left:
-            st.plotly_chart(
-                _bar_chart(
-                    seasons,
-                    x="season",
-                    y="records",
-                    title="Production records by season",
-                    y_label="Production records",
-                ),
-                width="stretch",
-            )
+            season_view = seasons[seasons["season"].astype(str).isin(selected_seasons)]
+            if not season_view.empty:
+                st.plotly_chart(
+                    _bar_chart(
+                        season_view,
+                        x="season",
+                        y="records",
+                        title="Production records by season",
+                        y_label="Production records",
+                    ),
+                    width="stretch",
+                )
+            else:
+                st.info("Select at least one season summary in the sidebar.")
         with right:
-            harvest = crops.dropna(subset=["median_reported_harvest_kg"]).copy()
+            harvest = crops[
+                crops["crop"].astype(str).isin(selected_crops)
+            ].dropna(subset=["median_reported_harvest_kg"]).copy()
             if not harvest.empty:
                 harvest = harvest.sort_values(
                     "median_reported_harvest_kg", ascending=False
@@ -126,8 +164,11 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             else:
                 st.info("No crop group has enough reported harvest values for this chart.")
 
-        if not provinces.empty:
-            province_chart = provinces.sort_values("records", ascending=False)
+        province_view = provinces[
+            provinces["province"].astype(str).isin(selected_provinces)
+        ]
+        if not province_view.empty:
+            province_chart = province_view.sort_values("records", ascending=False)
             st.plotly_chart(
                 _bar_chart(
                     province_chart,
@@ -145,7 +186,9 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             "Values summarize crop groups across all seasons. Small source groups are pooled "
             "without their original labels. The reported-loss unit remains unconfirmed."
         )
-        loss = crops.dropna(subset=["positive_reported_loss_share"]).copy()
+        loss = crops[
+            crops["crop"].astype(str).isin(selected_crops)
+        ].dropna(subset=["positive_reported_loss_share"]).copy()
         if not loss.empty:
             loss = loss.sort_values(
                 "positive_reported_loss_share", ascending=False
@@ -202,7 +245,10 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             "positive_reported_loss_records",
             "loss_missing_records",
         ]
-        quality = seasons.loc[:, quality_columns].rename(
+        season_quality = seasons[
+            seasons["season"].astype(str).isin(selected_seasons)
+        ]
+        quality = season_quality.loc[:, quality_columns].rename(
             columns={
                 "season": "Season",
                 "records": "Production records",
