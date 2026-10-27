@@ -43,6 +43,14 @@ st.markdown(
         color: #3f382b;
         margin: 0.7rem 0 1rem 0;
     }
+    .status-card {
+        background: linear-gradient(135deg, rgba(22,128,93,0.12), rgba(138,191,67,0.12));
+        border: 1px solid rgba(22,128,93,0.2);
+        border-radius: 14px;
+        padding: 1rem 1.2rem;
+        margin: 0.8rem 0 1.2rem 0;
+    }
+    .status-card p { margin: 0; color: #164d3d; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -114,9 +122,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 st.markdown(
-    "**Purpose:** Make selected NISR SAS 2024 crop-production and reported-loss patterns easier to explore "
-    "for research and planning. The prototype supports questions for follow-up; it does not estimate "
-    "national loss or predict future events."
+    '<div class="status-card"><p><strong>Purpose:</strong> Make selected NISR SAS 2024 crop-production and reported-loss patterns easier to explore for research and planning. The prototype supports questions for follow-up; it does not estimate national loss or predict future events.</p></div>',
+    unsafe_allow_html=True,
 )
 st.caption(
     "Potential thematic relevance: agricultural transformation, productivity, resilience, and evidence-informed "
@@ -214,13 +221,13 @@ with overview_tab:
     with left:
         st.plotly_chart(
             _bar_chart(season_counts, "season", "records", "Production records by season", "season"),
-            use_container_width=True,
+            width="stretch",
         )
     with right:
         if not crop_harvest.empty:
             st.plotly_chart(
                 _bar_chart(crop_harvest, "s2q4", "median_harvest", "Median reported harvest by crop"),
-                use_container_width=True,
+                width="stretch",
             )
         else:
             st.info("Not enough records to display crop harvest groups under the 30-record display threshold.")
@@ -228,7 +235,7 @@ with overview_tab:
     if not province_counts.empty:
         st.plotly_chart(
             _bar_chart(province_counts, "s1q1", "records", "Records by province", "s1q1"),
-            use_container_width=True,
+            width="stretch",
         )
     st.caption(
         "Crop groups with fewer than 30 valid harvest records are omitted from this chart. "
@@ -254,6 +261,7 @@ with loss_tab:
         st.plotly_chart(
             _bar_chart(loss_by_crop, "s2q4", "positive_share", "Share of valid records with positive reported loss"),
             use_container_width=True,
+            width="stretch",
         )
         display_loss = loss_by_crop.rename(
             columns={
@@ -266,7 +274,7 @@ with loss_tab:
         display_loss["Positive reported-loss share"] = display_loss[
             "Positive reported-loss share"
         ].map(_format_percent)
-        st.dataframe(display_loss, hide_index=True, use_container_width=True)
+        st.dataframe(display_loss, hide_index=True, width="stretch")
     else:
         st.info("No crop group meets the 30-record display threshold for loss comparisons.")
     st.caption("Missing loss responses are excluded from the denominator, not converted to zero.")
@@ -315,7 +323,7 @@ with model_tab:
         metric_table["Always-negative baseline"] = metric_table[
             "Always-negative baseline"
         ].map(_format_percent)
-        st.dataframe(metric_table, hide_index=True, use_container_width=True)
+        st.dataframe(metric_table, hide_index=True, width="stretch")
         st.info(
             f"Accuracy is {_format_percent(model_metrics['accuracy'])}, compared with "
             f"{_format_percent(baseline['accuracy'])} for the always-negative baseline. "
@@ -395,7 +403,7 @@ with methods_tab:
             distinct_crops=("s2q4", "nunique"),
         )
     )
-    st.dataframe(quality, hide_index=True, use_container_width=True)
+    st.dataframe(quality, hide_index=True, width="stretch")
     st.markdown(
         """
         **Interpretation and known limits**
