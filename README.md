@@ -68,7 +68,7 @@ py -3 -m pip install -r requirements-dev.txt
 ## Train or retrain the model
 
 ```powershell
-py -3 scripts/train_loss_model.py
+py -3 -m scripts.train_loss_model
 ```
 
 Training writes:
