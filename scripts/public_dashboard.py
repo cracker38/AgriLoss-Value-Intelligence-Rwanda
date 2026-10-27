@@ -181,8 +181,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         st.subheader("Exploratory reported-loss classifier")
         st.info(
             "The public aggregate edition does not include respondent-level model inputs or an "
-            "interactive score. The retrospective classifier and its validation results remain "
-            "available in the research materials; this hosted view does not score farmers."
+            "interactive score. This hosted view does not score or rank farmers."
         )
 
     with methods_tab:

@@ -68,6 +68,44 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             raise ValueError(f"Public dashboard section {section} must be a list")
     if not isinstance(payload["overall"], dict):
         raise ValueError("Public dashboard section overall must be an object")
+
+    required_fields = {
+        "overall": {
+            "records",
+            "distinct_crop_values",
+            "loss_reported_records",
+            "positive_reported_loss_records",
+            "positive_reported_loss_share",
+            "median_reported_harvest_kg",
+        },
+        "by_season": {
+            "season",
+            "records",
+            "distinct_crop_values",
+            "loss_reported_records",
+            "positive_reported_loss_records",
+            "loss_missing_records",
+        },
+        "by_province": {"province", "records"},
+        "by_crop": {
+            "crop",
+            "records",
+            "loss_reported_records",
+            "positive_reported_loss_share",
+            "median_reported_harvest_kg",
+            "median_reported_loss_value",
+        },
+    }
+    for section, fields in required_fields.items():
+        values = [payload[section]] if section == "overall" else payload[section]
+        for index, value in enumerate(values):
+            if not isinstance(value, dict):
+                raise ValueError(f"Public dashboard {section} entry {index} must be an object")
+            missing = fields.difference(value)
+            if missing:
+                raise ValueError(
+                    f"Public dashboard {section} entry {index} is missing: {sorted(missing)}"
+                )
     return payload
 
 
