@@ -9,7 +9,14 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from scripts.dashboard_data import available_values, filter_production_data, load_production_data
+from scripts.dashboard_data import (
+    PUBLIC_DASHBOARD_PATH,
+    available_values,
+    filter_production_data,
+    load_production_data,
+    load_public_dashboard_data,
+)
+from scripts.public_dashboard import render_public_dashboard
 from scripts.train_loss_model import METRICS_PATH, MODEL_PATH
 
 
@@ -131,9 +138,26 @@ st.caption(
 )
 
 try:
+    if PUBLIC_DASHBOARD_PATH.is_file():
+        public_data = load_public_dashboard_data()
+        render_public_dashboard(public_data)
+        st.stop()
     data = load_data()
+except FileNotFoundError:
+    st.error("This deployment has no approved aggregate dashboard data file.")
+    st.write(
+        "Respondent-level SAS extracts are intentionally excluded from hosted deployments. "
+        "The public dashboard requires a disclosure-reviewed aggregate file at:"
+    )
+    st.code("public_data/dashboard_aggregates.json", language="text")
+    st.write(
+        "To prepare a local review candidate from authorized source files, run "
+        "`py -3 -m scripts.build_public_dashboard`. The generated file is kept under "
+        "`artifacts/` and is not ready for public release until the required review is recorded."
+    )
+    st.stop()
 except (OSError, ValueError, json.JSONDecodeError) as error:
-    st.error(f"Could not load the SAS production data: {error}")
+    st.error(f"Could not load dashboard data: {error}")
     st.stop()
 
 with st.sidebar:

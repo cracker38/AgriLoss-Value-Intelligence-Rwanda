@@ -75,14 +75,28 @@ For tests and audit development, install the development dependencies instead:
 py -3 -m pip install -r requirements-dev.txt
 ```
 
+## Deploy on Streamlit Community Cloud
+
+The app entrypoint is `app.py` and runtime dependencies are in the root `requirements.txt`. Connect the GitHub repository to Streamlit Community Cloud and select `app.py` as the entrypoint; the existing Dockerfile is not needed for this host.
+
+The local respondent-level extracts and generated artifacts are intentionally Git-ignored. A hosted checkout therefore cannot use the local loader. To prepare an aggregate release candidate from authorized local source files, run:
+
+```powershell
+py -3 -m scripts.build_public_dashboard
+```
+
+This writes `artifacts/dashboard_release_candidate.json`, which remains Git-ignored. The candidate contains only independent season, province, and crop summaries, pools small groups, and omits respondent rows and individual model scores. Its group-size suppression is a preliminary safeguard, **not** disclosure approval. Confirm NISR's current data-use conditions and complete the required disclosure review before publishing any derived data.
+
+After that review, place the approved file at `public_data/dashboard_aggregates.json`, record its review status and reference in the JSON, and commit that aggregate file with the app code. The public app checks for the recorded approval before serving aggregate mode. It intentionally does not support combined season/province/crop filtering in that mode. Do not add `dataset/`, SQLite staging databases, or row-level source files to the hosted repository.
+
 ## Deploy on Hugging Face Spaces
 
 This project uses a server-side Docker Space. Do not use a static/browser/Pyodide runtime: Streamlit and the scikit-learn model need a Python server process, and browser-side `micropip` dependency resolution is not supported.
 
 1. Create a new Hugging Face Space and select **Docker** as its SDK.
 2. Push the project source, including `Dockerfile`, `requirements.txt`, and this README.
-3. Before making a Space public, confirm NISR permits hosting the data and complete a disclosure review. `dataset/` is deliberately Git-ignored because it contains respondent-level survey extracts. Do not force-add or upload those files to a public Space. The Docker build excludes local datasets and generated artifacts; as currently implemented, the app needs the three production JSON extracts at runtime and reports an error when they are absent. Therefore, the Docker setup addresses the Python runtime conflict, but the Space is not ready to serve dashboard data until an approved, disclosure-reviewed data product and corresponding app data loader are provided.
-4. If you have authorization to use data in a hosted environment, configure access and storage according to NISR's terms and your organization's data-protection requirements. A private Space does not replace those approvals.
+3. Before making a Space public, confirm NISR permits hosting the data and complete a disclosure review. `dataset/` is deliberately Git-ignored because it contains respondent-level survey extracts. Do not force-add or upload those files to a public Space. The app's public mode requires the approved aggregate file at `public_data/dashboard_aggregates.json`; the local candidate builder writes to Git-ignored `artifacts/` and does not approve the release.
+4. If you have authorization to use derived data in a hosted environment, record the disclosure-review approval in the aggregate file and commit only that file with the app. A private Space does not replace data-use approval.
 
 The reported `micropip` error is a browser-runtime package conflict (`huggingface-hub` is already installed at a version outside a requested constraint). This project's `requirements.txt` does not request `huggingface-hub`; deploying through the Docker Space runtime avoids that browser package installation path.
 
@@ -97,7 +111,7 @@ Training writes:
 - `artifacts/loss_classifier.joblib` — fitted preprocessing and classifier pipeline
 - `artifacts/loss_model_metrics.json` — target definition, split protocol, exclusions, and measured metrics
 
-The app reads those artifacts to display evaluation results and the optional illustrative score. Do not edit the evaluation metrics by hand; regenerate them by running the training command.
+The local dashboard reads those artifacts to display evaluation results and an optional illustrative score. The public aggregate edition omits respondent-level scoring and does not need the model binary. Do not edit the evaluation metrics by hand; regenerate them by running the training command.
 
 ## Reproduce the source audit and tests
 
@@ -113,10 +127,13 @@ The SQLite database created by the raw staging loader contains respondent-level 
 
 - `app.py` — Streamlit dashboard
 - `scripts/dashboard_data.py` — production source loading and filtering
+- `scripts/build_public_dashboard.py` — local aggregate release-candidate builder
+- `scripts/public_dashboard.py` — public aggregate-only dashboard renderer
 - `scripts/train_loss_model.py` — reproducible model training and grouped evaluation
 - `scripts/audit_sas_2024.py` — source and data-quality audit
 - `scripts/ingest_sas_2024.py` — provenance-preserving raw SQLite staging
 - `dataset/nisrdataset/` — local SAS JSON extracts
 - `docs/` — audit findings, schema, and research design
 - `artifacts/` — generated local database, model, and metrics
+- `public_data/` — only a disclosure-reviewed aggregate release may be committed here
 - `tests/` — audit, ingestion, and dashboard/model tests

@@ -9,6 +9,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "dataset" / "nisrdataset"
+PUBLIC_DASHBOARD_PATH = ROOT / "public_data" / "dashboard_aggregates.json"
 SEASONS = ("A", "B", "C")
 
 
@@ -39,6 +40,35 @@ def load_production_data(seasons: Iterable[str] = SEASONS) -> pd.DataFrame:
         if column in data:
             data[column] = pd.to_numeric(data[column], errors="coerce")
     return data
+
+
+def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
+    """Load an approved aggregate release without loading respondent-level rows."""
+    with path.open("r", encoding="utf-8") as source:
+        payload = json.load(source)
+    if not isinstance(payload, dict):
+        raise ValueError("Public dashboard data must be a JSON object")
+    if payload.get("schema_version") != 1:
+        raise ValueError("Unsupported public dashboard data schema")
+    if payload.get("release_status") != "approved":
+        raise ValueError("The aggregate release has not been marked approved")
+
+    review = payload.get("review")
+    if not isinstance(review, dict) or review.get("status") != "approved":
+        raise ValueError("The aggregate release does not include an approval record")
+    for field in ("reviewed_by", "reviewed_on", "reference"):
+        if not isinstance(review.get(field), str) or not review[field].strip():
+            raise ValueError(f"The aggregate release approval is missing {field}")
+
+    for section in ("overall", "by_season", "by_province", "by_crop"):
+        if section not in payload:
+            raise ValueError(f"Public dashboard data is missing {section}")
+    for section in ("by_season", "by_province", "by_crop"):
+        if not isinstance(payload[section], list):
+            raise ValueError(f"Public dashboard section {section} must be a list")
+    if not isinstance(payload["overall"], dict):
+        raise ValueError("Public dashboard section overall must be an object")
+    return payload
 
 
 def filter_production_data(
