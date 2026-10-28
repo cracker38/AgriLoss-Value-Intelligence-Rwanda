@@ -2,15 +2,15 @@
 
 ## Intended users
 
+- Agricultural planners and MINAGRI / district teams working on post-harvest handling, storage, and agro-processing.
 - NISR statisticians reviewing SAS 2024 production patterns.
-- Agricultural planners, researchers, and extension teams formulating follow-up questions.
-- Civil-society and development partners discussing evidence needs with those teams.
+- Cooperatives, processors, civil-society groups, and development partners who need a transparent first look before commissioning a study.
 
 ## Use pathway
 
-1. **Triage:** In the Follow-up workspace, sort named crop groups by positive-response share, positive-response count, or missing-response share. Check each candidate alongside valid-response counts and missingness, then export a brief.
-2. **Verify:** Confirm the `s2q39` unit, denominator, questionnaire logic, and release conditions. Re-estimate candidate findings using verified weights, strata, clusters, and survey-appropriate uncertainty.
-3. **Co-design:** Ask intended users whether a verified pattern supports a relevant question about production or post-harvest practices.
+1. **Triage:** On Start here, confirm the challenge (storage or value addition). In the Crop workspace, sort named crop groups with one rule, read coverage next to the headline number, and export a brief.
+2. **Verify:** Confirm the `s2q39` unit and skip logic. For storage, review `s2q36`–`s2q38` and `s2q47`. For value addition, review `s2q25`–`s2q28`. Re-estimate with verified weights before any geographic claim.
+3. **Co-design:** Ask intended users whether a verified pattern supports a storage, collection, processing, or market question.
 4. **Pilot and evaluate:** If stakeholders choose an intervention, evaluate its outcomes separately with an appropriate study design.
 
 The current dashboard supports the first step and prepares a follow-up brief; it does not perform the survey-aware estimation or stakeholder validation. Its sorting lenses are descriptive and do not create a combined priority score. It does not identify causes, recommend interventions, target farmers, or estimate changes in productivity.

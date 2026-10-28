@@ -38,11 +38,11 @@ Check the official page again before submitting in case NISR updates its dates o
 
 | Criterion | Current evidence | Last-mile improvement |
 |---|---|---|
-| Problem understanding and relevance | The project asks which named crop groups have reported-loss patterns or missing responses that merit verification; aligned to Track 1. | Validate the question and its usefulness with intended Rwandan users. |
-| Data use and methodology | Source audit, documented cleaning, aggregate release, grouped local model evaluation. | No external dataset or survey-weighted estimates are implemented. Explain why the current scope is descriptive and avoid population claims. |
-| Tech innovation | Python, Streamlit, Plotly, scikit-learn, and reproducible scripts. | Keep the model clearly exploratory; do not describe it as a forecast or alert system. |
-| Usability and design | Guided crop follow-up workspace with three review lenses, response counts and missingness, a downloadable evidence brief, and separate exploration/methods views. | Complete a short user check and screen recording; test a small screen if possible. |
-| Tangible impact | Aggregates can help analysts identify possible agricultural productivity and post-harvest follow-up topics. | Follow the [impact and validation plan](impact-and-validation-plan.md); no measured impact exists yet. |
+| Problem understanding and relevance | Two Track 1 challenges (storage; processing/value addition) are mapped to NST2, Vision 2050, and PSTA 5, then to SAS 2024 crop groups. | Validate usefulness with intended Rwandan users. |
+| Data use and methodology | NISR SAS 2024 aggregates, documented cleaning, public policy context labelled separately from sample shares. | Do not present sample shares as the NST2 13.8% or PSTA 5 study rates. Weights are still unimplemented. |
+| Tech innovation | Two-track workspace, transparent sort rules, Plotly charts, briefs, local exploratory classifier kept off the public score surface. | Keep the model exploratory; do not describe it as a forecast. |
+| Usability and design | Start-here page, glossary, storage vs value-addition radio, plain-language metrics, downloadable brief. | Record the 3-minute demo; test a small screen. |
+| Tangible impact | A crop pattern becomes a written next check for government, civil society, or partners. | Follow the [impact and validation plan](impact-and-validation-plan.md); no measured impact exists yet. |
 
 ## Submission-day checks
 

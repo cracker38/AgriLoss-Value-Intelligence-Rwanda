@@ -22,49 +22,89 @@ from scripts.train_loss_model import METRICS_PATH, MODEL_PATH
 
 ROOT = Path(__file__).resolve().parent
 st.set_page_config(
-    page_title="AgriLoss | Rwanda crop intelligence",
-    page_icon="🌱",
+    page_title="AgriLoss Rwanda | Post-harvest & value addition",
+    page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
     """
     <style>
-    .stApp { background: #f5f7f6; }
-    .block-container { max-width: 1320px; padding-top: 1.4rem; padding-bottom: 3rem; }
-    [data-testid="stSidebar"] { background: #102b25; }
-    [data-testid="stSidebar"] * { color: #eef6f1; }
+    @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap");
+    html, body, [class*="css"] { font-family: "Source Sans 3", "Segoe UI", sans-serif; }
+    .stApp { background: #f4f7f5; }
+    .block-container { max-width: 1180px; padding-top: 1.1rem; padding-bottom: 2.6rem; }
+    [data-testid="stSidebar"] { background: #0c241e; }
+    [data-testid="stSidebar"] * { color: #e7f3ed; }
+    [data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] p { color: #c5ddd3 !important; }
     .hero {
-        padding: 1.7rem 2rem;
-        border-radius: 18px;
+        padding: 1.55rem 1.8rem 1.35rem 1.8rem;
+        border-radius: 20px;
         color: #f6fbf7;
-        background: linear-gradient(115deg, #123b30 0%, #17664e 60%, #278a67 100%);
-        margin: 0.2rem 0 1rem 0;
+        background:
+            radial-gradient(1200px 280px at 90% -20%, rgba(201, 168, 76, 0.28), transparent 50%),
+            linear-gradient(118deg, #0c241e 0%, #13543f 58%, #1d7a58 100%);
+        margin: 0 0 1rem 0;
+        box-shadow: 0 10px 28px rgba(12, 36, 30, 0.18);
     }
-    .hero h1 { font-size: clamp(2rem, 4vw, 3rem); letter-spacing: -0.035em; margin-bottom: 0.3rem; }
-    .hero p { color: #d6e8df; margin-bottom: 0; }
+    .hero .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.16);
+        padding: 0.22rem 0.6rem;
+        border-radius: 999px;
+        margin-bottom: 0.7rem;
+    }
+    .hero h1 { font-size: clamp(1.85rem, 3.6vw, 2.6rem); letter-spacing: -0.03em; margin: 0 0 0.35rem 0; }
+    .hero p { color: #d7ebe2; margin: 0; max-width: 46rem; font-size: 1.05rem; line-height: 1.45; }
+    .hero-meta { margin-top: 0.85rem; color: #c9e2d7; font-size: 0.92rem; }
     .callout {
         padding: 0.9rem 1rem;
-        border-left: 4px solid #d89c38;
-        border-radius: 6px;
-        background: #fff8e9;
+        border-left: 4px solid #c9862a;
+        border-radius: 8px;
+        background: #fff7ea;
         color: #3f382b;
         margin: 0.7rem 0 1rem 0;
     }
-    .status-card {
-        background: linear-gradient(135deg, rgba(22,128,93,0.10), rgba(138,191,67,0.10));
-        border: 1px solid rgba(22,128,93,0.2);
-        border-radius: 12px;
-        padding: 0.85rem 1.1rem;
-        margin: 0.7rem 0 0.8rem 0;
+    .info-card, .step-card {
+        background: #ffffff;
+        border: 1px solid #dce7e1;
+        border-radius: 14px;
+        padding: 1rem 1.05rem;
+        min-height: 8.2rem;
+        margin-bottom: 0.6rem;
     }
-    .status-card p { margin: 0; color: #164d3d; }
-    [data-testid="stMetric"] { background: #ffffff; border: 1px solid #e2eae5; border-radius: 12px; padding: 0.9rem 1rem; }
-    [data-testid="stTabs"] button { font-weight: 600; }
+    .info-card h4 { margin: 0 0 0.35rem 0; color: #0f6b4e; font-size: 1.02rem; }
+    .info-card p, .step-card p { margin: 0; color: #315248; line-height: 1.45; }
+    .step-card { display: flex; gap: 0.75rem; align-items: flex-start; min-height: 6.4rem; }
+    .step-card span {
+        flex: 0 0 1.7rem;
+        height: 1.7rem;
+        border-radius: 999px;
+        background: #0f6b4e;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    [data-testid="stMetric"] {
+        background: #ffffff;
+        border: 1px solid #dce7e1;
+        border-radius: 14px;
+        padding: 0.85rem 1rem;
+    }
+    [data-testid="stTabs"] button { font-weight: 650; }
+    div[data-testid="stAlert"] { border-radius: 12px; }
     @media (max-width: 640px) {
-        .block-container { padding-left: 1rem; padding-right: 1rem; }
-        .hero { padding: 1.2rem 1.25rem; }
+        .block-container { padding-left: 0.85rem; padding-right: 0.85rem; }
+        .hero { padding: 1.15rem 1.15rem; }
+        .info-card, .step-card { min-height: 0; }
     }
     </style>
     """,
@@ -130,20 +170,14 @@ def _bar_chart(data: pd.DataFrame, x: str, y: str, title: str, color: str | None
 st.markdown(
     """
     <div class="hero">
+      <div class="eyebrow">NISR 2026 Big Data Hackathon · Track 1: Agricultural Productivity</div>
       <h1>AgriLoss Rwanda</h1>
-      <p>Evidence-led crop production and reported-loss intelligence · NISR SAS 2024</p>
+      <p>A clear first look at which crops in the SAS 2024 sample deserve follow-up on
+      post-harvest collection and storage, and on processing and value addition.</p>
+      <div class="hero-meta">NISR Seasonal Agricultural Survey 2024 · unweighted sample summaries · not official estimates</div>
     </div>
     """,
     unsafe_allow_html=True,
-)
-st.markdown(
-    '<div class="status-card"><p><strong>Research problem:</strong> Identify which crop groups in the NISR SAS 2024 sample have reported-loss patterns that merit verification. <strong>Solution:</strong> compare transparent sample indicators, inspect response coverage, and prepare a follow-up brief. This does not estimate national loss or recommend interventions.</p></div>',
-    unsafe_allow_html=True,
-)
-st.markdown("**NISR 2026 Big Data Hackathon · Track 1: Agricultural Productivity**")
-st.caption(
-    "The dashboard helps research and planning teams decide what to validate next. All published indicators "
-    "describe unweighted survey records, not Rwanda-wide estimates or proven intervention effects."
 )
 
 try:

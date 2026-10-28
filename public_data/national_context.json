@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "purpose": "Public policy context for the AgriLoss dashboard. These figures are not SAS 2024 sample estimates.",
+  "hackathon": {
+    "track": "Track 1: Agricultural Productivity",
+    "focus_areas": [
+      "Post-harvest collection and storage",
+      "Agricultural productivity processing and value addition"
+    ]
+  },
+  "national_priorities": [
+    {
+      "framework": "Vision 2050",
+      "relevance": "A high-income, food-secure Rwanda needs productive, market-oriented agriculture. Reducing food wasted after harvest and adding value before sale are part of that path.",
+      "source_name": "Vision 2050 (Government of Rwanda)",
+      "source_url": "https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/Vision_2050/Vision-2050.pdf"
+    },
+    {
+      "framework": "NST2 (2024–2029)",
+      "relevance": "NST2 aims to raise productivity on priority food crops and to strengthen post-harvest management, market linkages, and agro-processing.",
+      "indicator": "Food-crop post-harvest losses: 13.8% baseline, 8.5% intermediate, 4.8% target.",
+      "source_name": "National Strategy for Transformation (NST2) abridged",
+      "source_url": "https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/NST_2/NST2_2024-2029_Abridged.pdf"
+    },
+    {
+      "framework": "PSTA 5 / MINAGRI",
+      "relevance": "A 2023 post-harvest study cited in PSTA 5 reports value-chain losses of 13.8% for maize, 12.4% for rice, and 11.3% for beans. Those national study rates are not the SAS 2024 sample shares shown in this app.",
+      "source_name": "Strategic Plan for Agriculture Transformation (PSTA 5)",
+      "source_url": "https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Fulltext__Final.pdf"
+    }
+  ],
+  "priority_food_crops_nst2": [
+    "Maize",
+    "Beans",
+    "Potatoes",
+    "Rice",
+    "Cassava",
+    "Wheat",
+    "Bananas"
+  ],
+  "survey_fields_for_follow_up": {
+    "note": "These production questions exist in SAS 2024. Crop-level storage and processing shares are not published in the current aggregate file; the dashboard uses harvest and reported-loss summaries as a triage step.",
+    "storage": [
+      "s2q36 quantity stored (kg)",
+      "s2q37 storage facility (codes need verification)",
+      "s2q38 quantity in public storage (kg)",
+      "s2q47 storage-stage loss (kg; negative values exist and are flagged in the audit)"
+    ],
+    "processing_and_markets": [
+      "s2q25 quantity transformed (kg) and uses s2q25_1–s2q25_3",
+      "s2q26 quantity sold (kg)",
+      "s2q27 market",
+      "s2q28 selling price (RWF/kg; zeros with positive sales need verification)"
+    ],
+    "loss_stages_kg": "s2q41–s2q50 include harvest, transport, storage, processing, packaging, and sales-stage quantities. Do not sum them until overlap is confirmed."
+  }
+}

@@ -4,24 +4,23 @@
 **Output:** `.webm` or `.gif`, saved under `demo/`.  
 **App:** <https://agriloss-rwanda.streamlit.app/>
 
-Record the browser screen with a desktop recorder. Keep the pointer visible while changing filters. Do not use a phone to record a desktop screen. The recording should show the deployed app, not a slide deck.
+Record the browser screen with a desktop recorder. Keep the pointer visible. Do not use a phone to record a desktop screen. Show the deployed app, not a slide deck.
 
 ## Timed run of show
 
 | Time | Screen action | Suggested narration |
 |---|---|---|
-| 0:00–0:15 | Show the title and research problem statement. | “AgriLoss helps researchers identify crop-group patterns in the NISR SAS 2024 sample that deserve verification before planning use.” |
-| 0:15–0:35 | Show the provisional-release notice and sample metrics. | “These are unweighted production-record descriptions. The unit for reported-loss field s2q39 is unconfirmed, so its positive share is not a loss rate. The release status is visible.” |
-| 0:35–1:00 | In Follow-up workspace, switch from positive-response share to missing-response share. | “The workspace has separate, transparent review lenses. It does not combine them into an opaque score. Counts and missingness help interpret each share.” |
-| 1:00–1:25 | Select a crop group and point to its response and harvest summaries. | “This crop summary pools seasons and provinces. Median reported harvest is context, not yield. The dashboard does not claim the difference is nationally representative.” |
-| 1:25–1:50 | Show the verification steps and download the crop follow-up brief. | “The brief gives concrete next checks: verify the questionnaire measure, re-estimate with the survey design, and consult intended users.” |
-| 1:50–2:10 | Open Explore patterns and use season/province selectors. | “These are independent marginal summaries. Changing season or province does not cross-filter the crop analysis; Season C is restricted.” |
-| 2:10–2:30 | Open Data & methods and close on the title. | “AgriLoss supports research triage only. It does not estimate national loss, identify causes, recommend interventions, or score individual farmers.” |
+| 0:00–0:20 | Title, Track 1 badge, Start here. | “AgriLoss helps planners see which SAS 2024 crop groups deserve follow-up on post-harvest storage and on processing and value addition. It does not estimate national loss.” |
+| 0:20–0:45 | NST2 / PSTA 5 context and the four sample metrics. | “NST2 aims to cut food-crop post-harvest losses from 13.8% to 4.8%. Those targets are context. The numbers below describe the unweighted sample only.” |
+| 0:45–1:10 | Crop workspace, choose storage, change the sort rule. | “One track, one sort rule. We do not hide a composite score. Counts and missing answers sit next to every share.” |
+| 1:10–1:35 | Select a crop, point to plain-language note, download the brief. | “The brief records why this crop was selected and the storage fields still to verify. It is not a recommendation to build a store.” |
+| 1:35–2:00 | Switch to processing and value addition; show harvest sort. | “For value addition we sort by reported harvest or sample size, then point users to processing and sales questions.” |
+| 2:00–2:20 | Explore the sample; change a sidebar filter. | “Season and province charts do not filter the crop list. Season C is a restricted sample.” |
+| 2:20–2:30 | Data and methods, then stop on the title. | “AgriLoss is research triage. It does not rank farmers or prove that an intervention works.” |
 
 ## Before recording
 
-- Wait for Streamlit to finish loading and close browser popups or unrelated tabs.
-- Ensure the sidebar is expanded and the page is at the top.
-- Record the actual filter interactions; do not edit values or create fake results.
-- Keep the provisional-release notice visible long enough to read.
-- Review the finished recording for legibility and keep it under three minutes.
+- Wait for Streamlit to finish loading and close unrelated tabs.
+- Keep the sidebar expanded and start on **Start here**.
+- Leave the provisional-release notice visible long enough to read.
+- Keep the recording under three minutes.

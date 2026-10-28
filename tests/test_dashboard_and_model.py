@@ -4,7 +4,8 @@ import pandas as pd
 import pytest
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from scripts.dashboard_data import filter_production_data
+from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
+from scripts.public_dashboard import _follow_up_brief, _named_crops
 from scripts.train_loss_model import (
     FEATURES,
     _grouped_cv_splits,
@@ -97,6 +98,74 @@ def test_classifier_uses_dense_categorical_inputs_for_gradient_boosting() -> Non
 
     assert isinstance(classifier.named_steps["classifier"], HistGradientBoostingClassifier)
     assert categorical_pipeline.named_steps["encode"].sparse_output is False
+
+
+def test_named_crops_exclude_pooled_groups_and_tag_nst2_priority() -> None:
+    crops = pd.DataFrame(
+        [
+            {
+                "crop": "Maize",
+                "records": 200,
+                "loss_reported_records": 180,
+                "loss_missing_records": 20,
+                "positive_reported_loss_records": 18,
+                "positive_reported_loss_share": 0.1,
+                "median_reported_harvest_kg": 46,
+                "harvest_reported_records": 180,
+            },
+            {
+                "crop": "Other or unreported crops (pooled)",
+                "records": 200,
+                "loss_reported_records": 180,
+                "loss_missing_records": 20,
+                "positive_reported_loss_records": 18,
+                "positive_reported_loss_share": 0.1,
+                "median_reported_harvest_kg": 10,
+                "harvest_reported_records": 180,
+            },
+        ]
+    )
+
+    named = _named_crops(crops)
+
+    assert list(named["crop"]) == ["Maize"]
+    assert bool(named.iloc[0]["is_priority_crop"]) is True
+
+
+def test_storage_brief_states_limits_and_next_fields() -> None:
+    crop_row = pd.Series(
+        {
+            "crop": "Maize",
+            "records": 200,
+            "loss_reported_records": 180,
+            "loss_missing_records": 20,
+            "positive_reported_loss_records": 18,
+            "positive_reported_loss_share": 0.1,
+            "loss_missing_share": 0.1,
+            "median_reported_harvest_kg": 46,
+            "harvest_reported_records": 180,
+            "is_priority_crop": True,
+        }
+    )
+
+    brief = _follow_up_brief(
+        crop_row,
+        "Crops with the highest share of positive loss reports",
+        "provisional",
+        "storage",
+    )
+
+    assert "not a national post-harvest loss rate" in brief
+    assert "s2q36" in brief
+    assert "Maize" in brief
+
+
+def test_public_aggregates_file_loads() -> None:
+    payload = load_public_dashboard_data()
+
+    assert payload["schema_version"] == 1
+    assert "by_crop" in payload
+    assert payload["overall"]["records"] > 0
 
 
 def test_dashboard_filters_only_selected_season_province_and_crop() -> None:

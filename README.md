@@ -1,19 +1,26 @@
-# AgriLoss Rwanda — SAS 2024 Crop Intelligence
+# AgriLoss Rwanda — post-harvest storage and value addition
 
-AgriLoss is a Streamlit prototype aligned with **Track 1: Agricultural Productivity** in the NISR 2026 Big Data Hackathon. It uses NISR's 2024 Rwanda Seasonal Agricultural Survey (SAS) production data to help research and planning teams decide what to verify next. Its question is: **Which named crop groups in the SAS 2024 sample have reported-loss patterns or missing responses that merit survey-aware follow-up?** The app does not produce official survey estimates, causal findings, or validated forecasts.
+AgriLoss is a Streamlit prototype for **Track 1: Agricultural Productivity** in the NISR 2026 Big Data Hackathon. It uses NISR’s 2024 Rwanda Seasonal Agricultural Survey (SAS) production data to help planners and researchers decide **which named crop groups to verify next** for two challenges:
+
+1. **Post-harvest collection and storage**
+2. **Processing and value addition**
+
+The app does not produce official survey estimates, national loss rates, causal findings, or forecasts.
 
 ## Purpose and potential relevance
 
-NISR's Agricultural Productivity track includes challenges related to crop production, post-harvest collection and storage, and value addition. AgriLoss addresses an evidence-triage problem: potential users need to see which crop-level reported-loss patterns are worth checking against the questionnaire, survey design, and loss-stage fields before using them to shape further research. Its relevance to NST2 and Vision 2050 is thematic; this project is **not** an official policy assessment, NISR endorsement, or measure of progress against either framework.
+Rwanda’s **NST2** aims to raise productivity on priority food crops and to cut food-crop post-harvest losses from **13.8% to 4.8%**, including through post-harvest handling, market linkages, and agro-processing. **Vision 2050** frames a market-oriented, food-secure agriculture sector. **PSTA 5** cites a 2023 study with value-chain losses of 13.8% (maize), 12.4% (rice), and 11.3% (beans). Those published targets and study rates are shown in the app as national context. They are **not** calculated from the SAS 2024 sample.
 
-The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system. Its outputs describe the available sample and do not establish the impact of an intervention or predict future loss.
+AgriLoss answers a practical first question: given the SAS 2024 production sample, which crop groups have reported-loss coverage or harvest patterns that justify opening the survey’s storage, collection, processing, and sales fields next? Relevance to NST2 and Vision 2050 is therefore specific to those two track areas. This project is **not** an official policy assessment or NISR endorsement.
+
+The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system.
 
 ## What is in the dashboard
 
-- Start in the **Follow-up workspace**: choose whether to review crop groups by positive-response share, number of positive responses in the sample, or missing-response share.
-- Compare each crop group's positive share with its valid response count and missingness, then review median reported harvest as context. The app does not create an opaque composite score.
-- Select a crop group and download a follow-up brief containing the sample summary, interpretation limits, and next evidence checks.
-- Explore independent season and province record summaries, and review survey and interpretation limits in **Data & methods**. These dimensions are not cross-filtered.
+- **Start here:** the challenge in plain language, who the tool is for, NST2 / Vision 2050 / PSTA 5 context, and a short glossary.
+- **Crop workspace:** choose storage or value addition, sort named crops with one transparent rule, inspect coverage, and download a one-page brief.
+- **Explore the sample:** independent season, province, reported-loss, and harvest charts. Filters do not cross-tabulate.
+- **Data and methods:** source, cleaning rules, and interpretation limits.
 - The local research edition includes an exploratory classifier for a positive `s2q39` value. **The public aggregate edition does not include respondent-level model inputs or an interactive score. This hosted view does not score or rank farmers.**
 
 The hosted dashboard contains aggregate summaries only. Its current release is marked provisional because NISR disclosure review is not recorded; the app displays this status. The local respondent-level extracts and SQLite database are excluded from the public repository.
@@ -39,11 +46,11 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 
 | NISR judging criterion | Current evidence | Readiness and remaining work |
 |---|---|---|
-| Problem Understanding & Relevance (20) | SAS 2024 crop production and reported-loss patterns; project fit is NISR Track 1, Agricultural Productivity. | Relevance is a plausible research direction, not a demonstrated intervention. Validate the question with intended Rwandan users. |
-| Data Use & Methodology (20) | NISR SAS 2024 production extracts, source audit, explicit missing-value handling, grouped model evaluation, and documented limits. | No external dataset or verified survey-weighted estimates are included. NISR allows Track 1 solutions with or without other open data. |
-| Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, and reproducible source audit. | The classifier is a local retrospective experiment, not a forecast or alert system; it is not exposed as a score in the public edition. |
-| Usability & Design (20) | Guided crop review workspace, three explicit sorting lenses, response-coverage context, downloadable follow-up brief, separate exploration and methods tabs. | A team-recorded demo video and user testing remain to be completed. |
-| Tangible Impact (20) | The workflow turns grouped sample patterns into a documented question for survey-aware and stakeholder validation. | No real-world outcome or stakeholder validation has been measured. The proposed usability and impact checks are in `docs/impact-and-validation-plan.md`; do not present this prototype as an operational recommendation tool. |
+| Problem Understanding & Relevance (20) | Track 1 focus on post-harvest collection/storage and processing/value addition, tied to NST2 (13.8% → 4.8% food-crop post-harvest loss), Vision 2050, and PSTA 5 study rates, using SAS 2024 production records as the evidence base. | Alignment is documented, not a measured contribution to those targets. Validate usefulness with intended Rwandan users. |
+| Data Use & Methodology (20) | NISR SAS 2024 production extracts, source audit, missing values kept missing, independent crop/season/province aggregates, and public NST2/PSTA 5 context that is labelled as non-sample. | No survey-weighted estimates. Storage and processing fields are specified as next checks, not yet published as crop ranks. |
+| Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, two-track workspace, NST2 crop tagging, and downloadable briefs. | The classifier remains a local retrospective experiment and is not a public farmer score or alert system. |
+| Usability & Design (20) | Start-here guidance, glossary, two challenge tracks, one-rule sorting, plain-language metrics, charts, and a crop brief. | Complete the required screen recording and a short user check. |
+| Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. | No outcome has been measured. See `docs/impact-and-validation-plan.md`. |
 
 ## Data sources and interpretation
 
