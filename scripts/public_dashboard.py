@@ -22,14 +22,15 @@ NST2_PRIORITY_CROPS = {
 }
 
 STORAGE_LENSES = (
-    "Crops with the highest share of positive loss reports",
-    "Crops with the most positive loss reports",
-    "Crops with the most missing loss answers",
+    "Share of records with stored quantity (kg)",
+    "Share of records with storage-stage loss (kg)",
+    "Number of records with stored quantity",
+    "Share missing a stored-quantity answer",
 )
 VALUE_LENSES = (
-    "Crops with the highest median harvest",
-    "Crops with the most production records",
-    "Crops with the most missing loss answers",
+    "Share of records with transformed quantity (kg)",
+    "Share of records with quantity sold (kg)",
+    "Median reported harvest (kg)",
 )
 
 
@@ -45,6 +46,12 @@ def _kg(value: float | None) -> str:
     return f"{float(value):,.0f} kg"
 
 
+def _int(value: Any) -> int:
+    if value is None or pd.isna(value):
+        return 0
+    return int(value)
+
+
 def _bar_chart(
     frame: pd.DataFrame,
     *,
@@ -52,7 +59,6 @@ def _bar_chart(
     y: str,
     title: str,
     y_label: str,
-    hover_data: list[str] | None = None,
     x_angle: int = 0,
     percent_axis: bool = False,
     color: str = "#0f6b4e",
@@ -63,23 +69,13 @@ def _bar_chart(
         y=y,
         title=title,
         labels={x: "", y: y_label},
-        hover_data=hover_data,
         color_discrete_sequence=[color],
     )
-    if hover_data and percent_axis:
-        figure.for_each_trace(
-            lambda trace: trace.update(
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    + f"{y_label}: %{{y:.1%}}"
-                    + "<br>Valid answers: %{customdata[0]:,}"
-                    + "<br>Positive answers: %{customdata[1]:,}"
-                    + "<extra></extra>"
-                )
-            )
-        )
     if percent_axis:
         figure.update_yaxes(tickformat=".0%")
+        figure.update_traces(
+            hovertemplate="<b>%{x}</b><br>" + y_label + ": %{y:.1%}<extra></extra>"
+        )
     figure.update_layout(
         plot_bgcolor="white",
         paper_bgcolor="rgba(0,0,0,0)",
@@ -97,63 +93,146 @@ def _bar_chart(
 
 
 def _named_crops(crops: pd.DataFrame) -> pd.DataFrame:
-    reviewable = crops[
-        (crops["crop"].astype(str) != POOLED_CROP_LABEL)
-        & crops["positive_reported_loss_share"].notna()
-    ].copy()
-    reviewable["loss_missing_share"] = (
-        reviewable["loss_missing_records"] / reviewable["records"]
+    reviewable = crops[crops["crop"].astype(str) != POOLED_CROP_LABEL].copy()
+    published = (
+        reviewable["stored_positive_share"].notna()
+        | reviewable["transformed_positive_share"].notna()
+        | reviewable["sold_positive_share"].notna()
+        | reviewable["positive_reported_loss_share"].notna()
+    )
+    reviewable = reviewable.loc[published].copy()
+    reviewable["stored_missing_share"] = (
+        reviewable["stored_missing_records"] / reviewable["records"]
     )
     reviewable["is_priority_crop"] = reviewable["crop"].isin(NST2_PRIORITY_CROPS)
     return reviewable
 
 
 def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
-    display = frame.head(10)[
-        [
-            "crop",
-            "is_priority_crop",
-            "records",
-            "loss_reported_records",
-            "positive_reported_loss_records",
-            "positive_reported_loss_share",
-            "loss_missing_share",
-            "median_reported_harvest_kg",
-        ]
-    ].rename(
-        columns={
-            "crop": "Crop",
-            "is_priority_crop": "NST2 priority food crop",
-            "records": "Survey records",
-            "loss_reported_records": "Valid loss answers",
-            "positive_reported_loss_records": "Positive loss answers",
-            "positive_reported_loss_share": "Share of valid answers that are positive",
-            "loss_missing_share": "Share of records with no loss answer",
-            "median_reported_harvest_kg": "Median harvest reported (kg)",
-        }
-    )
-    display["NST2 priority food crop"] = display["NST2 priority food crop"].map(
-        lambda flag: "Yes" if flag else "—"
-    )
-    display["Share of valid answers that are positive"] = display[
-        "Share of valid answers that are positive"
-    ].map(_percent)
-    display["Share of records with no loss answer"] = display[
-        "Share of records with no loss answer"
-    ].map(_percent)
-    if track == "value":
-        return display[
+    if track == "storage":
+        display = frame.head(10)[
             [
-                "Crop",
-                "NST2 priority food crop",
-                "Median harvest reported (kg)",
-                "Survey records",
-                "Valid loss answers",
-                "Share of valid answers that are positive",
-                "Share of records with no loss answer",
+                "crop",
+                "is_priority_crop",
+                "records",
+                "stored_positive_records",
+                "stored_positive_share",
+                "stored_median_positive_kg",
+                "storage_loss_positive_records",
+                "storage_loss_positive_share",
+                "storage_loss_negative_records",
             ]
-        ]
+        ].rename(
+            columns={
+                "crop": "Crop",
+                "is_priority_crop": "NST2 priority",
+                "records": "Survey records",
+                "stored_positive_records": "Stored quantity > 0",
+                "stored_positive_share": "Share stored (valid s2q36)",
+                "stored_median_positive_kg": "Median stored kg (when > 0)",
+                "storage_loss_positive_records": "Storage-stage loss > 0",
+                "storage_loss_positive_share": "Share storage-stage loss (valid s2q47)",
+                "storage_loss_negative_records": "Negative s2q47 values",
+            }
+        )
+        display["Share stored (valid s2q36)"] = display["Share stored (valid s2q36)"].map(_percent)
+        display["Share storage-stage loss (valid s2q47)"] = display[
+            "Share storage-stage loss (valid s2q47)"
+        ].map(_percent)
+    else:
+        display = frame.head(10)[
+            [
+                "crop",
+                "is_priority_crop",
+                "records",
+                "transformed_positive_records",
+                "transformed_positive_share",
+                "transformed_median_positive_kg",
+                "sold_positive_records",
+                "sold_positive_share",
+                "sold_median_positive_kg",
+                "median_reported_harvest_kg",
+            ]
+        ].rename(
+            columns={
+                "crop": "Crop",
+                "is_priority_crop": "NST2 priority",
+                "records": "Survey records",
+                "transformed_positive_records": "Transformed > 0",
+                "transformed_positive_share": "Share transformed (valid s2q25)",
+                "transformed_median_positive_kg": "Median transformed kg (when > 0)",
+                "sold_positive_records": "Sold > 0",
+                "sold_positive_share": "Share sold (valid s2q26)",
+                "sold_median_positive_kg": "Median sold kg (when > 0)",
+                "median_reported_harvest_kg": "Median harvest kg",
+            }
+        )
+        display["Share transformed (valid s2q25)"] = display[
+            "Share transformed (valid s2q25)"
+        ].map(_percent)
+        display["Share sold (valid s2q26)"] = display["Share sold (valid s2q26)"].map(_percent)
+    display["NST2 priority"] = display["NST2 priority"].map(lambda flag: "Yes" if flag else "—")
     return display
+
+
+def _storage_reading(crop_row: pd.Series) -> str:
+    crop = str(crop_row["crop"])
+    stored_share = crop_row["stored_positive_share"]
+    stored_n = _int(crop_row["stored_positive_records"])
+    stored_valid = _int(crop_row["stored_reported_records"])
+    loss_share = crop_row["storage_loss_positive_share"]
+    loss_n = _int(crop_row["storage_loss_positive_records"])
+    negatives = _int(crop_row["storage_loss_negative_records"])
+    public_n = _int(crop_row["public_stored_positive_records"])
+    parts = [
+        f"In this unweighted SAS 2024 sample, {crop} has {_percent(stored_share)} of valid stored-quantity answers "
+        f"greater than zero ({stored_n:,} of {stored_valid:,}). Median stored quantity among those positive answers is "
+        f"{_kg(crop_row['stored_median_positive_kg'])}."
+    ]
+    parts.append(
+        f"Storage-stage loss (`s2q47`, kg) is positive in {_percent(loss_share)} of valid answers "
+        f"({loss_n:,} records). {negatives:,} records have a negative storage-stage quantity; those are kept as a quality flag, not clipped."
+    )
+    if public_n:
+        parts.append(
+            f"{public_n:,} records report public-storage quantity greater than zero. That count is small and is not a warehouse siting result."
+        )
+    if pd.notna(stored_share) and stored_share == 0 and pd.notna(loss_share) and loss_share > 0:
+        parts.append(
+            "Stored quantity is not reported as positive in this group, but storage-stage loss is. "
+            "That skip-pattern should be checked in the questionnaire before anyone infers a storage gap."
+        )
+    parts.append(
+        "These shares describe production records in the sample. They are not Rwanda’s national post-harvest loss rate."
+    )
+    return " ".join(parts)
+
+
+def _value_reading(crop_row: pd.Series) -> str:
+    crop = str(crop_row["crop"])
+    trans_share = crop_row["transformed_positive_share"]
+    sold_share = crop_row["sold_positive_share"]
+    trans_n = _int(crop_row["transformed_positive_records"])
+    sold_n = _int(crop_row["sold_positive_records"])
+    zero_price = _int(crop_row["sold_with_zero_price_records"])
+    pos_price = _int(crop_row["sold_with_positive_price_records"])
+    parts = [
+        f"In this unweighted SAS 2024 sample, {crop} has {_percent(trans_share)} of valid transformed-quantity answers "
+        f"greater than zero ({trans_n:,} records). Median transformed quantity among those positive answers is "
+        f"{_kg(crop_row['transformed_median_positive_kg'])}."
+    ]
+    parts.append(
+        f"{_percent(sold_share)} of valid sold-quantity answers are greater than zero ({sold_n:,} records). "
+        f"Median sold quantity among those positive answers is {_kg(crop_row['sold_median_positive_kg'])}."
+    )
+    parts.append(
+        f"Among records with sold quantity > 0, {pos_price:,} also report a positive price (RWF/kg) and "
+        f"{zero_price:,} report a zero price. Zero prices next to positive sales need a coding check before any value calculation."
+    )
+    parts.append(
+        f"Median reported harvest is {_kg(crop_row['median_reported_harvest_kg'])} per production record. That is not yield, profit, or processor demand."
+    )
+    return " ".join(parts)
 
 
 def _follow_up_brief(
@@ -163,82 +242,56 @@ def _follow_up_brief(
     track: str,
 ) -> str:
     crop_name = str(crop_row["crop"])
-    positive_share = _percent(crop_row["positive_reported_loss_share"])
-    total_records = int(crop_row["records"])
-    valid_records = int(crop_row["loss_reported_records"])
-    positive_records = int(crop_row["positive_reported_loss_records"])
-    missing_records = int(crop_row["loss_missing_records"])
-    missing_share = _percent(crop_row["loss_missing_share"])
-    harvest_median = crop_row["median_reported_harvest_kg"]
-    harvest_text = (
-        f"{float(harvest_median):,.1f} kg per production record "
-        f"({int(crop_row['harvest_reported_records']):,} harvest answers)"
-        if pd.notna(harvest_median)
-        else "Not available in the released summary"
-    )
     priority = (
-        "Yes — this crop group is among NST2 priority food crops (maize, beans, potatoes, rice, cassava, wheat, bananas)."
+        "Yes — mapped to NST2 priority food crops (maize, beans, potatoes, rice, cassava, wheat, bananas)."
         if crop_row["is_priority_crop"]
         else "Not listed as an NST2 priority food-crop group in this dashboard mapping."
     )
-    track_title = (
-        "Post-harvest collection and storage"
-        if track == "storage"
-        else "Processing and value addition"
-    )
     if track == "storage":
-        why = (
-            f"Among named crop groups in this SAS 2024 sample, {crop_name} has "
-            f"{positive_share} of valid reported-loss answers that are positive "
-            f"({positive_records:,} of {valid_records:,}). "
-            "That is a reason to verify collection, storage, and loss-stage questions for this crop. "
-            "It is not a national post-harvest loss rate."
-        )
-        checks = """1. Confirm how the total reported-loss question (`s2q39`) is worded, coded, and skipped.
-2. Review stored quantity (`s2q36`), facility (`s2q37`), public storage (`s2q38`), and storage-stage loss (`s2q47`) without treating blank as zero.
-3. Keep loss-stage fields (`s2q41`–`s2q50`) separate until it is clear whether they overlap.
+        why = _storage_reading(crop_row)
+        checks = """1. Confirm skip logic between harvest (`s2q21`), stored quantity (`s2q36`), facility (`s2q37`), and public storage (`s2q38`).
+2. Investigate negative and zero storage-stage loss values (`s2q47`) without clipping them.
+3. Keep stage losses (`s2q41`–`s2q50`) separate; do not add them to `s2q39`.
 4. Reproduce any comparison with verified survey weights before using it in a plan.
-5. Ask farmers, cooperatives, or agricultural planners whether a verified pattern is worth a storage or collection study."""
+5. Ask farmers, cooperatives, or planners whether the verified storage pattern is worth a collection or storage study."""
+        track_title = "Post-harvest collection and storage"
     else:
-        why = (
-            f"{crop_name} has a median reported harvest of {harvest_text} in this sample, "
-            f"with {total_records:,} production records. "
-            "That is a reason to review processing, sales, and market questions for this crop. "
-            "It is not proof of processor demand, profit, or export opportunity."
-        )
+        why = _value_reading(crop_row)
         checks = """1. Review transformed quantity and uses (`s2q25`, `s2q25_1`–`s2q25_3`) with their own valid counts.
-2. Review quantity sold (`s2q26`), market (`s2q27`), and price (`s2q28`). Confirm zero prices that sit beside positive sales.
-3. Compare harvest (`s2q21`) with stored quantity (`s2q36`) as context only — not as a processing yield.
+2. Review quantity sold (`s2q26`), market (`s2q27`), and price (`s2q28`). Confirm zero prices beside positive sales.
+3. Do not treat transformed or sold kilograms as processor yield, capacity, or profit.
 4. Reproduce any comparison with verified survey weights before using it in a plan.
-5. Ask processors, cooperatives, or planners whether a verified pattern supports a value-addition follow-up."""
+5. Ask processors, cooperatives, or planners whether the verified pattern supports a value-addition follow-up."""
+        track_title = "Processing and value addition"
 
     return f"""# AgriLoss follow-up brief: {crop_name}
 
 ## Challenge in focus
 {track_title}
 
-## Why this crop was selected
+## What the SAS 2024 sample shows
 {why}
 
-## Sample snapshot (unweighted SAS 2024 production records)
+## Sample snapshot (unweighted production records)
 - Crop group: {crop_name}
 - NST2 priority food crop: {priority}
-- Production records: {total_records:,}
-- Valid reported-loss answers: {valid_records:,}
-- Positive reported-loss answers: {positive_records:,} ({positive_share} of valid answers)
-- Missing reported-loss answers: {missing_records:,} ({missing_share} of records)
-- Median reported harvest (`s2q21`): {harvest_text}
+- Production records: {_int(crop_row['records']):,}
+- Stored quantity > 0 (`s2q36`, kg): {_int(crop_row['stored_positive_records']):,} · {_percent(crop_row['stored_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['stored_median_positive_kg'])}
+- Storage-stage loss > 0 (`s2q47`, kg): {_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])} of valid answers · negative values: {_int(crop_row['storage_loss_negative_records']):,}
+- Transformed quantity > 0 (`s2q25`, kg): {_int(crop_row['transformed_positive_records']):,} · {_percent(crop_row['transformed_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['transformed_median_positive_kg'])}
+- Quantity sold > 0 (`s2q26`, kg): {_int(crop_row['sold_positive_records']):,} · {_percent(crop_row['sold_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['sold_median_positive_kg'])}
+- Median harvest (`s2q21`, kg): {_kg(crop_row['median_reported_harvest_kg'])}
+- Positive total reported-loss answers (`s2q39`, unit unconfirmed): {_int(crop_row['positive_reported_loss_records']):,} · {_percent(crop_row['positive_reported_loss_share'])} of valid answers
 - Review lens: {review_lens}
 
 ## What to check next
 {checks}
 
 ## What this brief is not
-This is not a national estimate, a farmer ranking, a cause of loss, or a recommendation to build a store, mill, or factory. Season, province, and crop summaries in the public app cannot be combined.
+This is not a national estimate, a farmer ranking, a cause of loss, or a recommendation to build a store, mill, or factory. Season, province, and crop summaries cannot be combined in this public file.
 
 Source: NISR Rwanda Seasonal Agricultural Survey 2024 production data, [NISR Microdata Portal](https://microdata.statistics.gov.rw/index.php/catalog/113).
 Public dashboard status: {release_note}
-National context: NST2 post-harvest loss target (13.8% to 4.8%) and PSTA 5 2023 study rates are separate published figures, not these sample shares.
 """
 
 
@@ -249,15 +302,15 @@ def _render_crop_review(
     release_note: str,
     track: str,
 ) -> None:
-    st.markdown("##### Crops to look at first")
+    st.markdown("##### Crops from the SAS 2024 sample")
     st.dataframe(
         _crop_review_table(review_queue, track),
         hide_index=True,
         width="stretch",
     )
     st.caption(
-        "Small unnamed groups are pooled and hidden here. A crop needs at least 100 valid loss answers before a share is shown. "
-        "NST2 priority is a label for national relevance, not a ranking from this survey."
+        "These are grouped SAS 2024 production records, not mock data. A share is published only when the crop group has at least 100 valid answers. "
+        "NST2 priority is a policy label, not a survey ranking."
     )
 
     default_crop = str(review_queue.iloc[0]["crop"])
@@ -266,7 +319,6 @@ def _render_crop_review(
         "Choose a crop to inspect",
         options=crop_options,
         index=crop_options.index(default_crop),
-        help="The list starts with the crop at the top of your chosen sort. You can pick any named crop with a published summary.",
     )
     crop_row = reviewable_crops.loc[
         reviewable_crops["crop"].astype(str) == selected_crop
@@ -279,87 +331,37 @@ def _render_crop_review(
 
     crop_metrics = st.columns(4)
     if track == "storage":
-        crop_metrics[0].metric(
-            "Positive loss answers",
-            f"{int(crop_row['positive_reported_loss_records']):,}",
-            help="Count of valid s2q39 answers greater than zero in this crop group.",
-        )
-        crop_metrics[1].metric(
-            "Share of valid answers",
-            _percent(crop_row["positive_reported_loss_share"]),
-            help="Positive answers divided by valid answers. This is not a national loss rate.",
-        )
+        crop_metrics[0].metric("Stored quantity > 0", f"{_int(crop_row['stored_positive_records']):,}")
+        crop_metrics[1].metric("Share of valid stored answers", _percent(crop_row["stored_positive_share"]))
         crop_metrics[2].metric(
-            "Valid loss answers",
-            f"{int(crop_row['loss_reported_records']):,}",
+            "Median stored (when > 0)",
+            _kg(crop_row["stored_median_positive_kg"]),
         )
         crop_metrics[3].metric(
-            "No loss answer",
-            f"{_percent(crop_row['loss_missing_share'])}",
-            help="Blank s2q39 answers as a share of all production records in this crop group.",
+            "Storage-stage loss > 0",
+            f"{_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])}",
+        )
+        st.info(_storage_reading(crop_row))
+        actions = (
+            "**1. Check stored quantity**\n\nConfirm `s2q36` skip logic and keep blanks missing.",
+            "**2. Check storage-stage loss**\n\nReview `s2q47` positives and the negative-value flag separately.",
+            "**3. Check facility type**\n\n`s2q37` is mostly own storage in this sample; unmapped codes 12–14 stay unmapped.",
         )
     else:
-        harvest_median = crop_row["median_reported_harvest_kg"]
-        crop_metrics[0].metric(
-            "Median harvest reported",
-            _kg(harvest_median) if pd.notna(harvest_median) else "—",
-            help="Median s2q21 in kilograms per production record. This is not crop yield.",
-        )
-        crop_metrics[1].metric(
-            "Survey records",
-            f"{int(crop_row['records']):,}",
-        )
-        crop_metrics[2].metric(
-            "Positive loss share",
-            _percent(crop_row["positive_reported_loss_share"]),
-        )
-        crop_metrics[3].metric(
-            "No loss answer",
-            f"{_percent(crop_row['loss_missing_share'])}",
-        )
-
-    if track == "storage":
-        st.info(
-            f"**In plain language:** {selected_crop} has "
-            f"{_percent(crop_row['positive_reported_loss_share'])} of valid loss answers marked positive "
-            f"in this sample. Use that as a prompt to check collection and storage questions — not as a "
-            f"claim that this share of Rwanda’s harvest was lost."
-        )
-    else:
-        st.info(
-            f"**In plain language:** {selected_crop} shows a median reported harvest of "
-            f"{_kg(crop_row['median_reported_harvest_kg'])} in this sample. Use that as a prompt to check "
-            f"processing, sales, and storage questions — not as a business case for a factory."
+        crop_metrics[0].metric("Transformed > 0", f"{_int(crop_row['transformed_positive_records']):,}")
+        crop_metrics[1].metric("Share transformed", _percent(crop_row["transformed_positive_share"]))
+        crop_metrics[2].metric("Sold > 0", f"{_int(crop_row['sold_positive_records']):,}")
+        crop_metrics[3].metric("Share sold", _percent(crop_row["sold_positive_share"]))
+        st.info(_value_reading(crop_row))
+        actions = (
+            "**1. Check transformation**\n\n`s2q25` is kilograms already processed or used, not factory capacity.",
+            "**2. Check sales and price**\n\nKeep zero prices beside positive `s2q26` sales visible.",
+            "**3. Keep harvest as context**\n\nMedian `s2q21` is not yield or a business case.",
         )
 
     st.markdown("##### What to do next")
-    action_columns = st.columns(3)
-    if track == "storage":
-        action_columns[0].markdown(
-            "**1. Check the loss question**\n\n"
-            "Confirm the wording, unit, and skip pattern of the total reported-loss field before comparing crops."
-        )
-        action_columns[1].markdown(
-            "**2. Open the storage fields**\n\n"
-            "Look at stored quantity, facility type, public storage, and storage-stage loss separately."
-        )
-        action_columns[2].markdown(
-            "**3. Ask people who use the data**\n\n"
-            "A verified pattern is useful only if planners, cooperatives, or partners would act on it."
-        )
-    else:
-        action_columns[0].markdown(
-            "**1. Check processing and sales**\n\n"
-            "Review transformed quantity, quantity sold, market, and price — each with its own valid count."
-        )
-        action_columns[1].markdown(
-            "**2. Keep harvest as context**\n\n"
-            "Median harvest is not yield, profit, or processor capacity. Do not convert it into a business plan."
-        )
-        action_columns[2].markdown(
-            "**3. Ask people who use the data**\n\n"
-            "A verified pattern is useful only if processors, cooperatives, or planners would act on it."
-        )
+    for column, text in zip(st.columns(3), actions):
+        column.markdown(text)
 
     brief = _follow_up_brief(crop_row, review_lens, release_note, track)
     file_stub = "storage" if track == "storage" else "value-addition"
@@ -369,76 +371,112 @@ def _render_crop_review(
         file_name=f"agriloss-{file_stub}-{selected_crop.lower().replace(' ', '-')}.md",
         mime="text/markdown",
         type="primary",
-        help="Saves the sample snapshot, why the crop was selected, and the evidence checks still required.",
     )
 
 
-def _render_start_tab(overall: dict[str, Any], crops: pd.DataFrame) -> None:
+def _render_start_tab(
+    overall: dict[str, Any],
+    crops: pd.DataFrame,
+    facilities: list[dict[str, Any]],
+) -> None:
     st.markdown("### The challenge, in one page")
     st.write(
-        "After harvest, food can be lost in collection, drying, storage, transport, processing, and sale. "
-        "Rwanda’s **NST2** aims to cut food-crop post-harvest losses from **13.8% to 4.8%**, while raising "
-        "productivity and expanding **agro-processing**. This tool does not measure those national targets. "
-        "It helps a planner or researcher see **which crop groups in the NISR SAS 2024 sample** are worth "
-        "checking first for storage and value-addition follow-up."
+        "After harvest, crops are stored, processed, or sold. Rwanda’s **NST2** aims to cut food-crop post-harvest losses "
+        "from **13.8% to 4.8%** and to expand agro-processing. This dashboard does not measure those national targets. "
+        "It shows **what the NISR SAS 2024 production sample actually recorded** for stored quantity, storage-stage loss, "
+        "transformed quantity, and quantity sold."
     )
 
     cards = st.columns(3)
     cards[0].markdown(
         """
-        <div class="info-card">
-          <h4>Who it is for</h4>
-          <p>Agricultural planners, NISR and MINAGRI analysts, cooperatives, civil society, and development partners who need a transparent first look — not a farmer score.</p>
-        </div>
+        <div class="info-card"><h4>Who it is for</h4>
+        <p>Planners, NISR and MINAGRI analysts, cooperatives, and partners who need a first look at real survey patterns — not a farmer score.</p></div>
         """,
         unsafe_allow_html=True,
     )
     cards[1].markdown(
         """
-        <div class="info-card">
-          <h4>What you can do</h4>
-          <p>Pick storage or value addition, sort named crops with one clear rule, inspect harvest and reported-loss coverage, then download a follow-up brief.</p>
-        </div>
+        <div class="info-card"><h4>What you can do</h4>
+        <p>Compare named crops on stored kilograms, storage-stage loss, household processing, and sales, then download a brief.</p></div>
         """,
         unsafe_allow_html=True,
     )
     cards[2].markdown(
         """
-        <div class="info-card">
-          <h4>What you should not do</h4>
-          <p>Do not treat these shares as national loss rates, rank farmers, site a warehouse, or claim that an intervention works.</p>
-        </div>
+        <div class="info-card"><h4>What you should not do</h4>
+        <p>Do not treat sample shares as NST2 rates, rank farmers, or site a warehouse or factory from this screen.</p></div>
         """,
         unsafe_allow_html=True,
     )
 
+    st.markdown("### What SAS 2024 recorded in this sample")
+    metric_columns = st.columns(4)
+    metric_columns[0].metric("Production records", f"{overall['records']:,}")
+    metric_columns[1].metric(
+        "Stored quantity > 0",
+        f"{_int(overall['stored_positive_records']):,} · {_percent(overall['stored_positive_share'])}",
+        help="Valid s2q36 answers greater than zero. Unit is kilograms.",
+    )
+    metric_columns[2].metric(
+        "Transformed quantity > 0",
+        f"{_int(overall['transformed_positive_records']):,} · {_percent(overall['transformed_positive_share'])}",
+        help="Valid s2q25 answers greater than zero. Unit is kilograms.",
+    )
+    metric_columns[3].metric(
+        "Quantity sold > 0",
+        f"{_int(overall['sold_positive_records']):,} · {_percent(overall['sold_positive_share'])}",
+        help="Valid s2q26 answers greater than zero. Unit is kilograms.",
+    )
+    extra = st.columns(4)
+    extra[0].metric(
+        "Storage-stage loss > 0",
+        f"{_int(overall['storage_loss_positive_records']):,} · {_percent(overall.get('storage_loss_positive_share'))}",
+        help="Valid s2q47 answers greater than zero, in kilograms. Negative values are counted separately.",
+    )
+    extra[1].metric(
+        "Negative storage-stage values",
+        f"{_int(overall.get('storage_loss_negative_records')):,}",
+        help="Kept as a quality flag. NISR metadata also includes negative minima.",
+    )
+    extra[2].metric(
+        "Public-storage quantity > 0",
+        f"{_int(overall['public_stored_positive_records']):,}",
+        help="s2q38 in kilograms. Rare in this sample.",
+    )
+    extra[3].metric(
+        "Median harvest reported",
+        _kg(overall.get("median_reported_harvest_kg")),
+        help="Median s2q21 in kilograms per production record. Not yield.",
+    )
+    st.caption(
+        "All figures are unweighted SAS 2024 production records. Blanks stay missing. "
+        "NST2’s 13.8% to 4.8% target and PSTA 5’s 2023 study rates are separate published numbers, not these sample shares."
+    )
+
+    if facilities:
+        st.markdown("##### Reported storage facility (`s2q37`)")
+        facility_frame = pd.DataFrame(facilities).rename(
+            columns={"facility": "Facility response", "records": "Production records"}
+        )
+        st.dataframe(facility_frame, hide_index=True, width="stretch")
+        st.caption(
+            "Handbook codes are own, public, cooperative/private, and other. Values 12, 13, and 14 are left as unmapped. "
+            "Most production records have no facility answer, including many with stored quantity of zero."
+        )
+
     st.markdown("### How to use it")
     steps = st.columns(3)
     steps[0].markdown(
-        """
-        <div class="step-card"><span>1</span><div>
-          <strong>Choose a track</strong>
-          <p>Open the Crop workspace and select storage or processing.</p>
-        </div></div>
-        """,
+        '<div class="step-card"><span>1</span><div><strong>Choose a track</strong><p>Storage uses s2q36 and s2q47. Value addition uses s2q25 and s2q26.</p></div></div>',
         unsafe_allow_html=True,
     )
     steps[1].markdown(
-        """
-        <div class="step-card"><span>2</span><div>
-          <strong>Sort with one rule</strong>
-          <p>Use share, count, harvest, or missing answers — never a hidden score.</p>
-        </div></div>
-        """,
+        '<div class="step-card"><span>2</span><div><strong>Sort with one rule</strong><p>Each sort is one survey field. Nothing is combined into a hidden score.</p></div></div>',
         unsafe_allow_html=True,
     )
     steps[2].markdown(
-        """
-        <div class="step-card"><span>3</span><div>
-          <strong>Take the next check</strong>
-          <p>Download the brief and verify the survey fields before planning use.</p>
-        </div></div>
-        """,
+        '<div class="step-card"><span>3</span><div><strong>Read coverage</strong><p>A high share with few valid answers is not a national priority list.</p></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -447,71 +485,63 @@ def _render_start_tab(overall: dict[str, Any], crops: pd.DataFrame) -> None:
     with left:
         st.markdown(
             """
-            **Vision 2050 and NST2** call for productive, market-oriented agriculture. NST2 names
-            **post-harvest handling, market linkages, and agro-processing** as ways to reduce loss
-            and raise the value of what farmers already grow. Priority food crops include maize,
-            beans, potatoes, rice, cassava, wheat, and bananas.
+            **Vision 2050 and NST2** call for productive, market-oriented agriculture, including post-harvest handling
+            and agro-processing. Priority food crops include maize, beans, potatoes, rice, cassava, wheat, and bananas.
             """
         )
         st.markdown(
             """
-            **PSTA 5** cites a 2023 post-harvest study: **13.8% maize**, **12.4% rice**, and
-            **11.3% beans** along those value chains. Those published study rates are shown here
-            as national context. They are **not** calculated from the SAS 2024 sample in this app.
+            **PSTA 5** cites a 2023 study: 13.8% maize, 12.4% rice, and 11.3% beans along those value chains.
+            Those study rates are **not** calculated from this SAS sample.
             """
         )
     with right:
-        st.markdown(
-            """
-            **The SAS 2024 production questionnaire already asks** about stored quantity, public
-            storage, transformed quantity, quantity sold, and stage-specific losses (harvest,
-            transport, storage, processing, packaging, sales). This public edition publishes
-            grouped harvest and reported-loss summaries so users can choose which crops to
-            take back to those questions.
-            """
-        )
+        named = _named_crops(crops)
+        maize = named.loc[named["crop"] == "Maize"]
+        beans = named.loc[named["crop"] == "Bush bean"]
+        beer = named.loc[named["crop"] == "Banana for beer"]
+        bullets = []
+        if not maize.empty:
+            bullets.append(
+                f"**Maize:** {_percent(maize.iloc[0]['stored_positive_share'])} of valid stored-quantity answers are > 0, "
+                f"and {_percent(maize.iloc[0]['transformed_positive_share'])} of valid transformed-quantity answers are > 0."
+            )
+        if not beans.empty:
+            bullets.append(
+                f"**Bush bean:** {_percent(beans.iloc[0]['stored_positive_share'])} stored and "
+                f"{_percent(beans.iloc[0]['sold_positive_share'])} sold, among valid answers."
+            )
+        if not beer.empty:
+            bullets.append(
+                f"**Banana for beer:** {_percent(beer.iloc[0]['transformed_positive_share'])} transformed and "
+                f"{_percent(beer.iloc[0]['sold_positive_share'])} sold; stored quantity > 0 is "
+                f"{_percent(beer.iloc[0]['stored_positive_share'])}."
+            )
+        st.markdown("\n\n".join(f"- {item}" for item in bullets) or "Crop summaries will appear once the aggregate file includes storage and processing fields.")
         st.caption(
             "Sources: [NST2 abridged](https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/NST_2/NST2_2024-2029_Abridged.pdf) · "
             "[PSTA 5](https://www.minagri.gov.rw/fileadmin/user_upload/Minagri/Publications/Policies_and_strategies/PSTA_5_Fulltext__Final.pdf) · "
             "[NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113)"
         )
 
-    metric_columns = st.columns(4)
-    metric_columns[0].metric("Production records in this sample", f"{overall['records']:,}")
-    metric_columns[1].metric("Named crop groups with a published share", f"{len(_named_crops(crops)):,}")
-    metric_columns[2].metric(
-        "Positive loss answers (valid)",
-        f"{int(overall['positive_reported_loss_records']):,} · {_percent(overall['positive_reported_loss_share'])}",
-    )
-    metric_columns[3].metric(
-        "Median harvest reported",
-        _kg(overall.get("median_reported_harvest_kg")),
-    )
-    st.caption(
-        "These four numbers describe the released sample, not Rwanda’s harvest or national post-harvest loss. "
-        "Blank loss answers are kept missing, not turned into zero."
-    )
-
     with st.expander("Plain-language glossary"):
         st.markdown(
             """
-            - **Production record:** one crop on one plot in the SAS 2024 production file. It is not a unique farmer.
-            - **Valid loss answer:** a filled-in value for the total reported-loss question (`s2q39`). The unit is not confirmed, so we never call it kilograms.
-            - **Positive loss answer:** a valid answer greater than zero. This is not loss severity.
-            - **Missing answer:** a blank. Blanks stay blank.
-            - **Median harvest:** the middle reported harvest (`s2q21`, in kg) among records in that group. It is not yield.
-            - **Unweighted sample:** every record counts the same. Official SAS estimates use survey weights; this app does not.
+            - **Production record:** one crop on one plot in SAS 2024. It is not a unique farmer.
+            - **Stored quantity (`s2q36`):** kilograms reported as stored. Zero is zero; blank is missing.
+            - **Storage-stage loss (`s2q47`):** kilograms reported lost at the storage stage. Negative values are flagged.
+            - **Transformed quantity (`s2q25`):** kilograms already processed or used. Not factory throughput.
+            - **Quantity sold (`s2q26`):** kilograms sold. Price (`s2q28`) is RWF/kg and is often missing.
+            - **Total reported loss (`s2q39`):** shown without a unit because the published label does not confirm one.
+            - **Unweighted sample:** every record counts equally. Official SAS estimates use survey weights.
             """
         )
 
 
-def _render_workspace(
-    crops: pd.DataFrame,
-    release_note: str,
-) -> None:
+def _render_workspace(crops: pd.DataFrame, release_note: str) -> None:
     st.markdown("### Crop workspace")
     st.write(
-        "Start with the challenge you care about. The same crop table is sorted with a different rule so the first row is easier to discuss."
+        "Choose the Track 1 challenge. Sorting uses the real SAS 2024 field for that challenge — stored kilograms, storage-stage loss, transformed kilograms, or quantity sold."
     )
     track_label = st.radio(
         "Challenge in focus",
@@ -520,61 +550,55 @@ def _render_workspace(
             "Processing and value addition",
         ],
         horizontal=True,
-        help="Storage uses reported-loss coverage. Value addition uses reported harvest size and sample coverage.",
     )
     track = "storage" if track_label.startswith("Post-harvest") else "value"
 
     if track == "storage":
         st.markdown(
-            "Farmers and collectors need to know **where reported loss is concentrated in this sample**, "
-            "and **where too many loss answers are missing**, before anyone designs a store, dryer, or collection point."
+            "Storage follow-up uses **stored quantity (`s2q36`, kg)** and **storage-stage loss (`s2q47`, kg)**. "
+            "Total reported loss (`s2q39`) is shown as context only because its unit is unconfirmed."
         )
         review_lens = st.selectbox("Sort crops by", options=list(STORAGE_LENSES))
         lens_notes = {
-            STORAGE_LENSES[0]: "A high share can come from a small group. Always read it with the number of valid answers.",
-            STORAGE_LENSES[1]: "A large count can simply mean the crop is common in the sample, not that it loses more.",
-            STORAGE_LENSES[2]: "Missing answers need a look before you compare reported-loss patterns.",
+            STORAGE_LENSES[0]: "Share of valid s2q36 answers that are greater than zero. A high share can still be a small group.",
+            STORAGE_LENSES[1]: "Share of valid s2q47 answers that are greater than zero. This is not total post-harvest loss.",
+            STORAGE_LENSES[2]: "Count of records with stored quantity > 0. Common crops can dominate counts.",
+            STORAGE_LENSES[3]: "Blank stored-quantity answers as a share of production records in the crop group.",
         }
         sort_columns = {
-            STORAGE_LENSES[0]: "positive_reported_loss_share",
-            STORAGE_LENSES[1]: "positive_reported_loss_records",
-            STORAGE_LENSES[2]: "loss_missing_share",
+            STORAGE_LENSES[0]: "stored_positive_share",
+            STORAGE_LENSES[1]: "storage_loss_positive_share",
+            STORAGE_LENSES[2]: "stored_positive_records",
+            STORAGE_LENSES[3]: "stored_missing_share",
         }
     else:
         st.markdown(
-            "Processors and market actors need to know **which crops already show substantial reported harvest in this sample**, "
-            "so processing, sales, and storage questions can be checked — not so a mill is sited from this chart."
+            "Value-addition follow-up uses **transformed quantity (`s2q25`, kg)** and **quantity sold (`s2q26`, kg)**. "
+            "Harvest is context, not a mill-siting input."
         )
         review_lens = st.selectbox("Sort crops by", options=list(VALUE_LENSES))
         lens_notes = {
-            VALUE_LENSES[0]: "Median harvest is context, not yield, profit, or processor throughput.",
-            VALUE_LENSES[1]: "Record counts follow how often the crop appears in the sample.",
-            VALUE_LENSES[2]: "Missing loss answers can also limit later processing or storage analysis.",
+            VALUE_LENSES[0]: "Share of valid s2q25 answers greater than zero — household processing/use, not factory output.",
+            VALUE_LENSES[1]: "Share of valid s2q26 answers greater than zero — market participation in this sample.",
+            VALUE_LENSES[2]: "Median s2q21 in kilograms per production record. Not yield or profit.",
         }
         sort_columns = {
-            VALUE_LENSES[0]: "median_reported_harvest_kg",
-            VALUE_LENSES[1]: "records",
-            VALUE_LENSES[2]: "loss_missing_share",
+            VALUE_LENSES[0]: "transformed_positive_share",
+            VALUE_LENSES[1]: "sold_positive_share",
+            VALUE_LENSES[2]: "median_reported_harvest_kg",
         }
 
     st.caption(lens_notes[review_lens])
     reviewable_crops = _named_crops(crops)
-    sort_column = sort_columns[review_lens]
     review_queue = reviewable_crops.sort_values(
-        [sort_column, "loss_reported_records"],
+        [sort_columns[review_lens], "records"],
         ascending=[False, False],
         na_position="last",
     )
     if review_queue.empty:
         st.info("No named crop groups have a releasable summary.")
         return
-    _render_crop_review(
-        review_queue,
-        reviewable_crops,
-        review_lens,
-        release_note,
-        track,
-    )
+    _render_crop_review(review_queue, reviewable_crops, review_lens, release_note, track)
 
 
 def _render_explore_tab(
@@ -586,7 +610,7 @@ def _render_explore_tab(
 ) -> None:
     st.markdown("### Look around the sample")
     st.caption(
-        "Each chart is its own summary. Changing season or province does not change the crop table. Season C is a smaller, restricted sample."
+        "Each chart is its own SAS 2024 summary. Changing season or province does not change the crop table."
     )
     left, right = st.columns(2)
     with left:
@@ -599,7 +623,7 @@ def _render_explore_tab(
                     season_view,
                     x="season",
                     y="records",
-                    title="How many production records are in each season?",
+                    title="Production records by season",
                     y_label="Production records",
                 ),
                 width="stretch",
@@ -611,130 +635,131 @@ def _render_explore_tab(
         if province_view.empty:
             st.info("Select at least one province in the sidebar.")
         else:
+            y_column = (
+                "stored_positive_share"
+                if "stored_positive_share" in province_view.columns
+                else "records"
+            )
             st.plotly_chart(
                 _bar_chart(
                     province_view,
                     x="province",
-                    y="records",
-                    title="Where are the released records from?",
-                    y_label="Production records",
+                    y=y_column,
+                    title="Stored quantity > 0 by province"
+                    if y_column == "stored_positive_share"
+                    else "Production records by province",
+                    y_label="Share of valid stored answers"
+                    if y_column == "stored_positive_share"
+                    else "Production records",
+                    percent_axis=y_column == "stored_positive_share",
                     color="#c9862a",
                 ),
                 width="stretch",
             )
 
     named = _named_crops(crops)
-    loss_crops = named.sort_values("positive_reported_loss_share", ascending=False).head(12)
-    harvest_crops = named.sort_values("median_reported_harvest_kg", ascending=False).head(12)
+    stored = named.sort_values("stored_positive_share", ascending=False).head(12)
+    transformed = named.sort_values("transformed_positive_share", ascending=False).head(12)
     bottom_left, bottom_right = st.columns(2)
     with bottom_left:
-        if not loss_crops.empty:
+        if not stored.empty:
             st.plotly_chart(
                 _bar_chart(
-                    loss_crops,
+                    stored,
                     x="crop",
-                    y="positive_reported_loss_share",
-                    title="Storage track · positive loss answers (top 12)",
-                    y_label="Share of valid loss answers",
-                    hover_data=["loss_reported_records", "positive_reported_loss_records"],
+                    y="stored_positive_share",
+                    title="Storage · share with stored quantity > 0",
+                    y_label="Share of valid s2q36 answers",
                     x_angle=-32,
                     percent_axis=True,
                 ),
                 width="stretch",
             )
     with bottom_right:
-        if not harvest_crops.empty:
+        if not transformed.empty:
             st.plotly_chart(
                 _bar_chart(
-                    harvest_crops,
+                    transformed,
                     x="crop",
-                    y="median_reported_harvest_kg",
-                    title="Value-addition track · median harvest (top 12)",
-                    y_label="Median reported harvest (kg)",
+                    y="transformed_positive_share",
+                    title="Value addition · share transformed > 0",
+                    y_label="Share of valid s2q25 answers",
                     x_angle=-32,
+                    percent_axis=True,
                     color="#2a7a9b",
                 ),
                 width="stretch",
             )
     st.caption(
-        "Left: frequency of positive reported-loss answers, not kilograms lost. "
-        "Right: median harvest in kg, not yield. Both pool seasons and provinces."
+        "Left: household stored kilograms. Right: transformed kilograms. Neither chart is a national loss rate or a factory forecast."
     )
 
 
-def _render_methods_tab(
-    seasons: pd.DataFrame,
-    selected_seasons: list[str],
-) -> None:
+def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> None:
     st.markdown("### Data and methods")
     st.markdown(
         "**Primary data:** [NISR Rwanda Seasonal Agricultural Survey 2024 production module]"
         "(https://microdata.statistics.gov.rw/index.php/catalog/113). "
-        "**Other public sources:** NST2 and PSTA 5, used only as policy context. "
         "The hosted app reads grouped totals only. It does not load farmer or plot rows."
     )
     quality_columns = [
-        "season",
-        "records",
-        "distinct_crop_values",
-        "loss_reported_records",
-        "positive_reported_loss_records",
-        "loss_missing_records",
+        column
+        for column in (
+            "season",
+            "records",
+            "stored_positive_records",
+            "stored_positive_share",
+            "storage_loss_positive_records",
+            "storage_loss_negative_records",
+            "transformed_positive_records",
+            "transformed_positive_share",
+            "sold_positive_records",
+            "sold_positive_share",
+        )
+        if column in seasons.columns
     ]
     season_quality = seasons[seasons["season"].astype(str).isin(selected_seasons)]
-    quality = season_quality.loc[:, quality_columns].rename(
-        columns={
-            "season": "Season",
-            "records": "Production records",
-            "distinct_crop_values": "Distinct crop values",
-            "loss_reported_records": "Valid loss answers",
-            "positive_reported_loss_records": "Positive answers",
-            "loss_missing_records": "Missing loss answers",
-        }
-    )
-    if quality.empty:
+    if season_quality.empty or not quality_columns:
         st.info("Select at least one season in the sidebar.")
     else:
-        st.dataframe(quality, hide_index=True, width="stretch")
+        display = season_quality.loc[:, quality_columns].copy()
+        for column in display.columns:
+            if column.endswith("_share"):
+                display[column] = display[column].map(_percent)
+        st.dataframe(display, hide_index=True, width="stretch")
 
     st.markdown("#### How numbers are built")
     st.markdown(
         """
         - Empty strings stay missing. They are never filled with zero.
-        - A positive reported-loss share is positive `s2q39` values divided by valid `s2q39` values in that crop group.
-        - The unit of `s2q39` is not confirmed in the published label, so it is never shown as kilograms.
-        - Median harvest uses `s2q21` in kilograms. No harvested-area denominator is applied, so this is not yield.
+        - A “positive share” is values > 0 divided by valid answers for that field in the crop group.
+        - Median kilograms for stored, transformed, sold, and storage-stage loss are medians **among positive values**, so zeros do not pull them to zero.
+        - Median harvest uses all valid `s2q21` values, including zeros if any.
+        - `s2q36`, `s2q38`, `s2q25`, `s2q26`, and `s2q47` are labelled in kilograms. `s2q39` is not.
+        - Negative `s2q47` values are counted and not clipped.
+        - Facility codes 12, 13, and 14 are not mapped to a storage type.
         - Crop, season, and province tables are independent. They cannot be cross-filtered.
         - Groups with fewer than 100 records are pooled without their original names.
-        - Survey weights, strata, and cluster variance are not applied.
-        - Storage (`s2q36`–`s2q38`, `s2q47`) and processing/sales (`s2q25`–`s2q28`) remain the recommended next fields. They are not crop-ranked in this public file.
-        - Season C is a restricted sample and should not be compared with A and B without survey-aware analysis.
-        """
-    )
-    st.markdown("#### Innovation, used carefully")
-    st.markdown(
-        """
-        The public tool is a **guided evidence workspace**: one-track sorting, response coverage,
-        NST2 crop tagging, and a downloadable brief. A local research edition can train an
-        exploratory classifier for a positive `s2q39` value. That model is retrospective, unweighted,
-        and **not shown as a farmer score** in this hosted view.
+        - Survey weights are not applied.
+        - Season C is a restricted sample.
         """
     )
 
 
 def render_public_dashboard(payload: dict[str, Any]) -> None:
-    """Render a two-track post-harvest and value-addition workspace from aggregates only."""
+    """Render storage and value-addition summaries from SAS 2024 aggregates only."""
     overall = payload["overall"]
     seasons = pd.DataFrame(payload["by_season"])
     provinces = pd.DataFrame(payload["by_province"])
     crops = pd.DataFrame(payload["by_crop"])
+    facilities = payload.get("by_storage_facility") or []
 
     season_options = sorted(seasons["season"].astype(str).unique().tolist())
     province_options = sorted(provinces["province"].astype(str).unique().tolist())
     with st.sidebar:
         st.markdown("### AgriLoss Rwanda")
         st.caption("NISR 2026 hackathon · Track 1")
-        st.markdown("**Post-harvest storage** and **value addition**, using SAS 2024 production summaries.")
+        st.markdown("Real SAS 2024 production summaries for **storage** and **value addition**.")
         st.divider()
         st.markdown("#### Charts only")
         selected_seasons = st.multiselect(
@@ -749,19 +774,18 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             default=province_options,
             help="Changes the province chart only.",
         )
-        st.caption("Season and province never filter the crop list. That keeps this public file from becoming a cross-tab of respondents.")
+        st.caption("Season and province never filter the crop list.")
         st.divider()
         st.markdown(
-            "[SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113) · "
-            "[NST2](https://www.minecofin.gov.rw/fileadmin/user_upload/Minecofin/Publications/STRATEGIES/NST_2/NST2_2024-2029_Abridged.pdf)"
+            "[SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113)"
         )
 
     if payload["release_status"] == "owner_authorized_unreviewed":
         review = payload["review"]
         release_note = "provisional; NISR disclosure review is not recorded."
         st.warning(
-            "This public file is a **provisional grouped summary**. It is not an official NISR statistic "
-            "and has not recorded NISR disclosure review."
+            "This public file is a **provisional grouped summary of real SAS 2024 production records**. "
+            "It is not an official NISR statistic."
         )
         st.caption(f"Review status: {review.get('status', 'required')}.")
     else:
@@ -770,38 +794,22 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             f"approved; review recorded by {review['reviewed_by']} on "
             f"{review['reviewed_on']} (reference: {review['reference']})."
         )
-        st.info(
-            "These are unweighted sample descriptions, not population estimates for Rwanda."
-        )
-        st.caption(
-            f"Disclosure review: {review['reviewed_by']} · {review['reviewed_on']} · "
-            f"Reference: {review['reference']}"
-        )
+        st.info("These are unweighted sample descriptions, not population estimates for Rwanda.")
 
     start_tab, workspace_tab, explore_tab, methods_tab = st.tabs(
-        [
-            "Start here",
-            "Crop workspace",
-            "Explore the sample",
-            "Data and methods",
-        ]
+        ["Start here", "Crop workspace", "Explore the sample", "Data and methods"]
     )
     with start_tab:
-        _render_start_tab(overall, crops)
+        _render_start_tab(overall, crops, facilities)
     with workspace_tab:
         _render_workspace(crops, release_note)
     with explore_tab:
         _render_explore_tab(
-            seasons,
-            provinces,
-            crops,
-            selected_seasons,
-            selected_provinces,
+            seasons, provinces, crops, selected_seasons, selected_provinces
         )
     with methods_tab:
         _render_methods_tab(seasons, selected_seasons)
 
     st.caption(
-        "AgriLoss Rwanda · NISR SAS 2024 · Track 1: post-harvest collection and storage, processing and value addition · "
-        "Research triage prototype — no national loss estimates or intervention effects"
+        "AgriLoss Rwanda · NISR SAS 2024 production extracts · Track 1: post-harvest collection and storage, processing and value addition"
     )

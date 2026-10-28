@@ -36,7 +36,7 @@ def load_production_data(seasons: Iterable[str] = SEASONS) -> pd.DataFrame:
     data = pd.concat(frames, ignore_index=True, sort=False)
     for column in data.select_dtypes(include="object").columns:
         data[column] = data[column].replace("", float("nan"))
-    for column in ("s2q39", "s2q21", "s2q2", "s1q9"):
+    for column in ("s2q39", "s2q21", "s2q2", "s1q9", "s2q25", "s2q26", "s2q28", "s2q36", "s2q38", "s2q47"):
         if column in data:
             data[column] = pd.to_numeric(data[column], errors="coerce")
     return data
@@ -72,6 +72,8 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
     for section in ("overall", "by_season", "by_province", "by_crop"):
         if section not in payload:
             raise ValueError(f"Public dashboard data is missing {section}")
+    if "by_storage_facility" in payload and not isinstance(payload["by_storage_facility"], list):
+        raise ValueError("Public dashboard section by_storage_facility must be a list")
     for section in ("by_season", "by_province", "by_crop"):
         if not isinstance(payload[section], list):
             raise ValueError(f"Public dashboard section {section} must be a list")
@@ -86,6 +88,13 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "positive_reported_loss_records",
             "positive_reported_loss_share",
             "median_reported_harvest_kg",
+            "stored_positive_records",
+            "stored_positive_share",
+            "storage_loss_positive_records",
+            "transformed_positive_records",
+            "transformed_positive_share",
+            "sold_positive_records",
+            "sold_positive_share",
         },
         "by_season": {
             "season",
@@ -94,6 +103,9 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "loss_reported_records",
             "positive_reported_loss_records",
             "loss_missing_records",
+            "stored_positive_records",
+            "transformed_positive_records",
+            "sold_positive_records",
         },
         "by_province": {"province", "records"},
         "by_crop": {
@@ -103,6 +115,10 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "positive_reported_loss_share",
             "median_reported_harvest_kg",
             "median_reported_loss_value",
+            "stored_positive_share",
+            "storage_loss_positive_share",
+            "transformed_positive_share",
+            "sold_positive_share",
         },
     }
     for section, fields in required_fields.items():
