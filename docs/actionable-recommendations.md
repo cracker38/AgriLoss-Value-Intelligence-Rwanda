@@ -2,6 +2,16 @@
 
 The Crop workspace converts reported SAS 2024 patterns into questions for planners, cooperatives, processors, and buyers to verify. It identifies where to investigate and which process routes might merit comparison. It does not predict returns, establish demand, or recommend equipment or capital spending.
 
+## Planner workflow
+
+1. Choose the storage/collection or processing/value-addition track, then select a crop from the sample table.
+2. Enter a district, cooperative, market, or collection area and, if useful, a planning period. Optionally select a province to view its separate SAS summary.
+3. Select the local constraints that partners want to investigate and add short notes without personal information.
+4. Submit the context to review the crop-level recommendation, its survey evidence, and field actions prompted by the selected conditions.
+5. Preview and download the Markdown report. It records the crop signal, location and period entered, any separate province context, selected conditions, local actions, survey data-quality checks, and a decision gate.
+
+The location, period, notes, and conditions are user-entered planning context. They do not filter SAS records or make the crop and province summaries a joined result. The report labels survey evidence and local inputs in separate sections.
+
 ## Storage and collection investigation
 
 The storage track flags a crop when its positive storage-stage loss share (`s2q47`) or transport-stage loss share (`s2q46`) is positive and at or above the 75th percentile among named crop groups with publishable summaries. Ties are included. Each flag shows the positive-response count, valid-answer denominator, and comparison cutoff. The queue is a relative screen across unweighted, pooled 2024 seasons; the percentile is not a safe-loss threshold, a national estimate, or a ranking of investment need.

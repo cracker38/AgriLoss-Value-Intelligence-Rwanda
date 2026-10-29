@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 import pandas as pd
@@ -34,6 +35,22 @@ VALUE_LENSES = (
     "Median reported harvest (kg)",
 )
 NO_LOCAL_CONDITION = "Not specified"
+STORAGE_LOCAL_CONDITIONS = (
+    "Storage capacity",
+    "Drying or handling",
+    "Facility condition or pest/moisture issue",
+    "Collection or transport",
+    "Peak-season volume exceeds collection",
+    "Other / unknown",
+)
+PROCESSING_LOCAL_CONDITIONS = (
+    "Processing equipment / capacity",
+    "Product quality / yield",
+    "Market access / prices",
+    "Seasonal supply volume",
+    "Processor or buyer access",
+    "Other / unknown",
+)
 MIN_RECOMMENDATION_RECORDS = 100
 PROCESSING_USE_METRICS = (
     (
@@ -478,10 +495,45 @@ def _review_signal(
     )
 
 
+def _local_condition_checks(
+    track: str,
+    local_conditions: str | list[str],
+) -> list[str]:
+    selected = (
+        [local_conditions]
+        if isinstance(local_conditions, str)
+        else list(local_conditions)
+    )
+    if track == "storage":
+        condition_actions = {
+            "Storage capacity": "Compare the survey summary with verified local storage capacity and peak-season volume; neither is measured in SAS. Measure usable capacity against expected storage duration.",
+            "Drying or handling": "Review drying surfaces, moisture checks, handling damage, and the time from harvest to storage.",
+            "Facility condition or pest/moisture issue": "Inspect roofs, ventilation, pest controls, moisture protection, and storage records with facility operators.",
+            "Facility condition": "Inspect facility condition and capacity locally; SAS facility responses do not measure either. Review roofs, ventilation, pest controls, moisture protection, and storage records with operators.",
+            "Collection or transport": "Verify collection distances, transport costs, and seasonal access locally; map collection handoffs, route time, and handling damage with cooperatives and buyers.",
+            "Peak-season volume exceeds collection": "Compare weekly peak-season harvest volumes with collection schedules, vehicle capacity, and storage intake capacity.",
+            "Other / unknown": "Describe the additional local issue and verify it with field records or the people directly involved.",
+        }
+    else:
+        condition_actions = {
+            "Processing equipment / capacity": "Ask processors to verify available capacity, seasonal utilization, conversion yield, and operating cost for a small trial.",
+            "Product quality / yield": "Compare trial product quality and conversion yield with buyer specifications and food-safety requirements.",
+            "Market access / prices": "Collect current buyer quotes, sales terms, delivery requirements, and transport costs for the proposed product.",
+            "Seasonal supply volume": "Estimate reliable monthly supply and seasonal gaps before comparing equipment or processing contracts.",
+            "Processor or buyer access": "Identify existing processors and buyers, then document their product requirements, available capacity, and interest.",
+            "Other / unknown": "Describe the additional local issue and verify it with field records or the people directly involved.",
+        }
+    return [
+        condition_actions[condition]
+        for condition in selected
+        if condition in condition_actions
+    ]
+
+
 def _follow_up_checks(
     crop_row: pd.Series,
     track: str,
-    local_condition: str = NO_LOCAL_CONDITION,
+    local_condition: str | list[str] = NO_LOCAL_CONDITION,
 ) -> list[str]:
     checks: list[str] = []
     if track == "storage":
@@ -512,12 +564,6 @@ def _follow_up_checks(
             checks.append(
                 "Verify local storage capacity and peak-season collection volumes; the survey does not measure facility capacity."
             )
-        condition_checks = {
-            "Storage capacity": "Compare the survey summary with verified local storage capacity and peak-season volume; neither is measured in SAS.",
-            "Collection or transport": "Verify collection distances, transport costs, and seasonal access locally; these are not measured in SAS.",
-            "Facility condition": "Inspect facility condition and capacity locally; SAS facility responses do not measure either.",
-            "Other / unknown": "Verify the additional local issue with field evidence; it is not measured in the survey summary.",
-        }
     else:
         zero_prices = _int(crop_row["sold_with_zero_price_records"])
         missing_prices = _int(crop_row["sold_with_missing_price_records"])
@@ -532,15 +578,7 @@ def _follow_up_checks(
         checks.append(
             "Confirm current buyer prices, demand, processing yields, and costs with local operators; SAS 2024 does not provide current market data or profitability."
         )
-        condition_checks = {
-            "Processing equipment / capacity": "Verify equipment capacity, conversion yields, and operating costs with processors; SAS does not measure them.",
-            "Product quality / yield": "Check buyer quality standards and processing conversion yields with operators; these are not measured in the released summary.",
-            "Market access / prices": "Verify current buyer prices, sales outlets, and transport costs locally; survey prices are historical reports, not a current market feed.",
-            "Other / unknown": "Verify the additional local issue with field evidence; it is not measured in the survey summary.",
-        }
-
-    if local_condition in condition_checks:
-        checks.append(condition_checks[local_condition])
+    checks.extend(_local_condition_checks(track, local_condition))
     return checks
 
 
@@ -698,8 +736,10 @@ def _follow_up_brief(
     *,
     review_signal: str | None = None,
     province_context: dict[str, Any] | None = None,
-    local_condition: str = NO_LOCAL_CONDITION,
+    local_condition: str | list[str] = NO_LOCAL_CONDITION,
     local_notes: str = "",
+    planning_location: str = "",
+    planning_period: str = "",
     recommendations: list[dict[str, str]] | None = None,
 ) -> str:
     crop_name = str(crop_row["crop"])
@@ -718,7 +758,14 @@ def _follow_up_brief(
     signal = review_signal or (
         f"Selected sort: {review_lens}. This is a descriptive, unweighted sample signal."
     )
-    checks = _follow_up_checks(crop_row, track, local_condition)
+    conditions = (
+        [local_condition]
+        if isinstance(local_condition, str)
+        else list(local_condition)
+    )
+    conditions = [condition for condition in conditions if condition != NO_LOCAL_CONDITION]
+    checks = _follow_up_checks(crop_row, track)
+    condition_actions = _local_condition_checks(track, conditions)
     if recommendations is None:
         if track == "storage":
             recommendations = [
@@ -751,8 +798,11 @@ def _follow_up_brief(
         )
         for item in recommendations
     )
-    if local_notes.strip():
-        local_notes = local_notes.strip()
+    planning_location = planning_location.strip() or "Not specified"
+    planning_period = planning_period.strip() or "Not specified"
+    local_notes = local_notes.strip()
+    condition_text = ", ".join(conditions) if conditions else "None selected"
+    generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     if province_context:
         province_name = str(province_context["province"])
         province_description = (
@@ -763,7 +813,9 @@ def _follow_up_brief(
     else:
         province_description = "No province selected."
 
-    return f"""# AgriLoss follow-up brief: {crop_name}
+    return f"""# AgriLoss crop follow-up report: {crop_name}
+
+Generated: {generated_at}
 
 ## Challenge in focus
 {track_title}
@@ -777,15 +829,21 @@ def _follow_up_brief(
 ## Recommended next step to evaluate
 {recommendation_text}
 
-## Location context
-{province_description}
-Province values are a separate marginal summary; they are not joined to this crop's values.
+## Planning location
+- Location or group entered: {planning_location}
+- Planning period or season: {planning_period}
+- Province survey context: {province_description}
 
-## Local condition supplied for review
-- Condition: {local_condition}
+The planning location is user-entered context. Crop evidence is not filtered to this location. Province values are a separate marginal summary and are not joined to this crop's values.
+
+## Local conditions supplied for review
+- Conditions selected: {condition_text}
 - Notes: {local_notes or "None supplied"}
 
-## Recommended evidence checks
+## Local follow-up actions
+{chr(10).join(f"- {action}" for action in condition_actions) or "No local conditions selected. Add relevant conditions before using this report to guide field work."}
+
+## Survey data-quality checks
 {chr(10).join(f"- {check}" for check in checks)}
 
 ## Sample snapshot (unweighted production records)
@@ -801,8 +859,8 @@ Province values are a separate marginal summary; they are not joined to this cro
 - Positive total reported-loss answers (`s2q39`, unit unconfirmed): {_int(crop_row['positive_reported_loss_records']):,} · {_percent(crop_row['positive_reported_loss_share'])} of valid answers
 - Review lens: {review_lens}
 
-## What to check next
-Complete the evidence checks above before selecting a process, facility, or investment.
+## Decision gate
+Complete the local follow-up actions and evidence checks above. Confirm seasonal supply, buyer/processor interest, current terms, product quality, yields, and costs before selecting a process, facility, or investment.
 
 ## What this brief is not
 This is not a national estimate, a farmer ranking, a cause of loss, or an investment recommendation. Candidate process routes are evaluation ideas only; season, province, and crop summaries cannot be combined in this public file.
@@ -821,6 +879,7 @@ def _render_crop_review(
     peer_crops: pd.DataFrame,
     market_rows: list[dict[str, Any]],
 ) -> None:
+    st.markdown("#### 1. Choose a crop to review")
     st.markdown("##### Crops from the SAS 2024 sample")
     st.dataframe(
         _crop_review_table(review_queue, track),
@@ -843,23 +902,6 @@ def _render_crop_review(
         ranked_crops=len(review_queue),
     )
     st.info(review_signal)
-    recommendations = _actionable_recommendations(
-        crop_row,
-        peer_crops,
-        track,
-        market_rows,
-    )
-    st.markdown("#### Recommended follow-up")
-    for item in recommendations:
-        st.markdown(f"**{item['title']}**")
-        st.markdown(f"- **Why this surfaced:** {item['evidence']}")
-        st.markdown(f"- **Next step:** {item['action']}")
-        if item.get("source_url"):
-            st.markdown(
-                f"- Rwanda example: [{item['source_label']}]({item['source_url']}) "
-                "(a documented example, not proof of current demand or feasibility)."
-            )
-
     crop_metrics = st.columns(4)
     if track == "storage":
         crop_metrics[0].metric("Stored quantity > 0", f"{_int(crop_row['stored_positive_records']):,}")
@@ -872,13 +914,7 @@ def _render_crop_review(
             "Storage-stage loss > 0",
             f"{_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])}",
         )
-        condition_options = (
-            NO_LOCAL_CONDITION,
-            "Storage capacity",
-            "Collection or transport",
-            "Facility condition",
-            "Other / unknown",
-        )
+        condition_options = STORAGE_LOCAL_CONDITIONS
     else:
         crop_metrics[0].metric("Transformed > 0", f"{_int(crop_row['transformed_positive_records']):,}")
         crop_metrics[1].metric("Share transformed (valid)", _percent(crop_row["transformed_positive_share"]))
@@ -893,21 +929,52 @@ def _render_crop_review(
             "Positive sales, price missing",
             f"{_int(crop_row['sold_with_missing_price_records']):,}",
         )
-        condition_options = (
-            NO_LOCAL_CONDITION,
-            "Processing equipment / capacity",
-            "Product quality / yield",
-            "Market access / prices",
-            "Other / unknown",
-        )
+        condition_options = PROCESSING_LOCAL_CONDITIONS
 
-    st.markdown("#### Planning context")
+    st.markdown("#### 2. Add the planning context")
     province_options = ["Not specified"]
     if "province" in provinces:
         province_options.extend(
             sorted(provinces["province"].dropna().astype(str).unique().tolist())
         )
-    selected_province = st.selectbox("Province context", options=province_options)
+    with st.form(key=f"crop_follow_up_form_{track}"):
+        location_column, period_column = st.columns(2)
+        planning_location = location_column.text_input(
+            "Planning location (district, cooperative, or market)",
+            max_chars=120,
+            help="Enter the area or group this plan concerns. This does not filter the survey results.",
+        )
+        planning_period = period_column.text_input(
+            "Planning season or period (optional)",
+            max_chars=80,
+            help="For example, the upcoming season or a planned assessment period.",
+        )
+        selected_province = st.selectbox(
+            "Province survey context (optional)",
+            options=province_options,
+            help="Province figures are a separate sample summary and are not joined to the selected crop.",
+        )
+        local_conditions = st.multiselect(
+            "Conditions to investigate locally",
+            options=condition_options,
+            help="Select the constraints reported by local partners. These answers guide the checklist; they are not SAS survey observations.",
+        )
+        local_notes = st.text_area(
+            "Local notes (optional; do not enter personal information)",
+            max_chars=500,
+        )
+        submitted = st.form_submit_button(
+            "Review recommendation and field actions",
+            type="primary",
+        )
+
+    if not submitted:
+        st.caption("Submit the planning context to review the crop recommendation and prepare a follow-up report.")
+        return
+    if not planning_location.strip():
+        st.error("Enter the planning location or group before reviewing the recommendation.")
+        return
+
     province_context = None
     if selected_province != "Not specified":
         province_rows = provinces.loc[
@@ -916,20 +983,42 @@ def _render_crop_review(
         if not province_rows.empty:
             province_context = province_rows.iloc[0].to_dict()
             st.caption(
-                f"{selected_province}: {_int(province_context['records']):,} unweighted records · "
+                f"{selected_province}: {_int(province_context['records']):,} unweighted records; "
                 f"{_percent(province_context.get('stored_positive_share'))} with stored quantity > 0. "
                 "Province results are separate from the selected crop."
             )
-    local_condition = st.selectbox(
-        "Local condition to investigate",
-        options=condition_options,
+
+    recommendations = _actionable_recommendations(
+        crop_row,
+        peer_crops,
+        track,
+        market_rows,
     )
-    local_notes = st.text_area(
-        "Local notes (optional; do not enter personal information)",
-        max_chars=500,
+    checks = _follow_up_checks(crop_row, track)
+    local_actions = _local_condition_checks(track, local_conditions)
+
+    st.markdown("#### 3. Review the recommendation")
+    st.caption(
+        "The recommendation uses crop-level SAS evidence. Your entered location and conditions guide local follow-up; they do not change or geographically filter the survey evidence."
     )
-    checks = _follow_up_checks(crop_row, track, local_condition)
-    st.markdown("#### Recommended evidence checks")
+    for item in recommendations:
+        st.markdown(f"**{item['title']}**")
+        st.markdown(f"- **Survey evidence:** {item['evidence']}")
+        st.markdown(f"- **Next step:** {item['action']}")
+        if item.get("source_url"):
+            st.markdown(
+                f"- Rwanda example: [{item['source_label']}]({item['source_url']}) "
+                "(documented example only; it does not establish demand or feasibility)."
+            )
+
+    st.markdown("#### Local actions prompted by your conditions")
+    if local_actions:
+        for action in local_actions:
+            st.markdown(f"- {action}")
+    else:
+        st.info("No local conditions were selected. Add relevant constraints before using the report to guide field work.")
+
+    st.markdown("#### Survey data-quality checks")
     for check in checks:
         st.markdown(f"- {check}")
 
@@ -940,18 +1029,23 @@ def _render_crop_review(
         track,
         review_signal=review_signal,
         province_context=province_context,
-        local_condition=local_condition,
+        local_condition=local_conditions,
         local_notes=local_notes,
+        planning_location=planning_location,
+        planning_period=planning_period,
         recommendations=recommendations,
     )
     file_stub = "storage" if track == "storage" else "value-addition"
+    with st.expander("Preview the crop follow-up report"):
+        st.markdown(brief)
     st.download_button(
-        "Download a one-page brief for this crop",
+        "Download crop follow-up report",
         data=brief,
         file_name=f"agriloss-{file_stub}-{selected_crop.lower().replace(' ', '-')}.md",
         mime="text/markdown",
         type="primary",
     )
+
 
 
 def _render_start_tab(
