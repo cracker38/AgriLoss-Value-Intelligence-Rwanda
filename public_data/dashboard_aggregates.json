@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "release_status": "owner_authorized_unreviewed",
-  "generated_at_utc": "2026-10-29T19:16:56.392Z",
+  "generated_at_utc": "2026-10-29T19:32:18.579Z",
   "source": "NISR SAS 2024 production extracts",
   "review": {
     "status": "required",
@@ -35,6 +35,9 @@
     "kilogram_fields": [
       "s2q21",
       "s2q25",
+      "s2q25_1",
+      "s2q25_2",
+      "s2q25_3",
       "s2q26",
       "s2q36",
       "s2q38",

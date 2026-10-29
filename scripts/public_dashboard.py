@@ -208,20 +208,18 @@ def _storage_investigation_queue(crops: pd.DataFrame) -> pd.DataFrame:
             "storage_loss_positive_records",
             "storage_loss_reported_records",
             "Storage-stage loss",
-            "s2q47",
         ),
         (
             "transport_loss_positive_share",
             "transport_loss_positive_records",
             "transport_loss_reported_records",
             "Transport-stage loss",
-            "s2q46",
         ),
     )
     rows: list[dict[str, Any]] = []
     for _, crop_row in peers.iterrows():
         reasons: list[str] = []
-        for share_field, count_field, valid_field, label, question in signals:
+        for share_field, count_field, valid_field, label in signals:
             cutoff = _upper_quartile(peers, share_field)
             share = crop_row.get(share_field)
             if cutoff is None or share is None or pd.isna(share) or float(share) <= 0:
@@ -320,6 +318,7 @@ def _processing_option_queue(
                     "Reported transformation use": option["use_label"],
                     "Option to evaluate": option["option"],
                     "Why it surfaced": option["evidence"],
+                    "Documented Rwanda example": option["source_label"] or "No crop-specific example linked",
                     "Sale evidence": (
                         f"{_percent(crop_row.get('sold_positive_share'))} of valid sale answers "
                         f"positive ({_int(crop_row.get('sold_positive_records')):,}/"
@@ -395,6 +394,8 @@ def _actionable_recommendations(
                 "title": option["option"],
                 "evidence": f"{option['evidence']} {option['market_evidence']}",
                 "action": "First compare contract processing with equipment purchase, then verify current buyer demand and prices, seasonal input volume, conversion yield, energy and packaging costs, quality standards, and food-safety requirements.",
+                "source_label": option["source_label"],
+                "source_url": option["source_url"],
             }
             for option in options
         ]

@@ -18,7 +18,7 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 ## What is in the dashboard
 
 - **Start here:** unweighted SAS 2024 sample indicators and their coverage.
-- **Crop workspace:** compare reported storage, transport-stage loss, transformation, and sales patterns by crop. Review valid counts and data-quality checks, add a province as separate context and enter a local condition, then download a tailored follow-up brief.
+- **Crop workspace:** see which crops fall at or above the named-crop 75th percentile for positive storage/transport loss shares, and compare processing options tied to reported food, drink, or other use. Each option shows its sample evidence, sales and historical price context where available, and a documented Rwanda example where one is linked. Review valid counts and data-quality checks, add a province as separate context and enter a local condition, then download a tailored follow-up brief.
 - **Production links:** compare crop and post-harvest patterns with Season A practice/input responses, and inspect Season A sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
 - **Explore the sample:** independent season, province, crop, and harvest summaries. Province and crop values are not cross-tabulated.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
