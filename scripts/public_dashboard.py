@@ -1625,8 +1625,9 @@ def _render_linked_analysis(
         )
         return
 
-    st.markdown("### Production, practice and input patterns")
+    st.markdown("### Season A production links to farm practices and inputs")
     st.caption(
+        "Production records are linked to the agricultural-practice and fertilizer/pesticide modules at plot level. "
         f"Season {linkage.get('season', 'A')} · unweighted crop-record comparisons · "
         f"{_int(linkage.get('matched_practice_plot_keys')):,} of "
         f"{_int(linkage.get('production_plot_keys')):,} production plot keys matched with exact keys and equal plot weights · "
@@ -1843,7 +1844,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             "Start here",
             "Crop workspace",
             "Explore the sample",
-            "Production links",
+            "SAS module links",
             "Data and methods",
         ]
     )

@@ -36,7 +36,10 @@ Read this same fictional context to the participant in either condition:
 ## Facilitator record
 
 - Condition: `[usual/source workflow or AgriLoss]`
+- Assigned counterbalanced sequence: `[1, 2, 3, or 4]`
 - Order: `[1 or 2]`
+- Session date: `[YYYY-MM-DD]`
+- Dashboard version or commit (AgriLoss task): `[version/commit; leave as N/A for source-only task]`
 - Start/end time: `[minutes and seconds]`
 - Task completed: `[yes/no]`
 - Participant confidence: `[0–100]`

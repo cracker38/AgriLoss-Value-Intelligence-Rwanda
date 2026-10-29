@@ -17,7 +17,7 @@ The workspace turns observed missingness, negative transport/storage values, and
 
 ## Practical evaluation before operational use
 
-No participant sessions have been conducted. The team should run the [decision-support evaluation protocol](impact-evaluation-protocol.md), which contains matched task instructions, an evidence-and-actionability rubric, critical interpretation errors to watch for, and an anonymized [session results template](impact-evaluation-results-template.csv). It compares AgriLoss with a source-based workflow and measures task-level decision quality. The protocol is ready to run; it is not itself evidence that the tool improves decisions.
+No participant sessions have been conducted. The team should run the [decision-support evaluation protocol](impact-evaluation-protocol.md), which contains matched task instructions, an evidence-and-actionability rubric, critical interpretation errors to watch for, and a coded [session results template](impact-evaluation-results-template.csv). It compares AgriLoss with a source-based workflow and measures task-level decision quality. Keep the completed results CSV private, then use `scripts.summarize_impact_evaluation` to validate and summarize scores without exposing participant-level notes. The protocol and summary tool are ready to run; they are not evidence that the tool improves decisions.
 
 ## Evidence needed for an impact claim
 

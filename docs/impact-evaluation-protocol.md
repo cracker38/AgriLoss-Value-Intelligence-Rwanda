@@ -14,6 +14,8 @@ Recruit 8–12 intended users for a first formative round, such as district or n
 
 Run individual 45–60 minute sessions with a facilitator. Obtain informed agreement to participate and take notes. Explain that the exercise evaluates the tool, not the participant. Use fictional planning locations and no personal or farmer-identifying information. Keep coded study records in a private working location and do not commit completed records to the repository.
 
+Use these broad categories in the results file: `district_planner`, `national_planner`, `cooperative_staff`, `extension_staff`, `analyst`, or `other` for role; and `government`, `cooperative`, `research`, `ngo_development_partner`, `processor_buyer`, or `other` for organization type. Record the session date as `YYYY-MM-DD` and the dashboard version or commit used for each task.
+
 ## Comparison design
 
 Use two matched crop-investigation scenarios. Match them as closely as possible on task type, evidence volume, and difficulty; for example, two storage/collection cases or two processing/value-addition cases. Prepare each case with the [scenario-card template](impact-evaluation-scenario-template.md).
@@ -28,6 +30,8 @@ Use these four sequences in rotation so scenario and order effects are spread ac
 | 2 | Scenario B, AgriLoss | Scenario A, source-based |
 | 3 | Scenario A, AgriLoss | Scenario B, source-based |
 | 4 | Scenario B, source-based | Scenario A, AgriLoss |
+
+Record the assigned sequence number and task order (`1` or `2`) for each row. Keep the two rows for each coded participant assigned to the same sequence.
 
 For each scenario, ask the participant to:
 
@@ -57,7 +61,7 @@ If possible, have two reviewers score anonymized session notes independently. Re
 
 ## Measures and analysis
 
-**Primary measure:** Difference in decision-quality scores between the AgriLoss and source-based conditions under the counterbalanced scenario assignments. Report every participant/scenario/condition score, the median and range of participant-level differences, how many scored higher/the same/lower with AgriLoss, and results by scenario and sequence. The small purposive sample and different matched scenarios cannot isolate the tool effect conclusively, so keep all findings descriptive.
+**Primary measure:** Difference in decision-quality scores between the AgriLoss and source-based conditions under the counterbalanced scenario assignments. Keep every participant/scenario/condition score in the private study file. In the aggregate report, show the median and range of participant-level differences, how many scored higher/the same/lower with AgriLoss, and results by scenario and sequence when cell size permits. Suppress cells with fewer than three scored tasks. The small purposive sample and different matched scenarios cannot isolate the tool effect conclusively, so keep all findings descriptive.
 
 **Secondary measures:** task completion, time per scenario, report usefulness (1–5), confidence (0–100), critical interpretation errors, and participant-reported changes they would make to a real planning workflow. Summarize errors by type and count. Preserve short, non-identifying quotes only with participant agreement.
 
@@ -68,6 +72,14 @@ If the dashboard helps users identify a better follow-up question, check whether
 ## Session recording sheet
 
 Use the [blank results template](impact-evaluation-results-template.csv), with one row for each participant/scenario/condition. Use `usual_source` or `agriloss` in the `condition` column, `1` or `2` in `order`, and `0`/`1` for each error flag (`1` means observed; leave blank if not scored). Fill report usefulness for the AgriLoss task only. Do not put participant names, contact details, farmer details, or identifiable free text in it. Keep any consent records separately from evaluation scores.
+
+Keep the completed CSV outside the repository. After scoring, create an aggregate summary without copying session notes or participant codes into a public location:
+
+```powershell
+py -3 -m scripts.summarize_impact_evaluation --input C:\private\impact-results.csv
+```
+
+The script validates the rubric totals, dates, sequence assignments, and error flags, then writes a descriptive summary to the Git-ignored `artifacts/impact_evaluation_summary.md`. Review the output against the source sessions before reporting results. Do not publish small-cell breakdowns or session-level data.
 
 ## Reporting rule
 

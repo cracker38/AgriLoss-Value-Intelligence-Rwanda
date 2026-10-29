@@ -19,7 +19,7 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 
 - **Start here:** unweighted SAS 2024 sample indicators, data scope, and the eight-step user workflow.
 - **Crop workspace:** choose a challenge, SAS season, and crop; enter your role, planning location, optional period, local conditions, and relevant supply/storage/processing/market values. Review crop evidence and field actions, compare the crop across seasons, then preview and download the report. Province evidence remains separate from crop evidence.
-- **Production links:** compare crop and post-harvest patterns with Season A practice/input responses, and inspect Season A sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
+- **SAS module links:** compare crop and post-harvest patterns with Season A agricultural-practice and fertilizer/pesticide responses, and inspect production-linked sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
 - **Explore the sample:** independent season, province, crop, and harvest summaries. Crop-by-season views are available in Crop workspace; province and crop values are not cross-tabulated.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
 - **User workflow:** [`docs/user-workflow.md`](docs/user-workflow.md) maps the eight steps to available data and explains which inputs are contextual and which estimates the system cannot support.
@@ -49,14 +49,33 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 | NISR judging criterion | Current evidence | Readiness and remaining work |
 |---|---|---|
 | Problem Understanding & Relevance (20) | Track 1 focus on post-harvest collection/storage and processing/value addition, tied to NST2 (13.8% → 4.8% food-crop post-harvest loss), Vision 2050, and PSTA 5 study rates, using SAS 2024 production records as the evidence base. Crop briefs explain storage/transport investigation flags and food, drink, or other transformation-use options. | Alignment is documented, not a measured contribution to those targets. The flags are relative sample comparisons; processing routes are hypotheses to validate. Validate usefulness with intended Rwandan users. |
-| Data Use & Methodology (20) | SAS production summaries cover storage, transport-stage loss, transformation, sales, and price coverage; Season A practice/input modules are linked at plot level after cardinality and weight checks; market-channel summaries use reported survey prices. | Descriptions are unweighted. No survey-weighted estimates or current market feed; Season A practice/input associations are observational. |
-| Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, two-track workspace, NST2 crop tagging, and downloadable briefs. | The classifier remains a local retrospective experiment and is not a public farmer score or alert system. |
+| Data Use & Methodology (20) | SAS production summaries cover storage, transport-stage loss, transformation, sales, and price coverage; the SAS module-links view compares Season A production with practice and fertilizer/pesticide responses after plot-key and weight checks; market-channel summaries use production-linked survey responses. | Descriptions are unweighted. Screening is kept separate because crop-area linkage is not cleared; Season B/C practice links are unpublished. No current market feed; Season A practice/input associations are observational. |
+| Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, two-track workspace, NST2 crop tagging, and downloadable briefs. The experimental target and grouped/cross-season evaluation are documented. | The classifier predicts a contemporaneous positive `s2q39` report from SAS 2024 features; it is not a future-loss forecast or public farmer score. New survey waves and prospective evaluation are required. |
 | Usability & Design (20) | Start-here guidance, glossary, two challenge tracks, one-rule sorting, plain-language metrics, charts, recommendation evidence, and a downloadable crop brief. | Complete the required screen recording and a short user check. |
-| Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. A paired decision-support evaluation protocol and recording template are ready. | No user sessions or outcomes have been measured. Run the protocol before making decision-improvement claims; see `docs/impact-and-validation-plan.md`. |
+| Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. A paired decision-support protocol, coded session template, and aggregate-results script are ready. | No user sessions or outcomes have been measured. Run the protocol and summarize the completed private results before making decision-improvement claims; see `docs/impact-and-validation-plan.md`. |
+
+## Status against the six product feedback areas
+
+| Feedback area | Current state |
+|---|---|
+| Data visualization | Implemented: aggregate crop, season, province, loss and harvest views, plus season-by-crop comparisons and the crop workspace. |
+| Deeper data analysis | Implemented with documented limits: production evidence covers storage, transport, processing, sales and market reports; the SAS module links view joins Season A practice/input responses to production. Screening and Season B/C module links remain separate or unpublished where linkage is not cleared. |
+| Useful predictions | Experimental: the classifier target is a positive contemporaneous `s2q39` report, evaluated with grouped cross-validation and a Season A-to-B holdout. This is not a future-loss forecast; prospective labels from later survey waves are required. |
+| Actionable recommendations | Implemented as transparent investigation steps: storage flags show relative crop evidence, and processing options cite reported use and supporting counts. They are not investment or profitability advice. |
+| Practical user workflow | Implemented: users choose a challenge, crop and survey season; enter role, location, conditions and local values; review evidence/actions; and download a report. |
+| Evidence of real-world impact | Not demonstrated: the matched-task protocol and aggregate summary tool are prepared, but intended-user sessions and outcome measures have not been collected. |
 
 ## Data sources and interpretation
 
-The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural-practice, and fertilizer/pesticide modules across Seasons A, B, and C. The dashboard summarizes production fields for storage (`s2q36`–`s2q38`), transport and storage losses (`s2q46`–`s2q47`), processing (`s2q25`), sales (`s2q26`–`s2q28`), and reported market channel. The workspace supports season-by-crop summaries; province remains a separate marginal summary and is not joined to crop evidence. Season A agricultural-practice and fertilizer/pesticide responses are joined to production on `Segment_ID + s2q1` after plot-level reduction, exact key matching, response consistency, and plot-weight checks. Season B practice provenance and unresolved grain/linkage issues prevent publishing those comparisons; Season C remains separate because its sample is restricted. Screening is not joined to production because the crop-area linkage is not cleared. See the [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113), [data audit](docs/dataset-audit-2024.md), and [research design](docs/research-design-2024.md).
+The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural-practice, and fertilizer/pesticide modules across Seasons A, B, and C. See the [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113), [data audit](docs/dataset-audit-2024.md), and [research design](docs/research-design-2024.md).
+
+| Data source | How AgriLoss uses it | Join and interpretation boundary |
+|---|---|---|
+| Production, Seasons A/B/C | Crop-by-season storage, transport loss, transformation, sales, harvest and storage summaries; Season A sales-channel and historical price summaries. | Unweighted sample descriptions. Season C is restricted. Province is shown separately and is not combined with crop. |
+| Agricultural-practice and fertilizer/pesticide modules, Season A | The **SAS module links** view compares crop storage, transformation and sales measures by reported practice/input response. | Linked to production using `Segment_ID + s2q1` after one-row-per-plot reduction, exact matching, response consistency and equal plot-weight checks. Observational associations; not causal. |
+| Agricultural-practice modules, Seasons B/C | Not included in the production-link view. | Season B provenance and grain issues remain unresolved; Season C is restricted. |
+| Screening modules, Seasons A/B/C | Kept outside the crop workspace and production-linked analyses. | The crop-area linkage is not cleared for a defensible production join; see the research design. |
+| Market channel and price responses | Compared with production sales in the **SAS module links** view and used as historical context for processing review. | Season A 2024 only; not current prices, processor demand, or profitability evidence. |
 
 The [actionable recommendations note](docs/actionable-recommendations.md) explains the transparent rules behind storage/collection flags and processing options, the evidence shown in the app, Rwanda-based process examples, and the local checks required before a project decision.
 
@@ -122,6 +141,16 @@ Training writes:
 
 The local dashboard reads the metrics for grouped cross-validation and the Season A-to-B holdout, and checks that the fitted model artifact exists. It does not expose a score or forecast. The public aggregate edition omits respondent-level model inputs and does not need the model binary. Regenerate the metrics after changing the training script; do not edit them by hand.
 
+## Evaluate the decision-support workflow
+
+The [formative protocol](docs/impact-evaluation-protocol.md) compares matched planning tasks completed with AgriLoss and the team's usual/source-based workflow. No participant sessions or impact results have been collected. Copy the [CSV template](docs/impact-evaluation-results-template.csv) to a private location, record anonymized sessions, and keep completed data out of this repository. Summarize only after reviewing the recorded sessions:
+
+```powershell
+py -3 -m scripts.summarize_impact_evaluation --input C:\private\impact-results.csv
+```
+
+The script validates scores and counterbalanced assignments, then writes a descriptive, aggregate-only report under Git-ignored `artifacts/`. Task-score results do not establish that farmer outcomes or crop losses changed.
+
 ## Reproduce the source audit and tests
 
 ```powershell
@@ -139,6 +168,7 @@ The SQLite database created by the raw staging loader contains respondent-level 
 - `scripts/build_public_dashboard.py` — local aggregate release-candidate builder
 - `scripts/public_dashboard.py` — public aggregate-only dashboard renderer
 - `scripts/train_loss_model.py` — reproducible model training and grouped evaluation
+- `scripts/summarize_impact_evaluation.py` — validation and aggregate summary of private user-study results
 - `scripts/audit_sas_2024.py` — source and data-quality audit
 - `scripts/ingest_sas_2024.py` — provenance-preserving raw SQLite staging
 - `dataset/nisrdataset/` — local SAS JSON extracts
