@@ -179,10 +179,10 @@ try:
         st.stop()
     data = load_data()
 except FileNotFoundError:
-    st.error("This deployment has no approved aggregate dashboard data file.")
+    st.error("This deployment has no authorized aggregate dashboard data file.")
     st.write(
         "Respondent-level SAS extracts are intentionally excluded from hosted deployments. "
-        "The public dashboard requires a disclosure-reviewed aggregate file at:"
+        "The public dashboard requires an approved or owner-authorized aggregate file at:"
     )
     st.code("public_data/dashboard_aggregates.json", language="text")
     st.write(
@@ -368,7 +368,7 @@ with model_tab:
             ("F1", "f1"),
             ("Balanced accuracy", "balanced_accuracy"),
             ("ROC AUC", "roc_auc"),
-            ("Average precision (PR AUC)", "average_precision"),
+            ("Average precision", "average_precision"),
         )
         metric_table = pd.DataFrame(
             [
@@ -391,6 +391,42 @@ with model_tab:
             "Validation caveat: candidate models were compared during development on this same SAS 2024 sample. "
             "These cross-validation results are exploratory, not independent validation."
         )
+
+        season_holdout = metrics.get("season_holdout_evaluation")
+        if season_holdout:
+            st.markdown("#### Season A to Season B holdout")
+            st.caption(
+                f"Trained on {season_holdout['rows_trained']:,} Season A records and evaluated on "
+                f"{season_holdout['rows_evaluated']:,} Season B records. "
+                f"{season_holdout['repeated_plot_groups_removed_from_training']:,} repeated plot groups were removed from training."
+            )
+            st.write(
+                f"Season B positive-response prevalence: "
+                f"{_format_percent(season_holdout['positive_prevalence'])}. "
+                f"This is an out-of-season check of the same `s2q39 > 0` response, not a forecast of a future loss outcome."
+            )
+            holdout_metrics = season_holdout["metrics"]
+            holdout_baseline = season_holdout["always_negative_baseline"]
+            holdout_table = pd.DataFrame(
+                [
+                    {
+                        "Metric": label,
+                        "Classifier": holdout_metrics[key],
+                        "Always-negative baseline": holdout_baseline[key],
+                    }
+                    for label, key in metric_names
+                ]
+            )
+            holdout_table["Classifier"] = holdout_table["Classifier"].map(_format_percent)
+            holdout_table["Always-negative baseline"] = holdout_table[
+                "Always-negative baseline"
+            ].map(_format_percent)
+            st.dataframe(holdout_table, hide_index=True, width="stretch")
+        else:
+            st.info(
+                "The current metrics file has no Season A to Season B holdout. "
+                "Regenerate it with `py -3 -m scripts.train_loss_model` to add that evaluation."
+            )
 
         confusion = model_metrics["confusion_matrix"]
         c1, c2, c3, c4 = st.columns(4)
@@ -441,7 +477,9 @@ with methods_tab:
     st.write(
         "A fixed 0.5 threshold is evaluated using five-fold stratified group cross-validation. "
         "All records sharing the Segment_ID + plot key are held in one fold. The metrics are out-of-fold "
-        "descriptive performance on this 2024 sample and are not an external validation."
+        "descriptive performance on this 2024 sample and are not an external validation. The training script "
+        "also reports a Season A train / Season B holdout after removing repeated plot groups from training; "
+        "it evaluates transfer across survey seasons, not a future-period loss forecast."
     )
 
 st.caption("AgriLoss Rwanda · NISR SAS 2024 · Research prototype with explicit survey and model limitations")

@@ -157,9 +157,61 @@ def _classification_metrics(
     }
 
 
+def _season_holdout_evaluation(
+    features: pd.DataFrame, target: pd.Series, groups: pd.Series
+) -> dict[str, Any]:
+    """Evaluate an A-to-B retrospective holdout with repeated plots kept out of training."""
+    season = features["season"].astype("string")
+    train_season_mask = season.eq("A")
+    test_mask = season.eq("B")
+    repeated_test_groups = set(groups.loc[test_mask].unique())
+    repeated_groups = set(groups.loc[train_season_mask].unique()).intersection(
+        repeated_test_groups
+    )
+    train_mask = train_season_mask & ~groups.isin(repeated_test_groups)
+
+    if not train_mask.any() or not test_mask.any():
+        raise ValueError("Season A training and Season B holdout records are required")
+    if target.loc[train_mask].nunique() != 2 or target.loc[test_mask].nunique() != 2:
+        raise ValueError("Both target classes must appear in the Season A and B holdout data")
+    if set(groups.loc[train_mask]).intersection(groups.loc[test_mask]):
+        raise ValueError("A plot group appears in both the season training and holdout data")
+
+    classifier = build_classifier()
+    classifier.fit(features.loc[train_mask], target.loc[train_mask])
+    probabilities = classifier.predict_proba(features.loc[test_mask])[:, 1]
+    predictions = (probabilities >= 0.5).astype("int8")
+    metrics = _classification_metrics(target.loc[test_mask], predictions, probabilities)
+
+    baseline_predictions = np.zeros(int(test_mask.sum()), dtype="int8")
+    baseline_metrics = _classification_metrics(
+        target.loc[test_mask],
+        baseline_predictions,
+        np.full(int(test_mask.sum()), float(target.loc[train_mask].mean())),
+    )
+    return {
+        "training_season": "A",
+        "holdout_season": "B",
+        "rows_trained": int(train_mask.sum()),
+        "rows_evaluated": int(test_mask.sum()),
+        "training_plot_groups": int(groups.loc[train_mask].nunique()),
+        "holdout_plot_groups": int(groups.loc[test_mask].nunique()),
+        "repeated_plot_groups_removed_from_training": len(repeated_groups),
+        "positive_prevalence": float(target.loc[test_mask].mean()),
+        "threshold": 0.5,
+        "metrics": metrics,
+        "always_negative_baseline": baseline_metrics,
+        "interpretation": (
+            "Retrospective cross-season classification of the same survey response, "
+            "not a forecast of a future-period loss outcome."
+        ),
+    }
+
+
 def train_and_evaluate() -> dict[str, Any]:
     data = load_production_data(("A", "B"))
     features, target, groups = prepare_model_data(data)
+    season_holdout = _season_holdout_evaluation(features, target, groups)
     splits = _grouped_cv_splits(features, target, groups)
     classifier = build_classifier()
     probabilities = cross_val_predict(
@@ -194,6 +246,7 @@ def train_and_evaluate() -> dict[str, Any]:
         "season_c_excluded": "Restricted sample; kept out of this exploratory model.",
         "evaluation": "5-fold stratified group cross-validation",
         "grouping": "Segment_ID + s2q1 plot key; plot groups do not cross folds.",
+        "season_holdout_evaluation": season_holdout,
         "threshold": 0.5,
         "rows_evaluated": int(len(target)),
         "positive_rows": int(target.sum()),
@@ -218,9 +271,9 @@ def train_and_evaluate() -> dict[str, Any]:
         "majority_class_baseline": baseline_metrics,
         "model_file": str(MODEL_PATH.relative_to(ROOT)),
         "interpretation": (
-            "Retrospective exploratory classification of survey-reported records. "
-            "It is not a prospective forecast, causal model, calibrated risk estimate, "
-            "or a basis for decisions about individual farmers."
+            "Retrospective exploratory classification of the same-survey s2q39 response. "
+            "The A-to-B holdout checks cross-season generalization but is not a future-period "
+            "forecast, causal model, calibrated risk estimate, or basis for decisions about individuals."
         ),
     }
     METRICS_PATH.write_text(

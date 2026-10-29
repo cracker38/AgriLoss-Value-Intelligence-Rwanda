@@ -74,7 +74,11 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             raise ValueError(f"Public dashboard data is missing {section}")
     if "by_storage_facility" in payload and not isinstance(payload["by_storage_facility"], list):
         raise ValueError("Public dashboard section by_storage_facility must be a list")
-    optional_list_sections = ("by_crop_practice", "by_market_channel")
+    optional_list_sections = (
+        "by_crop_practice",
+        "by_market_channel",
+        "by_crop_market_channel",
+    )
     for section in optional_list_sections:
         if section in payload and not isinstance(payload[section], list):
             raise ValueError(f"Public dashboard section {section} must be a list")
@@ -97,6 +101,7 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "stored_positive_records",
             "stored_positive_share",
             "storage_loss_positive_records",
+            "transport_loss_positive_records",
             "transformed_positive_records",
             "transformed_positive_share",
             "sold_positive_records",
@@ -112,6 +117,7 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "stored_positive_records",
             "transformed_positive_records",
             "sold_positive_records",
+            "transport_loss_positive_records",
         },
         "by_province": {"province", "records"},
         "by_crop": {
@@ -123,6 +129,7 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "median_reported_loss_value",
             "stored_positive_share",
             "storage_loss_positive_share",
+            "transport_loss_positive_share",
             "transformed_positive_share",
             "sold_positive_share",
         },
@@ -146,10 +153,22 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "records",
             "stored_positive_share",
             "storage_loss_positive_share",
+            "transport_loss_positive_share",
             "transformed_positive_share",
             "sold_positive_share",
         },
         "by_market_channel": {
+            "market_channel",
+            "production_records",
+            "valid_sales_records",
+            "positive_sales_records",
+            "positive_sales_share",
+            "median_positive_sales_kg",
+            "positive_price_records",
+            "median_positive_price_rwf_per_kg",
+        },
+        "by_crop_market_channel": {
+            "crop",
             "market_channel",
             "production_records",
             "valid_sales_records",

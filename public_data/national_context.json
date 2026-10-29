@@ -39,11 +39,12 @@
     "Bananas"
   ],
   "survey_fields_for_follow_up": {
-    "note": "These production questions exist in SAS 2024. Crop-level storage and processing shares are not published in the current aggregate file; the dashboard uses harvest and reported-loss summaries as a triage step.",
+    "note": "The aggregate dashboard summarizes storage, transport-stage loss, processing, sales, and reported market channels from SAS 2024. Season A practice and input modules are linked at plot level after validation. These are unweighted sample descriptions; market prices are historical survey responses, not current quotes.",
     "storage": [
       "s2q36 quantity stored (kg)",
       "s2q37 storage facility (codes need verification)",
       "s2q38 quantity in public storage (kg)",
+      "s2q46 transport-stage loss (kg)",
       "s2q47 storage-stage loss (kg; negative values exist and are flagged in the audit)"
     ],
     "processing_and_markets": [

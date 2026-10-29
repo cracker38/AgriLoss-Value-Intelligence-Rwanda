@@ -24,6 +24,7 @@ NST2_PRIORITY_CROPS = {
 STORAGE_LENSES = (
     "Share of records with stored quantity (kg)",
     "Share of records with storage-stage loss (kg)",
+    "Share of records with transport-stage loss (kg)",
     "Number of records with stored quantity",
     "Share missing a stored-quantity answer",
 )
@@ -141,6 +142,12 @@ def _review_signal(
             )
         elif review_lens == STORAGE_LENSES[2]:
             evidence = (
+                f"{_percent(crop_row['transport_loss_positive_share'])} "
+                f"({ _int(crop_row['transport_loss_positive_records']):,} of "
+                f"{_int(crop_row['transport_loss_reported_records']):,} valid answers)"
+            )
+        elif review_lens == STORAGE_LENSES[3]:
+            evidence = (
                 f"{_int(crop_row['stored_positive_records']):,} records with stored quantity > 0 "
                 f"out of {_int(crop_row['records']):,} production records"
             )
@@ -184,6 +191,7 @@ def _follow_up_checks(
     if track == "storage":
         missing = _int(crop_row["stored_missing_records"])
         negative = _int(crop_row["storage_loss_negative_records"])
+        transport_negative = _int(crop_row.get("transport_loss_negative_records", 0))
         if missing:
             checks.append(
                 f"Verify stored-quantity blanks and skip logic (`s2q36`): {missing:,} records are missing."
@@ -191,6 +199,14 @@ def _follow_up_checks(
         if negative:
             checks.append(
                 f"Review {_int(crop_row['storage_loss_negative_records']):,} negative storage-stage loss values (`s2q47`) against the source records."
+            )
+        if transport_negative:
+            checks.append(
+                f"Review {_int(crop_row.get('transport_loss_negative_records')):,} negative transport-stage loss values (`s2q46`) against the source records."
+            )
+        if _int(crop_row.get("transport_loss_positive_records", 0)):
+            checks.append(
+                "Check reported transport-stage loss (`s2q46`) alongside local collection routes and transport records; the survey does not measure distance or cost."
             )
         if _int(crop_row["public_stored_positive_records"]):
             checks.append(
@@ -245,6 +261,9 @@ def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
                 "storage_loss_positive_records",
                 "storage_loss_positive_share",
                 "storage_loss_negative_records",
+                "transport_loss_positive_records",
+                "transport_loss_positive_share",
+                "transport_loss_negative_records",
             ]
         ].rename(
             columns={
@@ -257,11 +276,17 @@ def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
                 "storage_loss_positive_records": "Storage-stage loss > 0",
                 "storage_loss_positive_share": "Share storage-stage loss (valid s2q47)",
                 "storage_loss_negative_records": "Negative s2q47 values",
+                "transport_loss_positive_records": "Transport-stage loss > 0",
+                "transport_loss_positive_share": "Share transport-stage loss (valid s2q46)",
+                "transport_loss_negative_records": "Negative s2q46 values",
             }
         )
         display["Share stored (valid s2q36)"] = display["Share stored (valid s2q36)"].map(_percent)
         display["Share storage-stage loss (valid s2q47)"] = display[
             "Share storage-stage loss (valid s2q47)"
+        ].map(_percent)
+        display["Share transport-stage loss (valid s2q46)"] = display[
+            "Share transport-stage loss (valid s2q46)"
         ].map(_percent)
     else:
         display = frame.head(10)[
@@ -307,6 +332,9 @@ def _storage_reading(crop_row: pd.Series) -> str:
     loss_share = crop_row["storage_loss_positive_share"]
     loss_n = _int(crop_row["storage_loss_positive_records"])
     negatives = _int(crop_row["storage_loss_negative_records"])
+    transport_n = _int(crop_row.get("transport_loss_positive_records", 0))
+    transport_share = crop_row.get("transport_loss_positive_share")
+    transport_negative = _int(crop_row.get("transport_loss_negative_records", 0))
     public_n = _int(crop_row["public_stored_positive_records"])
     parts = [
         f"In this unweighted SAS 2024 sample, {crop} has {_percent(stored_share)} of valid stored-quantity answers "
@@ -316,6 +344,11 @@ def _storage_reading(crop_row: pd.Series) -> str:
     parts.append(
         f"Storage-stage loss (`s2q47`, kg) is positive in {_percent(loss_share)} of valid answers "
         f"({loss_n:,} records). {negatives:,} records have a negative storage-stage quantity; those are kept as a quality flag, not clipped."
+    )
+    parts.append(
+        f"Transport-stage loss (`s2q46`, kg) is positive in {_percent(transport_share)} of valid answers "
+        f"({transport_n:,} records); {transport_negative:,} negative values are retained as a quality flag. "
+        "This does not identify a collection route, distance, or transport cost."
     )
     if public_n:
         parts.append(
@@ -429,6 +462,7 @@ Province values are a separate marginal summary; they are not joined to this cro
 - Production records: {_int(crop_row['records']):,}
 - Stored quantity > 0 (`s2q36`, kg): {_int(crop_row['stored_positive_records']):,} · {_percent(crop_row['stored_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['stored_median_positive_kg'])}
 - Storage-stage loss > 0 (`s2q47`, kg): {_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])} of valid answers · negative values: {_int(crop_row['storage_loss_negative_records']):,}
+- Transport-stage loss > 0 (`s2q46`, kg): {_int(crop_row.get('transport_loss_positive_records', 0)):,} · {_percent(crop_row.get('transport_loss_positive_share'))} of valid answers · negative values: {_int(crop_row.get('transport_loss_negative_records', 0)):,}
 - Transformed quantity > 0 (`s2q25`, kg): {_int(crop_row['transformed_positive_records']):,} · {_percent(crop_row['transformed_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['transformed_median_positive_kg'])}
 - Quantity sold > 0 (`s2q26`, kg): {_int(crop_row['sold_positive_records']):,} · {_percent(crop_row['sold_positive_share'])} of valid answers · median when > 0: {_kg(crop_row['sold_median_positive_kg'])}
 - Median harvest (`s2q21`, kg): {_kg(crop_row['median_reported_harvest_kg'])}
@@ -588,7 +622,7 @@ def _render_start_tab(
         "Quantity sold > 0",
         f"{_int(overall['sold_positive_records']):,} · {_percent(overall['sold_positive_share'])}",
     )
-    extra = st.columns(4)
+    extra = st.columns(5)
     extra[0].metric(
         "Storage-stage loss > 0",
         f"{_int(overall['storage_loss_positive_records']):,} · {_percent(overall.get('storage_loss_positive_share'))}",
@@ -604,6 +638,10 @@ def _render_start_tab(
     extra[3].metric(
         "Median harvest reported",
         _kg(overall.get("median_reported_harvest_kg")),
+    )
+    extra[4].metric(
+        "Transport-stage loss > 0",
+        f"{_int(overall.get('transport_loss_positive_records')):,} · {_percent(overall.get('transport_loss_positive_share'))}",
     )
     st.caption("Unweighted sample summaries; not national estimates. Blank answers are excluded.")
 
@@ -636,8 +674,9 @@ def _render_workspace(
         sort_columns = {
             STORAGE_LENSES[0]: "stored_positive_share",
             STORAGE_LENSES[1]: "storage_loss_positive_share",
-            STORAGE_LENSES[2]: "stored_positive_records",
-            STORAGE_LENSES[3]: "stored_missing_share",
+            STORAGE_LENSES[2]: "transport_loss_positive_share",
+            STORAGE_LENSES[3]: "stored_positive_records",
+            STORAGE_LENSES[4]: "stored_missing_share",
         }
     else:
         review_lens = st.selectbox("Sort crops by", options=list(VALUE_LENSES))
@@ -767,6 +806,9 @@ def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> N
             "stored_positive_share",
             "storage_loss_positive_records",
             "storage_loss_negative_records",
+            "transport_loss_positive_records",
+            "transport_loss_positive_share",
+            "transport_loss_negative_records",
             "transformed_positive_records",
             "transformed_positive_share",
             "sold_positive_records",
@@ -789,10 +831,11 @@ def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> N
         """
         - Empty strings stay missing. They are never filled with zero.
         - A “positive share” is values > 0 divided by valid answers for that field in the crop group.
-        - Median kilograms for stored, transformed, sold, and storage-stage loss are medians **among positive values**, so zeros do not pull them to zero.
+        - Median kilograms for stored, transformed, sold, storage-stage loss, and transport-stage loss are medians **among positive values**, so zeros do not pull them to zero.
         - Median harvest uses all valid `s2q21` values, including zeros if any.
-        - `s2q36`, `s2q38`, `s2q25`, `s2q26`, and `s2q47` are labelled in kilograms. `s2q39` is not.
-        - Negative `s2q47` values are counted and not clipped.
+        - `s2q36`, `s2q38`, `s2q25`, `s2q26`, `s2q46`, and `s2q47` are labelled in kilograms. `s2q39` is not.
+        - Negative `s2q46` and `s2q47` values are counted and not clipped.
+        - Transport-stage loss is a collection/transport signal; the survey does not include routes, distances, costs, or collection volumes at facilities.
         - Facility codes 12, 13, and 14 are not mapped to a storage type.
         - Crop, season, and province tables are independent. They cannot be cross-filtered.
         - Groups with fewer than 100 records are pooled without their original names.
@@ -805,9 +848,10 @@ def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> N
 def _render_linked_analysis(
     practice_rows: list[dict[str, Any]],
     market_rows: list[dict[str, Any]],
+    crop_market_rows: list[dict[str, Any]],
     linkage: dict[str, Any],
 ) -> None:
-    if not practice_rows and not market_rows:
+    if not practice_rows and not market_rows and not crop_market_rows:
         st.info(
             "Linked practice and market summaries are not in this public aggregate release. "
             "They require a fresh aggregate build and disclosure review before publication."
@@ -817,6 +861,8 @@ def _render_linked_analysis(
     st.markdown("### Production, practice and input patterns")
     st.caption(
         f"Season {linkage.get('season', 'A')} · unweighted crop-record comparisons · "
+        f"{_int(linkage.get('matched_practice_plot_keys')):,} of "
+        f"{_int(linkage.get('production_plot_keys')):,} production plot keys matched with exact keys and equal plot weights · "
         "observational associations, not causes or population estimates."
     )
     if practice_rows:
@@ -922,6 +968,58 @@ def _render_linked_analysis(
             "Market channel and price responses are historical SAS 2024 reports, not a current market feed. "
             "Rare channels are pooled; blank prices are not treated as zero."
         )
+    if crop_market_rows:
+        st.markdown("### Crop sales and reported price by market channel")
+        crop_market = pd.DataFrame(crop_market_rows)
+        crop_options = sorted(crop_market["crop"].astype(str).unique().tolist())
+        selected_crop = st.selectbox("Crop for market comparison", options=crop_options)
+        crop_view = crop_market.loc[crop_market["crop"].astype(str) == selected_crop].copy()
+        chart_view = crop_view.dropna(subset=["median_positive_price_rwf_per_kg"])
+        if not chart_view.empty:
+            st.plotly_chart(
+                _bar_chart(
+                    chart_view,
+                    x="market_channel",
+                    y="median_positive_price_rwf_per_kg",
+                    title=f"{selected_crop} · median reported price by channel",
+                    y_label="Median positive reported price (RWF/kg)",
+                    x_angle=-20,
+                    color="#477c91",
+                ),
+                width="stretch",
+            )
+        display = crop_view.loc[
+            :,
+            [
+                "market_channel",
+                "production_records",
+                "valid_sales_records",
+                "positive_sales_records",
+                "positive_sales_share",
+                "median_positive_sales_kg",
+                "positive_price_records",
+                "median_positive_price_rwf_per_kg",
+            ],
+        ].rename(
+            columns={
+                "market_channel": "Reported market channel",
+                "production_records": "Production records",
+                "valid_sales_records": "Valid sales answers",
+                "positive_sales_records": "Positive-sales records",
+                "positive_sales_share": "Share of valid answers with sales",
+                "median_positive_sales_kg": "Median positive quantity sold (kg)",
+                "positive_price_records": "Positive-price records",
+                "median_positive_price_rwf_per_kg": "Median reported price (RWF/kg)",
+            }
+        )
+        display["Share of valid answers with sales"] = display[
+            "Share of valid answers with sales"
+        ].map(_percent)
+        st.dataframe(display, hide_index=True, width="stretch")
+        st.caption(
+            "Only crop/channel groups with at least 100 production records are shown. Prices are historical SAS 2024 reports, "
+            "not current quotes or a profitability estimate; confirm current buyer prices and terms locally."
+        )
 
 
 def render_public_dashboard(payload: dict[str, Any]) -> None:
@@ -933,6 +1031,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     facilities = payload.get("by_storage_facility") or []
     practice_rows = payload.get("by_crop_practice") or []
     market_rows = payload.get("by_market_channel") or []
+    crop_market_rows = payload.get("by_crop_market_channel") or []
     linkage = payload.get("module_linkage") or {}
 
     season_options = sorted(seasons["season"].astype(str).unique().tolist())
@@ -989,7 +1088,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
             seasons, provinces, crops, selected_seasons, selected_provinces
         )
     with linked_tab:
-        _render_linked_analysis(practice_rows, market_rows, linkage)
+        _render_linked_analysis(practice_rows, market_rows, crop_market_rows, linkage)
     with methods_tab:
         _render_methods_tab(seasons, selected_seasons)
 

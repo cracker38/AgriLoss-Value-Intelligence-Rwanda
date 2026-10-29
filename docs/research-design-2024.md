@@ -48,7 +48,13 @@ NISR's production dictionary labels `s2q21` as total harvest for the season in k
 
 ## ML decision
 
-No supervised model is specified for production yet. `s2q39` is a candidate regression target only after its unit, denominator, and response process are confirmed. A future model must exclude `s2q41`–`s2q50`, establish that every feature is available at the intended prediction time, compare against a simple baseline, and split by survey segment (and farmer where appropriate). Keep Season C separate unless its restricted design can be handled validly. Do not construct a high-risk label using an arbitrary threshold. Processing-profit prediction is unsupported without processing costs, capacity, yield, and demand data.
+The local research edition has an exploratory binary classifier, not a production forecasting model. Its target is `s2q39 > 0` versus `s2q39 == 0`; blank responses are excluded. This encodes a positive reported value, not severity, a rate, or a verified kilogram outcome. The unit and response process remain unresolved, so the classifier must stay labeled as retrospective research.
+
+The evaluation combines five-fold stratified group cross-validation (plot groups stay within one fold) with a Season A train / Season B holdout. Any plot group represented in Season B is removed from the Season A training partition. Both compare with an always-negative baseline at a fixed 0.5 threshold. The A-to-B check evaluates cross-season transfer of the same survey response, not prediction of losses before they occur. Candidate model development has already used this 2024 sample, so neither evaluation is an untouched independent validation. The code excludes loss-stage and downstream production fields from model inputs, but timing and meaning of the target still need confirmation.
+
+A true future-loss forecast requires repeated survey waves or another dated outcome source, a target measured after the feature cutoff, a predefined forecast horizon, and an independent temporal evaluation. Season C remains excluded because of its restricted design. A loss-severity model additionally requires a confirmed `s2q39` unit and denominator. Processing-profit prediction remains unsupported without costs, capacity, yields, and demand.
+
+The hosted dashboard does not expose respondent-level scores. Do not use this experimental classifier to rank or target individual farmers.
 
 ## Prerequisites for implementation
 

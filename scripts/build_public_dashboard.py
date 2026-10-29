@@ -120,6 +120,12 @@ def _measure_summary(frame: pd.DataFrame) -> dict[str, Any]:
         _quantity_summary(frame, "s2q47", keep_negatives=True),
         kg=True,
     )
+    _attach(
+        summary,
+        "transport_loss",
+        _quantity_summary(frame, "s2q46", keep_negatives=True),
+        kg=True,
+    )
     _attach(summary, "transformed", _quantity_summary(frame, "s2q25"), kg=True)
     _attach(summary, "sold", _quantity_summary(frame, "s2q26"), kg=True)
     summary.update(_price_quality(frame))
@@ -281,7 +287,9 @@ def _crop_practice_associations(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
-def _market_channel_summaries(frame: pd.DataFrame) -> list[dict[str, Any]]:
+def _market_channel_summaries(
+    frame: pd.DataFrame, *, by_crop: bool = False
+) -> list[dict[str, Any]]:
     working = frame.copy()
     channels = working["s2q27"].astype("string").str.strip().replace("", pd.NA)
     channels = channels.fillna("Not reported")
@@ -298,7 +306,12 @@ def _market_channel_summaries(frame: pd.DataFrame) -> list[dict[str, Any]]:
         raise ValueError(f"Unexpected reported market channels: {unexpected}")
 
     rows: list[dict[str, Any]] = []
-    for channel, group in working.groupby("_market_channel", sort=True):
+    group_columns = ["s2q4", "_market_channel"] if by_crop else ["_market_channel"]
+    for group_key, group in working.groupby(group_columns, sort=True, dropna=False):
+        if by_crop:
+            crop, channel = group_key
+        else:
+            crop, channel = None, group_key
         if len(group) < MIN_GROUP_RECORDS:
             continue
         sold = pd.to_numeric(group["s2q26"], errors="coerce")
@@ -307,38 +320,44 @@ def _market_channel_summaries(frame: pd.DataFrame) -> list[dict[str, Any]]:
         valid_sales = sold.notna()
         positive_prices = positive_sales & price.gt(0)
         positive_price_values = price.loc[positive_prices]
-        rows.append(
-            {
-                "market_channel": str(channel),
-                "production_records": int(len(group)),
-                "valid_sales_records": int(valid_sales.sum()),
-                "positive_sales_records": int(positive_sales.sum()),
-                "positive_sales_share": (
-                    round(float(positive_sales.sum() / valid_sales.sum()), 4)
-                    if valid_sales.sum() >= MIN_GROUP_RECORDS
-                    else None
-                ),
-                "median_positive_sales_kg": (
-                    _number_or_none(sold.loc[positive_sales].median())
-                    if positive_sales.sum() >= MIN_GROUP_RECORDS
-                    else None
-                ),
-                "positive_price_records": (
-                    int(positive_prices.sum())
-                    if positive_prices.sum() >= MIN_GROUP_RECORDS
-                    else None
-                ),
-                "median_positive_price_rwf_per_kg": (
-                    _number_or_none(positive_price_values.median())
-                    if positive_prices.sum() >= MIN_GROUP_RECORDS
-                    else None
-                ),
-            }
-        )
+        row = {
+            "market_channel": str(channel),
+            "production_records": int(len(group)),
+            "valid_sales_records": int(valid_sales.sum()),
+            "positive_sales_records": int(positive_sales.sum()),
+            "positive_sales_share": (
+                round(float(positive_sales.sum() / valid_sales.sum()), 4)
+                if valid_sales.sum() >= MIN_GROUP_RECORDS
+                else None
+            ),
+            "median_positive_sales_kg": (
+                _number_or_none(sold.loc[positive_sales].median())
+                if positive_sales.sum() >= MIN_GROUP_RECORDS
+                else None
+            ),
+            "positive_price_records": (
+                int(positive_prices.sum())
+                if positive_prices.sum() >= MIN_GROUP_RECORDS
+                else None
+            ),
+            "median_positive_price_rwf_per_kg": (
+                _number_or_none(positive_price_values.median())
+                if positive_prices.sum() >= MIN_GROUP_RECORDS
+                else None
+            ),
+        }
+        if by_crop:
+            row["crop"] = str(crop) if pd.notna(crop) else "Not reported"
+        rows.append(row)
     return rows
 
 
-def _build_linked_analysis() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+def _build_linked_analysis() -> tuple[
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, Any],
+]:
     production = load_production_data(seasons=(LINKED_ANALYSIS_SEASON,))
     practice = _read_module_frame(
         LINKED_ANALYSIS_SEASON,
@@ -354,6 +373,7 @@ def _build_linked_analysis() -> tuple[list[dict[str, Any]], list[dict[str, Any]]
     return (
         _crop_practice_associations(linked),
         _market_channel_summaries(production),
+        _market_channel_summaries(production, by_crop=True),
         {
             "season": LINKED_ANALYSIS_SEASON,
             "join_key": list(PLOT_KEY_COLUMNS),
@@ -401,7 +421,9 @@ def _marginal_summaries(
 def build_public_dashboard_candidate() -> dict[str, Any]:
     """Build coarse marginal summaries for disclosure review; never copy source rows."""
     data = load_production_data()
-    crop_practice_rows, market_channel_rows, linkage = _build_linked_analysis()
+    crop_practice_rows, market_channel_rows, crop_market_rows, linkage = (
+        _build_linked_analysis()
+    )
     overall = _measure_summary(data)
     overall["distinct_crop_values"] = int(data["s2q4"].nunique(dropna=True))
 
@@ -442,7 +464,8 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
             "minimum_group_records": MIN_GROUP_RECORDS,
             "grouping": (
                 "Independent season, province, and crop summaries, plus Season A crop-by-one-practice "
-                "associations and Season A market-channel summaries; no respondent rows or geographic cross-tabulations."
+                "associations, Season A market-channel summaries, and crop-by-channel summaries; "
+                "no respondent rows or geographic cross-tabulations."
             ),
             "notes": [
                 "Groups below the minimum size are pooled without their original labels.",
@@ -454,6 +477,7 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
                 "Season A practice/input links use Segment_ID + s2q1 after one-row-per-plot reduction, response consistency checks, complete key matching, and plot-weight equality checks.",
                 "Season B practice data are excluded because their provenance is not confirmed. Season C is excluded because its sample is restricted.",
                 "Market channel categories below 100 records are pooled. Market and price values are historical SAS 2024 reports, not a current market feed.",
+                "Crop-by-market-channel cells below 100 records are suppressed. Prices are median reported positive prices among records with positive sales and positive prices.",
                 "Practice/input associations are unweighted and observational; they are not causal or population estimates.",
             ],
         },
@@ -471,6 +495,7 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         "by_storage_facility": _facility_summary(data),
         "by_crop_practice": crop_practice_rows,
         "by_market_channel": market_channel_rows,
+        "by_crop_market_channel": crop_market_rows,
         "module_linkage": linkage,
     }
 
