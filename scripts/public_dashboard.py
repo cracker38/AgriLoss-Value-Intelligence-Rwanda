@@ -34,6 +34,75 @@ VALUE_LENSES = (
     "Median reported harvest (kg)",
 )
 NO_LOCAL_CONDITION = "Not specified"
+MIN_RECOMMENDATION_RECORDS = 100
+PROCESSING_USE_METRICS = (
+    (
+        "food",
+        "Food use",
+        "transformed_food_positive_records",
+        "transformed_food_positive_share",
+        "transformed_food_reported_records",
+        "transformed_food_median_positive_kg",
+    ),
+    (
+        "drink",
+        "Drink use",
+        "transformed_drink_positive_records",
+        "transformed_drink_positive_share",
+        "transformed_drink_reported_records",
+        "transformed_drink_median_positive_kg",
+    ),
+    (
+        "other",
+        "Other reported use",
+        "transformed_other_positive_records",
+        "transformed_other_positive_share",
+        "transformed_other_reported_records",
+        "transformed_other_median_positive_kg",
+    ),
+)
+PROCESSING_EXAMPLES = {
+    ("Maize", "food"): (
+        "Compare local or contract milling into maize flour",
+        "Rwanda Agriculture Board example: maize flour processing",
+        "https://www.rab.gov.rw/1-1/news-details/the-director-general-visits-agro-processing-industries-in-gisagara-district",
+    ),
+    ("Cassava", "food"): (
+        "Evaluate cassava flour products with an existing processor",
+        "Rwanda Agriculture Board example: cassava flour and porridge research",
+        "https://www.rab.gov.rw/fileadmin/user_upload/RAB/Publications/Reports/RAB-Annual_report___2012_2013.pdf",
+    ),
+    ("Cassava", "other"): (
+        "Clarify the reported other use; if peels are available, assess a safe peel-to-feed route",
+        "Rwanda Agriculture Board example: cassava peels for animal feed",
+        "https://www.rab.gov.rw/1-1/news-details/rab-iita-train-farmers-on-processing-cassava-peels-into-animal-feed",
+    ),
+    ("Bush bean", "food"): (
+        "Compare bean flour or blended products with existing processors",
+        "Rwanda Agriculture Board report: beans used in flour and blended products",
+        "https://www.rab.gov.rw/fileadmin/user_upload/RAB/Publications/Reports/RAB_Annual_2018-2019_FY.pdf",
+    ),
+    ("Climbing bean", "food"): (
+        "Compare bean flour or blended products with existing processors",
+        "Rwanda Agriculture Board report: beans used in flour and blended products",
+        "https://www.rab.gov.rw/fileadmin/user_upload/RAB/Publications/Reports/RAB_Annual_2018-2019_FY.pdf",
+    ),
+    ("Banana for beer", "drink"): (
+        "Evaluate banana juice or fermented beverage processing",
+        "Rwanda Agriculture Board example: banana juice and beer processing",
+        "https://www.rab.gov.rw/1-1/news-details/the-director-general-visits-agro-processing-industries-in-gisagara-district",
+    ),
+    ("Cooking banana", "drink"): (
+        "Evaluate banana juice or fermented beverage processing",
+        "Rwanda Agriculture Board example: banana juice and beer processing",
+        "https://www.rab.gov.rw/1-1/news-details/the-director-general-visits-agro-processing-industries-in-gisagara-district",
+    ),
+    ("Dessert banana", "drink"): (
+        "Evaluate banana juice or fermented beverage processing",
+        "Rwanda Agriculture Board example: banana juice and beer processing",
+        "https://www.rab.gov.rw/1-1/news-details/the-director-general-visits-agro-processing-industries-in-gisagara-district",
+    ),
+}
 
 
 def _percent(value: float | None) -> str:
@@ -117,6 +186,232 @@ def _rank_crop_review(crops: pd.DataFrame, sort_column: str) -> pd.DataFrame:
         ascending=[False, False],
         na_position="last",
     ).reset_index(drop=True)
+
+
+def _upper_quartile(crops: pd.DataFrame, field: str) -> float | None:
+    if field not in crops:
+        return None
+    values = pd.to_numeric(crops[field], errors="coerce").dropna()
+    if values.empty:
+        return None
+    return float(values.quantile(0.75))
+
+
+def _storage_investigation_queue(crops: pd.DataFrame) -> pd.DataFrame:
+    """Flag named crops in the upper quartile of reported storage/transport loss shares."""
+    peers = _named_crops(crops)
+    if peers.empty:
+        return pd.DataFrame()
+    signals = (
+        (
+            "storage_loss_positive_share",
+            "storage_loss_positive_records",
+            "storage_loss_reported_records",
+            "Storage-stage loss",
+            "s2q47",
+        ),
+        (
+            "transport_loss_positive_share",
+            "transport_loss_positive_records",
+            "transport_loss_reported_records",
+            "Transport-stage loss",
+            "s2q46",
+        ),
+    )
+    rows: list[dict[str, Any]] = []
+    for _, crop_row in peers.iterrows():
+        reasons: list[str] = []
+        for share_field, count_field, valid_field, label, question in signals:
+            cutoff = _upper_quartile(peers, share_field)
+            share = crop_row.get(share_field)
+            if cutoff is None or share is None or pd.isna(share) or float(share) <= 0:
+                continue
+            if float(share) >= cutoff:
+                reasons.append(
+                    f"{label}: {_percent(float(share))} "
+                    f"({_int(crop_row.get(count_field)):,}/{_int(crop_row.get(valid_field)):,} valid; "
+                    f"named-crop 75th percentile {_percent(cutoff)})"
+                )
+        if reasons:
+            rows.append(
+                {
+                    "Crop": str(crop_row["crop"]),
+                    "Why investigate": "; ".join(reasons),
+                    "Stored quantity > 0": (
+                        f"{_percent(crop_row.get('stored_positive_share'))} "
+                        f"({_int(crop_row.get('stored_positive_records')):,}/"
+                        f"{_int(crop_row.get('stored_reported_records')):,} valid)"
+                    ),
+                }
+            )
+    return pd.DataFrame(rows).sort_values("Crop").reset_index(drop=True) if rows else pd.DataFrame()
+
+
+def _market_evidence(crop: str, market_rows: list[dict[str, Any]]) -> str:
+    options = [
+        row
+        for row in market_rows
+        if str(row.get("crop")) == crop
+        and row.get("median_positive_price_rwf_per_kg") is not None
+        and not pd.isna(row.get("median_positive_price_rwf_per_kg"))
+    ]
+    if not options:
+        return "No crop/channel price group meets the display threshold."
+    best = max(options, key=lambda row: _int(row.get("positive_price_records")))
+    return (
+        f"Season A {best['market_channel']}: median reported price "
+        f"{float(best['median_positive_price_rwf_per_kg']):,.0f} RWF/kg "
+        f"({ _int(best.get('positive_price_records')):,} positive-price records; historical only)."
+    )
+
+
+def _processing_use_options(
+    crop_row: pd.Series,
+    market_rows: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    crop = str(crop_row["crop"])
+    options: list[dict[str, Any]] = []
+    for use_key, use_label, count_field, share_field, valid_field, median_field in PROCESSING_USE_METRICS:
+        positive_count = _int(crop_row.get(count_field, 0))
+        valid_count = _int(crop_row.get(valid_field, 0))
+        share = crop_row.get(share_field)
+        if positive_count < MIN_RECOMMENDATION_RECORDS or valid_count < MIN_RECOMMENDATION_RECORDS:
+            continue
+        option, source_label, source_url = PROCESSING_EXAMPLES.get(
+            (crop, use_key),
+            (
+                f"Work with an existing processor to specify a crop-specific {use_key} product before comparing processes",
+                "",
+                "",
+            ),
+        )
+        evidence = (
+            f"SAS 2024 reports {positive_count:,} positive {use_key}-use quantities "
+            f"({_percent(share)} of {valid_count:,} valid answers; median positive quantity "
+            f"{_kg(crop_row.get(median_field))})."
+        )
+        market = _market_evidence(crop, market_rows)
+        options.append(
+            {
+                "crop": crop,
+                "use_key": use_key,
+                "use_label": use_label,
+                "option": option,
+                "evidence": evidence,
+                "market_evidence": market,
+                "source_label": source_label,
+                "source_url": source_url,
+            }
+        )
+    return options
+
+
+def _processing_option_queue(
+    crops: pd.DataFrame,
+    market_rows: list[dict[str, Any]],
+) -> pd.DataFrame:
+    peers = _named_crops(crops)
+    rows: list[dict[str, Any]] = []
+    for _, crop_row in peers.iterrows():
+        for option in _processing_use_options(crop_row, market_rows):
+            rows.append(
+                {
+                    "Crop": option["crop"],
+                    "Reported transformation use": option["use_label"],
+                    "Option to evaluate": option["option"],
+                    "Why it surfaced": option["evidence"],
+                    "Sale evidence": (
+                        f"{_percent(crop_row.get('sold_positive_share'))} of valid sale answers "
+                        f"positive ({_int(crop_row.get('sold_positive_records')):,}/"
+                        f"{_int(crop_row.get('sold_reported_records')):,}). {option['market_evidence']}"
+                    ),
+                }
+            )
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values(
+        ["Crop", "Reported transformation use"]
+    ).reset_index(drop=True)
+
+
+def _actionable_recommendations(
+    crop_row: pd.Series,
+    peer_crops: pd.DataFrame,
+    track: str,
+    market_rows: list[dict[str, Any]],
+) -> list[dict[str, str]]:
+    if track == "storage":
+        recommendations: list[dict[str, str]] = []
+        for share_field, count_field, valid_field, label, action in (
+            (
+                "storage_loss_positive_share",
+                "storage_loss_positive_records",
+                "storage_loss_reported_records",
+                "Storage handling",
+                "Inspect drying, storage duration, pests, facility condition, and the questionnaire skip pattern with farmers and facility operators.",
+            ),
+            (
+                "transport_loss_positive_share",
+                "transport_loss_positive_records",
+                "transport_loss_reported_records",
+                "Collection and transport",
+                "Map collection handoffs, routes, handling damage, travel time, volumes, and cost with cooperatives or buyers; the survey records no route or cost.",
+            ),
+        ):
+            cutoff = _upper_quartile(peer_crops, share_field)
+            share = crop_row.get(share_field)
+            if (
+                cutoff is not None
+                and share is not None
+                and not pd.isna(share)
+                and float(share) > 0
+                and float(share) >= cutoff
+            ):
+                recommendations.append(
+                    {
+                        "title": f"Investigate {label.lower()} before proposing capacity or equipment",
+                        "evidence": (
+                            f"{_percent(float(share))} of valid {label.lower()} answers were positive "
+                            f"({_int(crop_row.get(count_field)):,} of {_int(crop_row.get(valid_field)):,}); "
+                            f"this is at or above the 75th percentile ({_percent(cutoff)}) among named crop groups."
+                        ),
+                        "action": action,
+                    }
+                )
+        if not recommendations:
+            recommendations.append(
+                {
+                    "title": "No above-quartile storage or transport-loss flag",
+                    "evidence": "Neither positive storage-stage loss nor positive transport-stage loss is at or above the named-crop 75th percentile in the published sample summaries.",
+                    "action": "Check local complaints, facility records, and collection conditions before dismissing a local issue. This comparative flag is not a safe-loss threshold.",
+                }
+            )
+        return recommendations
+
+    options = _processing_use_options(crop_row, market_rows)
+    if options:
+        return [
+            {
+                "title": option["option"],
+                "evidence": f"{option['evidence']} {option['market_evidence']}",
+                "action": "First compare contract processing with equipment purchase, then verify current buyer demand and prices, seasonal input volume, conversion yield, energy and packaging costs, quality standards, and food-safety requirements.",
+            }
+            for option in options
+        ]
+    transformed = _int(crop_row.get("transformed_positive_records", 0))
+    if transformed:
+        evidence = (
+            f"{transformed:,} records report a positive transformed quantity, but no food, drink, or other-use category has 100 positive records in the published crop summary."
+        )
+    else:
+        evidence = "The published crop summary has no food, drink, or other transformed-use category with 100 positive records."
+    return [
+        {
+            "title": "No crop-specific process clears the evidence rule",
+            "evidence": f"{evidence} Sales are positive in {_percent(crop_row.get('sold_positive_share'))} of valid quantity-sold answers. {_market_evidence(str(crop_row['crop']), market_rows)}",
+            "action": "Ask processors and buyers to name a product and verify reliable seasonal supply before selecting a process. Do not infer demand or profitability from the sales share or historical survey price.",
+        }
+    ]
 
 
 def _review_signal(
@@ -404,6 +699,7 @@ def _follow_up_brief(
     province_context: dict[str, Any] | None = None,
     local_condition: str = NO_LOCAL_CONDITION,
     local_notes: str = "",
+    recommendations: list[dict[str, str]] | None = None,
 ) -> str:
     crop_name = str(crop_row["crop"])
     priority = (
@@ -422,6 +718,38 @@ def _follow_up_brief(
         f"Selected sort: {review_lens}. This is a descriptive, unweighted sample signal."
     )
     checks = _follow_up_checks(crop_row, track, local_condition)
+    if recommendations is None:
+        if track == "storage":
+            recommendations = [
+                {
+                    "title": "Verify storage and collection conditions locally",
+                    "evidence": (
+                        f"The crop summary reports positive storage-stage loss in "
+                        f"{_int(crop_row.get('storage_loss_positive_records')):,} records and "
+                        f"positive transport-stage loss in "
+                        f"{_int(crop_row.get('transport_loss_positive_records')):,} records. "
+                        "This brief has no peer-group comparison, so it makes no relative priority claim."
+                    ),
+                    "action": "Review drying, storage, handling, collection routes, and local facility records with farmers, facility operators, cooperatives, and buyers.",
+                }
+            ]
+        else:
+            recommendations = _actionable_recommendations(
+                crop_row,
+                pd.DataFrame(),
+                track,
+                [],
+            )
+    recommendation_text = "\n".join(
+        f"- **{item['title']}**\n  - Why: {item['evidence']}\n  - Next: {item['action']}"
+        + (
+            f"\n  - Rwanda example: [{item['source_label']}]({item['source_url']}) "
+            "(documented example only; it does not establish feasibility or demand)."
+            if item.get("source_url")
+            else ""
+        )
+        for item in recommendations
+    )
     if local_notes.strip():
         local_notes = local_notes.strip()
     if province_context:
@@ -444,6 +772,9 @@ def _follow_up_brief(
 
 ## What the SAS 2024 sample shows
 {why}
+
+## Recommended next step to evaluate
+{recommendation_text}
 
 ## Location context
 {province_description}
@@ -470,10 +801,10 @@ Province values are a separate marginal summary; they are not joined to this cro
 - Review lens: {review_lens}
 
 ## What to check next
-Use the evidence checks above before planning an intervention.
+Complete the evidence checks above before selecting a process, facility, or investment.
 
 ## What this brief is not
-This is not a national estimate, a farmer ranking, a cause of loss, or a recommendation to build a store, mill, or factory. Season, province, and crop summaries cannot be combined in this public file.
+This is not a national estimate, a farmer ranking, a cause of loss, or an investment recommendation. Candidate process routes are evaluation ideas only; season, province, and crop summaries cannot be combined in this public file.
 
 Source: NISR Rwanda Seasonal Agricultural Survey 2024 production data, [NISR Microdata Portal](https://microdata.statistics.gov.rw/index.php/catalog/113).
 Public dashboard status: {release_note}
@@ -486,6 +817,8 @@ def _render_crop_review(
     release_note: str,
     track: str,
     provinces: pd.DataFrame,
+    peer_crops: pd.DataFrame,
+    market_rows: list[dict[str, Any]],
 ) -> None:
     st.markdown("##### Crops from the SAS 2024 sample")
     st.dataframe(
@@ -509,6 +842,22 @@ def _render_crop_review(
         ranked_crops=len(review_queue),
     )
     st.info(review_signal)
+    recommendations = _actionable_recommendations(
+        crop_row,
+        peer_crops,
+        track,
+        market_rows,
+    )
+    st.markdown("#### Recommended follow-up")
+    for item in recommendations:
+        st.markdown(f"**{item['title']}**")
+        st.markdown(f"- **Why this surfaced:** {item['evidence']}")
+        st.markdown(f"- **Next step:** {item['action']}")
+        if item.get("source_url"):
+            st.markdown(
+                f"- Rwanda example: [{item['source_label']}]({item['source_url']}) "
+                "(a documented example, not proof of current demand or feasibility)."
+            )
 
     crop_metrics = st.columns(4)
     if track == "storage":
@@ -592,6 +941,7 @@ def _render_crop_review(
         province_context=province_context,
         local_condition=local_condition,
         local_notes=local_notes,
+        recommendations=recommendations,
     )
     file_stub = "storage" if track == "storage" else "value-addition"
     st.download_button(
@@ -657,6 +1007,7 @@ def _render_workspace(
     crops: pd.DataFrame,
     provinces: pd.DataFrame,
     release_note: str,
+    market_rows: list[dict[str, Any]],
 ) -> None:
     st.markdown("### Crop workspace")
     track_label = st.radio(
@@ -668,6 +1019,35 @@ def _render_workspace(
         horizontal=True,
     )
     track = "storage" if track_label.startswith("Post-harvest") else "value"
+    peer_crops = _named_crops(crops)
+
+    if track == "storage":
+        st.markdown("#### Crops to investigate for storage or collection")
+        st.caption(
+            "Flags are crop groups at or above the 75th percentile for positive storage-stage or transport-stage loss share among named crop groups. "
+            "They are relative investigation flags, not acceptable-loss limits or investment rankings. Summaries pool available SAS 2024 seasons and are unweighted."
+        )
+        investigation_queue = _storage_investigation_queue(crops)
+        if investigation_queue.empty:
+            st.info("No crop group crosses the displayed relative investigation flags. Local evidence may still justify a review.")
+        else:
+            st.dataframe(investigation_queue, hide_index=True, width="stretch")
+    else:
+        st.markdown("#### Processing options worth evaluating")
+        st.caption(
+            "Options are tied to reported food, drink, or other transformation use. A named option appears only when at least 100 records report that use; this is a display rule, not a business-case threshold."
+        )
+        processing_queue = _processing_option_queue(crops, market_rows)
+        if processing_queue.empty:
+            st.info(
+                "No crop-specific processing option meets the minimum evidence rule. "
+                "First confirm product, supply, buyer requirements, and processor interest locally."
+            )
+        else:
+            st.dataframe(processing_queue, hide_index=True, width="stretch")
+        st.caption(
+            "Market evidence comes from Season A 2024 reports. It does not establish current prices, demand, conversion yields, costs, or profitability."
+        )
 
     if track == "storage":
         review_lens = st.selectbox("Sort crops by", options=list(STORAGE_LENSES))
@@ -699,6 +1079,8 @@ def _render_workspace(
         release_note,
         track,
         provinces,
+        peer_crops,
+        market_rows,
     )
 
 
@@ -1082,7 +1464,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     with start_tab:
         _render_start_tab(overall, facilities)
     with workspace_tab:
-        _render_workspace(crops, provinces, release_note)
+        _render_workspace(crops, provinces, release_note, crop_market_rows)
     with explore_tab:
         _render_explore_tab(
             seasons, provinces, crops, selected_seasons, selected_provinces

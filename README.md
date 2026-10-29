@@ -28,7 +28,7 @@ The hosted dashboard contains aggregate summaries only. Its current release is m
 
 ## NISR 2026 hackathon submission package
 
-The project is aligned with **Track 1: Agricultural Productivity**. NISR's track includes crop production and post-harvest topics; the app offers exploratory survey summaries, not intervention recommendations.
+The project is aligned with **Track 1: Agricultural Productivity**. NISR's track includes crop production and post-harvest topics; the app offers exploratory survey summaries, evidence-backed investigation priorities, and processing options to evaluate. It does not recommend a specific investment.
 
 See the [official NISR 2026 competition rules and timeline](https://www.statistics.gov.rw/about/hackathon/2026-hackathon-competition).
 
@@ -47,15 +47,17 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 
 | NISR judging criterion | Current evidence | Readiness and remaining work |
 |---|---|---|
-| Problem Understanding & Relevance (20) | Track 1 focus on post-harvest collection/storage and processing/value addition, tied to NST2 (13.8% → 4.8% food-crop post-harvest loss), Vision 2050, and PSTA 5 study rates, using SAS 2024 production records as the evidence base. | Alignment is documented, not a measured contribution to those targets. Validate usefulness with intended Rwandan users. |
+| Problem Understanding & Relevance (20) | Track 1 focus on post-harvest collection/storage and processing/value addition, tied to NST2 (13.8% → 4.8% food-crop post-harvest loss), Vision 2050, and PSTA 5 study rates, using SAS 2024 production records as the evidence base. Crop briefs explain storage/transport investigation flags and food, drink, or other transformation-use options. | Alignment is documented, not a measured contribution to those targets. The flags are relative sample comparisons; processing routes are hypotheses to validate. Validate usefulness with intended Rwandan users. |
 | Data Use & Methodology (20) | SAS production summaries cover storage, transport-stage loss, transformation, sales, and price coverage; Season A practice/input modules are linked at plot level after cardinality and weight checks; market-channel summaries use reported survey prices. | Descriptions are unweighted. No survey-weighted estimates or current market feed; Season A practice/input associations are observational. |
 | Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, two-track workspace, NST2 crop tagging, and downloadable briefs. | The classifier remains a local retrospective experiment and is not a public farmer score or alert system. |
-| Usability & Design (20) | Start-here guidance, glossary, two challenge tracks, one-rule sorting, plain-language metrics, charts, and a crop brief. | Complete the required screen recording and a short user check. |
+| Usability & Design (20) | Start-here guidance, glossary, two challenge tracks, one-rule sorting, plain-language metrics, charts, recommendation evidence, and a downloadable crop brief. | Complete the required screen recording and a short user check. |
 | Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. | No outcome has been measured. See `docs/impact-and-validation-plan.md`. |
 
 ## Data sources and interpretation
 
 The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural-practice, and fertilizer/pesticide modules across Seasons A, B, and C. The dashboard summarizes production fields for storage (`s2q36`–`s2q38`), transport and storage losses (`s2q46`–`s2q47`), processing (`s2q25`), sales (`s2q26`–`s2q28`), and reported market channel. Season A agricultural-practice and fertilizer/pesticide responses are joined to production on `Segment_ID + s2q1` after plot-level reduction, exact key matching, response consistency, and plot-weight checks. Season B practice provenance and unresolved grain/linkage issues prevent publishing those comparisons; Season C remains separate because its sample is restricted. Screening is not joined to production because the crop-area linkage is not cleared. Crop and province summaries remain independent; the selected province is context only. See the [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113), [data audit](docs/dataset-audit-2024.md), and [research design](docs/research-design-2024.md).
+
+The [actionable recommendations note](docs/actionable-recommendations.md) explains the transparent rules behind storage/collection flags and processing options, the evidence shown in the app, Rwanda-based process examples, and the local checks required before a project decision.
 
 No external dataset is currently integrated. NISR's Track 1 permits solutions using NISR data with or without other open/public datasets. An external weather, climate, or geospatial dataset should be added only with verified source terms, spatial/time alignment, and a clear analytical purpose.
 

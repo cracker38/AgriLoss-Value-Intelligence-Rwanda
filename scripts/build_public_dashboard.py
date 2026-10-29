@@ -25,6 +25,11 @@ INPUT_FIELDS = {
     "s3q19": "Pesticide or fungicide used",
 }
 LINKED_BINARY_FIELDS = {**PRACTICE_FIELDS, **INPUT_FIELDS}
+TRANSFORM_USE_FIELDS = {
+    "s2q25_1": "transformed_food",
+    "s2q25_2": "transformed_drink",
+    "s2q25_3": "transformed_other",
+}
 MARKET_CHANNELS = {
     "Market",
     "Farm/Home",
@@ -127,6 +132,8 @@ def _measure_summary(frame: pd.DataFrame) -> dict[str, Any]:
         kg=True,
     )
     _attach(summary, "transformed", _quantity_summary(frame, "s2q25"), kg=True)
+    for field, prefix in TRANSFORM_USE_FIELDS.items():
+        _attach(summary, prefix, _quantity_summary(frame, field), kg=True)
     _attach(summary, "sold", _quantity_summary(frame, "s2q26"), kg=True)
     summary.update(_price_quality(frame))
     return summary
