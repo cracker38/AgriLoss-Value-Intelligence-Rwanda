@@ -116,7 +116,7 @@ Training writes:
 - `artifacts/loss_classifier.joblib` — fitted preprocessing and classifier pipeline
 - `artifacts/loss_model_metrics.json` — target definition, split protocol, exclusions, and measured metrics
 
-The local dashboard reads those artifacts to display evaluation results and an optional illustrative score. The public aggregate edition omits respondent-level scoring and does not need the model binary. Do not edit the evaluation metrics by hand; regenerate them by running the training command.
+The local dashboard reads the metrics for retrospective evaluation and checks that the fitted model artifact exists. It does not expose a score or forecast. The public aggregate edition omits respondent-level model inputs and does not need the model binary. Do not edit the evaluation metrics by hand; regenerate them by running the training command.
 
 ## Reproduce the source audit and tests
 

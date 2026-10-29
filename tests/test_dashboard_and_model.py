@@ -8,6 +8,7 @@ from scripts.build_public_dashboard import _measure_summary
 from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
 from scripts.public_dashboard import (
     STORAGE_LENSES,
+    VALUE_LENSES,
     _follow_up_brief,
     _follow_up_checks,
     _named_crops,
@@ -201,6 +202,18 @@ def test_follow_up_checks_use_observed_quality_flags_and_local_condition() -> No
     assert any("collection distances, transport costs" in check for check in checks)
 
 
+def test_value_addition_checks_flag_sales_price_quality() -> None:
+    checks = _follow_up_checks(
+        pd.Series(_crop_summary()),
+        "value",
+        "Market access / prices",
+    )
+
+    assert any("5 zero-price responses" in check for check in checks)
+    assert any("15 records with positive sales have no reported price" in check for check in checks)
+    assert any("current buyer prices" in check for check in checks)
+
+
 def test_storage_brief_states_limits_and_next_fields() -> None:
     crop_row = pd.Series(_crop_summary(is_priority_crop=True))
 
@@ -269,6 +282,37 @@ def test_public_aggregates_file_loads() -> None:
     assert payload["overall"]["records"] > 0
     assert "stored_positive_share" in payload["overall"]
     assert "transformed_positive_share" in payload["overall"]
+
+
+def test_released_aggregates_generate_a_ranked_value_follow_up_brief() -> None:
+    payload = load_public_dashboard_data()
+    crops = _rank_crop_review(
+        _named_crops(pd.DataFrame(payload["by_crop"])),
+        "sold_positive_share",
+    )
+    crop_row = crops.iloc[0]
+    signal = _review_signal(
+        crop_row,
+        VALUE_LENSES[1],
+        "value",
+        rank=1,
+        ranked_crops=len(crops),
+    )
+
+    brief = _follow_up_brief(
+        crop_row,
+        VALUE_LENSES[1],
+        "provisional",
+        "value",
+        review_signal=signal,
+        province_context=pd.DataFrame(payload["by_province"]).iloc[0].to_dict(),
+        local_condition="Market access / prices",
+    )
+
+    assert "ranks 1 of" in brief
+    assert "Market access / prices" in brief
+    assert "Province values are a separate marginal summary" in brief
+    assert "Recommended evidence checks" in brief
 
 
 def test_dashboard_filters_only_selected_season_province_and_crop() -> None:
