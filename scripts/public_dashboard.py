@@ -802,6 +802,128 @@ def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> N
     )
 
 
+def _render_linked_analysis(
+    practice_rows: list[dict[str, Any]],
+    market_rows: list[dict[str, Any]],
+    linkage: dict[str, Any],
+) -> None:
+    if not practice_rows and not market_rows:
+        st.info(
+            "Linked practice and market summaries are not in this public aggregate release. "
+            "They require a fresh aggregate build and disclosure review before publication."
+        )
+        return
+
+    st.markdown("### Production, practice and input patterns")
+    st.caption(
+        f"Season {linkage.get('season', 'A')} · unweighted crop-record comparisons · "
+        "observational associations, not causes or population estimates."
+    )
+    if practice_rows:
+        practice = pd.DataFrame(practice_rows)
+        practice_options = sorted(practice["practice"].astype(str).unique().tolist())
+        selected_practice = st.selectbox(
+            "Practice or input",
+            options=practice_options,
+        )
+        practice_view = practice.loc[practice["practice"] == selected_practice]
+        crop_options = sorted(practice_view["crop"].astype(str).unique().tolist())
+        if crop_options:
+            selected_crop = st.selectbox("Crop", options=crop_options)
+            crop_view = practice_view.loc[practice_view["crop"] == selected_crop].copy()
+            if not crop_view.empty:
+                measure_labels = {
+                    "Stored quantity > 0": "stored_positive_share",
+                    "Storage-stage loss > 0": "storage_loss_positive_share",
+                    "Transformed quantity > 0": "transformed_positive_share",
+                    "Quantity sold > 0": "sold_positive_share",
+                }
+                selected_measure = st.selectbox(
+                    "Compare outcome",
+                    options=list(measure_labels),
+                )
+                chart_data = crop_view.loc[
+                    :, ["status", "records", measure_labels[selected_measure]]
+                ].rename(
+                    columns={
+                        "status": "Practice response",
+                        "records": "Crop records",
+                        measure_labels[selected_measure]: "share",
+                    }
+                )
+                chart_data = chart_data.dropna(subset=["share"])
+                if not chart_data.empty:
+                    st.plotly_chart(
+                        _bar_chart(
+                            chart_data,
+                            x="Practice response",
+                            y="share",
+                            title=f"{selected_crop} · {selected_measure}",
+                            y_label="Share of valid crop records",
+                            percent_axis=True,
+                        ),
+                        width="stretch",
+                    )
+
+                display = crop_view.loc[
+                    :,
+                    [
+                        "status",
+                        "records",
+                        "stored_positive_records",
+                        "stored_positive_share",
+                        "storage_loss_positive_records",
+                        "storage_loss_positive_share",
+                        "transformed_positive_records",
+                        "transformed_positive_share",
+                        "sold_positive_records",
+                        "sold_positive_share",
+                    ],
+                ].rename(
+                    columns={
+                        "status": "Practice response",
+                        "records": "Crop records",
+                        "stored_positive_records": "Stored > 0 records",
+                        "stored_positive_share": "Stored > 0 share",
+                        "storage_loss_positive_records": "Storage loss > 0 records",
+                        "storage_loss_positive_share": "Storage loss > 0 share",
+                        "transformed_positive_records": "Transformed > 0 records",
+                        "transformed_positive_share": "Transformed > 0 share",
+                        "sold_positive_records": "Sold > 0 records",
+                        "sold_positive_share": "Sold > 0 share",
+                    }
+                )
+                for column in display.columns:
+                    if column.endswith("share"):
+                        display[column] = display[column].map(_percent)
+                st.dataframe(display, hide_index=True, width="stretch")
+        else:
+            st.info("No crop has both Yes and No groups meeting the release threshold for this practice.")
+    if market_rows:
+        st.markdown("### Reported sales channels and prices")
+        market = pd.DataFrame(market_rows).rename(
+            columns={
+                "market_channel": "Reported market channel",
+                "production_records": "Production records",
+                "valid_sales_records": "Valid quantity-sold answers",
+                "positive_sales_records": "Positive-sales records",
+                "positive_sales_share": "Share of valid answers with sales",
+                "median_positive_sales_kg": "Median positive quantity sold (kg)",
+                "positive_price_records": "Positive-price records",
+                "median_positive_price_rwf_per_kg": "Median reported price (RWF/kg)",
+            }
+        )
+        if "Share of valid answers with sales" in market:
+            market["Share of valid answers with sales"] = market[
+                "Share of valid answers with sales"
+            ].map(_percent)
+        st.dataframe(market, hide_index=True, width="stretch")
+        st.caption(
+            "Market channel and price responses are historical SAS 2024 reports, not a current market feed. "
+            "Rare channels are pooled; blank prices are not treated as zero."
+        )
+
+
 def render_public_dashboard(payload: dict[str, Any]) -> None:
     """Render storage and value-addition summaries from SAS 2024 aggregates only."""
     overall = payload["overall"]
@@ -809,6 +931,9 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     provinces = pd.DataFrame(payload["by_province"])
     crops = pd.DataFrame(payload["by_crop"])
     facilities = payload.get("by_storage_facility") or []
+    practice_rows = payload.get("by_crop_practice") or []
+    market_rows = payload.get("by_market_channel") or []
+    linkage = payload.get("module_linkage") or {}
 
     season_options = sorted(seasons["season"].astype(str).unique().tolist())
     province_options = sorted(provinces["province"].astype(str).unique().tolist())
@@ -846,8 +971,14 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         )
         st.info("These are unweighted sample descriptions, not population estimates for Rwanda.")
 
-    start_tab, workspace_tab, explore_tab, methods_tab = st.tabs(
-        ["Start here", "Crop workspace", "Explore the sample", "Data and methods"]
+    start_tab, workspace_tab, explore_tab, linked_tab, methods_tab = st.tabs(
+        [
+            "Start here",
+            "Crop workspace",
+            "Explore the sample",
+            "Production links",
+            "Data and methods",
+        ]
     )
     with start_tab:
         _render_start_tab(overall, facilities)
@@ -857,6 +988,8 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         _render_explore_tab(
             seasons, provinces, crops, selected_seasons, selected_provinces
         )
+    with linked_tab:
+        _render_linked_analysis(practice_rows, market_rows, linkage)
     with methods_tab:
         _render_methods_tab(seasons, selected_seasons)
 

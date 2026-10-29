@@ -1,10 +1,17 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 from sklearn.ensemble import HistGradientBoostingClassifier
 
-from scripts.build_public_dashboard import _measure_summary
+from scripts.build_public_dashboard import (
+    _crop_practice_associations,
+    _join_plot_modules,
+    _market_channel_summaries,
+    _measure_summary,
+)
 from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
 from scripts.public_dashboard import (
     STORAGE_LENSES,
@@ -274,6 +281,106 @@ def test_measure_summary_keeps_blanks_missing_and_flags_negative_storage_loss() 
     assert summary["sold_with_zero_price_records"] == 1
 
 
+def test_plot_module_join_reduces_consistent_repeated_input_rows() -> None:
+    production = pd.DataFrame(
+        [
+            {"Segment_ID": "S1", "s2q1": "P1", "s2q4": "Maize", "plot_weight": "2", "s2q36": 5},
+            {"Segment_ID": "S1", "s2q1": "P1", "s2q4": "Beans", "plot_weight": "2", "s2q36": 0},
+        ]
+    )
+    practice = pd.DataFrame(
+        [
+            {"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s4q3": "Yes", "s4q15": "No"},
+        ]
+    )
+    inputs = pd.DataFrame(
+        [
+            {"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s3q3": "Yes", "s3q9": "No", "s3q19": "No"},
+            {"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s3q3": "Yes", "s3q9": "No", "s3q19": "No"},
+        ]
+    )
+
+    linked, metadata = _join_plot_modules(production, practice, inputs)
+
+    assert len(linked) == 2
+    assert set(linked["s3q3"]) == {"Yes"}
+    assert metadata["production_plot_keys"] == 1
+    assert metadata["fertilizer_pesticide_source_rows"] == 2
+    assert metadata["fertilizer_pesticide_plot_keys"] == 1
+
+
+def test_plot_module_join_rejects_conflicting_repeated_response() -> None:
+    production = pd.DataFrame(
+        [{"Segment_ID": "S1", "s2q1": "P1", "s2q4": "Maize", "plot_weight": "2"}]
+    )
+    practice = pd.DataFrame(
+        [{"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s4q3": "Yes", "s4q15": "No"}]
+    )
+    inputs = pd.DataFrame(
+        [
+            {"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s3q3": "Yes", "s3q9": "No", "s3q19": "No"},
+            {"Segment_ID": "S1", "s2q1": "P1", "plot_weight": "2", "s3q3": "No", "s3q9": "No", "s3q19": "No"},
+        ]
+    )
+
+    with pytest.raises(ValueError, match="conflicting linked-module values"):
+        _join_plot_modules(production, practice, inputs)
+
+
+def test_crop_practice_associations_require_both_thresholded_status_groups() -> None:
+    frame = pd.DataFrame(
+        {
+            "s2q4": ["Maize"] * 200,
+            "s4q3": ["Yes"] * 100 + ["No"] * 100,
+            "s4q15": ["Yes"] * 100 + ["No"] * 100,
+            "s3q3": ["Yes"] * 100 + ["No"] * 100,
+            "s3q9": ["Yes"] * 100 + ["No"] * 100,
+            "s3q19": ["Yes"] * 100 + ["No"] * 100,
+            "s2q36": [10] * 100 + [0] * 100,
+            "s2q47": [2] * 100 + [0] * 100,
+            "s2q25": [5] * 100 + [0] * 100,
+            "s2q26": [3] * 100 + [0] * 100,
+            "s2q39": [1] * 100 + [0] * 100,
+        }
+    )
+
+    rows = _crop_practice_associations(frame)
+    irrigation = [row for row in rows if row["practice_field"] == "s4q15"]
+
+    assert len(rows) == 10
+    assert {row["status"] for row in irrigation} == {"Yes", "No"}
+    assert {row["stored_positive_share"] for row in irrigation} == {0.0, 1.0}
+
+    below_threshold = frame.iloc[:-1].copy()
+    assert _crop_practice_associations(below_threshold) == []
+
+
+def test_market_summary_pools_rare_channels_and_uses_valid_sales_denominator() -> None:
+    frame = pd.DataFrame(
+        {
+            "s2q27": ["Market"] * 100
+            + ["Farm/Home"] * 100
+            + ["Cooperative/company/Association"] * 60
+            + ["Other selling place"] * 40,
+            "s2q26": [10] * 300,
+            "s2q28": [100] * 150 + [None] * 150,
+        }
+    )
+
+    rows = _market_channel_summaries(frame)
+    pooled = next(
+        row
+        for row in rows
+        if row["market_channel"] == "Cooperative or other reported channel (pooled)"
+    )
+    market = next(row for row in rows if row["market_channel"] == "Market")
+
+    assert pooled["production_records"] == 100
+    assert market["positive_sales_share"] == 1.0
+    assert market["median_positive_price_rwf_per_kg"] == 100
+    assert not any(row["market_channel"] == "Other selling place" for row in rows)
+
+
 def test_public_aggregates_file_loads() -> None:
     payload = load_public_dashboard_data()
 
@@ -282,6 +389,16 @@ def test_public_aggregates_file_loads() -> None:
     assert payload["overall"]["records"] > 0
     assert "stored_positive_share" in payload["overall"]
     assert "transformed_positive_share" in payload["overall"]
+
+
+def test_public_aggregate_loader_validates_optional_module_sections(tmp_path) -> None:
+    payload = load_public_dashboard_data()
+    payload["by_crop_practice"] = [{"crop": "Maize"}]
+    path = tmp_path / "aggregate.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing"):
+        load_public_dashboard_data(path)
 
 
 def test_released_aggregates_generate_a_ranked_value_follow_up_brief() -> None:

@@ -74,6 +74,12 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             raise ValueError(f"Public dashboard data is missing {section}")
     if "by_storage_facility" in payload and not isinstance(payload["by_storage_facility"], list):
         raise ValueError("Public dashboard section by_storage_facility must be a list")
+    optional_list_sections = ("by_crop_practice", "by_market_channel")
+    for section in optional_list_sections:
+        if section in payload and not isinstance(payload[section], list):
+            raise ValueError(f"Public dashboard section {section} must be a list")
+    if "module_linkage" in payload and not isinstance(payload["module_linkage"], dict):
+        raise ValueError("Public dashboard section module_linkage must be an object")
     for section in ("by_season", "by_province", "by_crop"):
         if not isinstance(payload[section], list):
             raise ValueError(f"Public dashboard section {section} must be a list")
@@ -124,6 +130,38 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
     for section, fields in required_fields.items():
         values = [payload[section]] if section == "overall" else payload[section]
         for index, value in enumerate(values):
+            if not isinstance(value, dict):
+                raise ValueError(f"Public dashboard {section} entry {index} must be an object")
+            missing = fields.difference(value)
+            if missing:
+                raise ValueError(
+                    f"Public dashboard {section} entry {index} is missing: {sorted(missing)}"
+                )
+    optional_required_fields = {
+        "by_crop_practice": {
+            "crop",
+            "practice_field",
+            "practice",
+            "status",
+            "records",
+            "stored_positive_share",
+            "storage_loss_positive_share",
+            "transformed_positive_share",
+            "sold_positive_share",
+        },
+        "by_market_channel": {
+            "market_channel",
+            "production_records",
+            "valid_sales_records",
+            "positive_sales_records",
+            "positive_sales_share",
+            "median_positive_sales_kg",
+            "positive_price_records",
+            "median_positive_price_rwf_per_kg",
+        },
+    }
+    for section, fields in optional_required_fields.items():
+        for index, value in enumerate(payload.get(section, [])):
             if not isinstance(value, dict):
                 raise ValueError(f"Public dashboard {section} entry {index} must be an object")
             missing = fields.difference(value)
