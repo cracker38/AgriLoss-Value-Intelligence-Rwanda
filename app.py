@@ -403,7 +403,8 @@ with model_tab:
             st.write(
                 f"Season B positive-response prevalence: "
                 f"{_format_percent(season_holdout['positive_prevalence'])}. "
-                f"This is an out-of-season check of the same `s2q39 > 0` response, not a forecast of a future loss outcome."
+                f"This is an out-of-season check of the same `s2q39 > 0` response, not a forecast of a future loss outcome. "
+                "Model development has already used these 2024 records, so this is not independent validation."
             )
             holdout_metrics = season_holdout["metrics"]
             holdout_baseline = season_holdout["always_negative_baseline"]

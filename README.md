@@ -19,7 +19,7 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 
 - **Start here:** unweighted SAS 2024 sample indicators and their coverage.
 - **Crop workspace:** compare reported storage, transport-stage loss, transformation, and sales patterns by crop. Review valid counts and data-quality checks, add a province as separate context and enter a local condition, then download a tailored follow-up brief.
-- **Production links:** compare crop and post-harvest patterns with Season A practice/input responses, and inspect reported sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
+- **Production links:** compare crop and post-harvest patterns with Season A practice/input responses, and inspect Season A sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
 - **Explore the sample:** independent season, province, crop, and harvest summaries. Province and crop values are not cross-tabulated.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
 - The local research edition shows retrospective classifier evaluation only. It does not generate an interactive score or a future-loss forecast. The public aggregate edition does not include respondent-level model inputs.
@@ -69,7 +69,7 @@ Important boundaries:
 
 ## Exploratory model: what it does and does not mean
 
-The training script creates a binary target from the observed survey field: `s2q39 > 0` means “positive reported-loss value,” and `s2q39 == 0` means “zero reported-loss value.” It excludes blank target responses. This is not a loss-severity threshold, and the target's unit and survey response process remain unresolved.
+The training script creates a binary target from the observed survey field: `s2q39 > 0` means “positive reported-loss value,” and `s2q39 == 0` means “zero reported-loss value.” It excludes blank, nonnumeric, and negative responses. This is not a loss-severity threshold, and the target's unit and survey response process remain unresolved.
 
 The model is a histogram gradient-boosting classifier using season, reported province/district, farmer/frame category, sex, crop and crop category, plus physical plot area. It excludes loss-stage and downstream production fields. The primary evaluation is five-fold stratified group cross-validation, with all records sharing `Segment_ID + s2q1` kept in one fold. The training script also runs a Season A train / Season B holdout, removing repeated plot groups from training. Both evaluations compare with an always-negative baseline because positive records are uncommon. The app displays aggregate evaluation metrics only; it does not calculate an individual score. The local metrics file must be regenerated with the training command to include the new holdout results.
 

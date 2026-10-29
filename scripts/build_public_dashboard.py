@@ -306,8 +306,12 @@ def _market_channel_summaries(
         raise ValueError(f"Unexpected reported market channels: {unexpected}")
 
     rows: list[dict[str, Any]] = []
-    group_columns = ["s2q4", "_market_channel"] if by_crop else ["_market_channel"]
-    for group_key, group in working.groupby(group_columns, sort=True, dropna=False):
+    grouped = (
+        working.groupby(["s2q4", "_market_channel"], sort=True, dropna=False)
+        if by_crop
+        else working.groupby("_market_channel", sort=True, dropna=False)
+    )
+    for group_key, group in grouped:
         if by_crop:
             crop, channel = group_key
         else:
@@ -468,15 +472,15 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
                 "no respondent rows or geographic cross-tabulations."
             ),
             "notes": [
-                "Groups below the minimum size are pooled without their original labels.",
+                "Crop and province groups below the minimum size are pooled without their original labels.",
                 "The group-size rule is a coarse suppression measure, not NISR disclosure approval.",
                 "Obtain the required data-use and disclosure review before placing this file in a public repository.",
-                "Stored, transformed, sold, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
-                "Blank responses remain missing. Negative storage-stage loss values are counted, not clipped.",
+                "Stored, transformed, sold, transport-stage loss, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
+                "Blank responses remain missing. Negative transport- and storage-stage loss values are counted, not clipped.",
                 "Crop-by-practice tables include a crop/response cell only when both Yes and No groups have at least 100 crop records.",
                 "Season A practice/input links use Segment_ID + s2q1 after one-row-per-plot reduction, response consistency checks, complete key matching, and plot-weight equality checks.",
                 "Season B practice data are excluded because their provenance is not confirmed. Season C is excluded because its sample is restricted.",
-                "Market channel categories below 100 records are pooled. Market and price values are historical SAS 2024 reports, not a current market feed.",
+                "Season A market summaries are used. Cooperative/company and other selling-place responses are pooled; market-channel groups below 100 records are suppressed. Market and price values are historical SAS 2024 reports, not a current market feed.",
                 "Crop-by-market-channel cells below 100 records are suppressed. Prices are median reported positive prices among records with positive sales and positive prices.",
                 "Practice/input associations are unweighted and observational; they are not causal or population estimates.",
             ],
@@ -486,7 +490,7 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
             "survey_weights_applied": False,
             "s2q39_unit_confirmed": False,
             "s2q39_note": "Reported values are shown without a unit; the unit is unconfirmed.",
-            "kilogram_fields": ["s2q21", "s2q25", "s2q26", "s2q36", "s2q38", "s2q47"],
+            "kilogram_fields": ["s2q21", "s2q25", "s2q26", "s2q36", "s2q38", "s2q46", "s2q47"],
         },
         "overall": overall,
         "by_season": season_rows,

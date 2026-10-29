@@ -56,6 +56,7 @@ def prepare_model_data(data: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series, pd.
     frame = data.loc[:, [*FEATURES, "s2q39", "Segment_ID", "s2q1"]].copy()
     frame["s2q39"] = pd.to_numeric(frame["s2q39"], errors="coerce")
     frame = frame.dropna(subset=["s2q39", "Segment_ID", "s2q1"])
+    frame = frame.loc[frame["s2q39"].ge(0)].copy()
     target = frame["s2q39"].gt(0).astype("int8")
 
     plot_keys = pd.MultiIndex.from_frame(
@@ -241,6 +242,13 @@ def train_and_evaluate() -> dict[str, Any]:
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "model": "Histogram gradient boosting",
         "target": "s2q39 > 0: a positive reported-loss value, not a loss rate",
+        "target_definition": {
+            "source_field": "s2q39",
+            "positive_class": "s2q39 > 0",
+            "negative_class": "s2q39 == 0",
+            "excluded_responses": "Blank, nonnumeric, negative, or missing plot-key responses.",
+            "interpretation": "Presence of a positive reported value only; not loss severity, a loss rate, or a confirmed kilogram quantity.",
+        },
         "target_unit": "Unconfirmed; do not interpret as kilograms",
         "training_seasons": ["A", "B"],
         "season_c_excluded": "Restricted sample; kept out of this exploratory model.",
