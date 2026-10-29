@@ -17,19 +17,11 @@ The workspace turns observed missingness, negative transport/storage values, and
 
 ## Practical evaluation before operational use
 
-Run a small, documented usability review with intended agricultural data users. Ask each person to:
-
-1. Use two review lenses and explain why their crop-group ordering differs.
-2. Select a crop, enter a planning location, optionally add a planning period, choose relevant conditions, review the recommendation, and preview/download the tailored report.
-3. Explain which figures are crop evidence and which are province context, and why they are not linked.
-4. Explain the difference between positive-response share, valid response count, and missingness; explain why these are not national estimates and why `s2q39` is not labeled in kilograms.
-5. Describe one follow-up analysis needed before using the pattern in planning. Identify the market figures as historical SAS 2024 reports, distinguish Season A associations from causal evidence, and explain why the classifier does not forecast future loss.
-
-Record task completion, time to complete, misunderstandings (especially whether users infer crop-by-province relationships or interpret a follow-up check as an investment recommendation), and requested changes. Do not retain free-text notes or unnecessary personal information. Fix confusing labels before sharing the app as a decision-support prototype.
+No participant sessions have been conducted. The team should run the [decision-support evaluation protocol](impact-evaluation-protocol.md), which contains matched task instructions, an evidence-and-actionability rubric, critical interpretation errors to watch for, and an anonymized [session results template](impact-evaluation-results-template.csv). It compares AgriLoss with a source-based workflow and measures task-level decision quality. The protocol is ready to run; it is not itself evidence that the tool improves decisions.
 
 ## Evidence needed for an impact claim
 
-No impact has been measured. Before claiming that AgriLoss improves a decision or outcome, document a baseline and a follow-up measure, such as:
+No impact has been measured. A formative task-score improvement would support a limited decision-support claim, not an outcome or farmer-impact claim. Before claiming that AgriLoss improves a decision or outcome, document a baseline and a follow-up measure, such as:
 
 - Whether analysts can identify and explain a candidate pattern more quickly than with the source report alone.
 - Whether the dashboard leads to a specific, validated analysis question accepted by an agricultural stakeholder.

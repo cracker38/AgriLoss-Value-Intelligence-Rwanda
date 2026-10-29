@@ -38,7 +38,7 @@ See the [official NISR 2026 competition rules and timeline](https://www.statisti
 - **Original NISR data source:** [Rwanda Seasonal Agricultural Survey 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113). The local source extracts are not committed.
 - **Screen recording:** required by the submission instructions and limited to three minutes. It is not included yet; use the [demo recording script](docs/demo-recording-script.md).
 - **AI-use disclosure:** a draft is in [`docs/ai-use-disclosure.md`](docs/ai-use-disclosure.md); the team must verify it against all tools and work used.
-- **Impact pathway:** [`docs/impact-and-validation-plan.md`](docs/impact-and-validation-plan.md) describes intended users, validation tasks, and evidence needed before making impact claims.
+- **Impact pathway:** [`docs/impact-and-validation-plan.md`](docs/impact-and-validation-plan.md) describes intended users and evidence limits. The [decision-support evaluation protocol](docs/impact-evaluation-protocol.md), [scenario card](docs/impact-evaluation-scenario-template.md), and [results template](docs/impact-evaluation-results-template.csv) prepare a formative user study; none contains collected results.
 - **Submission checks:** eligibility, registration, originality, IP terms, and deadline are tracked in [`docs/hackathon-submission-checklist.md`](docs/hackathon-submission-checklist.md).
 
 NISR's current page lists the registration deadline as 20 October 2026 and the submission deadline as 30 October 2026 at 11:59 PM. The registration date has passed. If the team did not register, contact the organizer rather than assuming late entry is allowed. Read the official rules before submitting, including the IP assignment requirement.
@@ -51,7 +51,7 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 | Data Use & Methodology (20) | SAS production summaries cover storage, transport-stage loss, transformation, sales, and price coverage; Season A practice/input modules are linked at plot level after cardinality and weight checks; market-channel summaries use reported survey prices. | Descriptions are unweighted. No survey-weighted estimates or current market feed; Season A practice/input associations are observational. |
 | Tech Innovation (20) | Python, Streamlit, pandas, Plotly, scikit-learn, aggregate release pipeline, two-track workspace, NST2 crop tagging, and downloadable briefs. | The classifier remains a local retrospective experiment and is not a public farmer score or alert system. |
 | Usability & Design (20) | Start-here guidance, glossary, two challenge tracks, one-rule sorting, plain-language metrics, charts, recommendation evidence, and a downloadable crop brief. | Complete the required screen recording and a short user check. |
-| Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. | No outcome has been measured. See `docs/impact-and-validation-plan.md`. |
+| Tangible Impact (20) | The workflow turns a crop pattern into a written next step for planners, cooperatives, or partners, with explicit non-use rules. A paired decision-support evaluation protocol and recording template are ready. | No user sessions or outcomes have been measured. Run the protocol before making decision-improvement claims; see `docs/impact-and-validation-plan.md`. |
 
 ## Data sources and interpretation
 
