@@ -17,11 +17,11 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 
 ## What is in the dashboard
 
-- **Start here:** the challenge in plain language, who the tool is for, NST2 / Vision 2050 / PSTA 5 context, and a short glossary.
-- **Crop workspace:** choose storage or value addition, sort named crops with one transparent rule, inspect coverage, and download a one-page brief.
+- **Start here:** unweighted SAS 2024 sample indicators and their coverage.
+- **Crop workspace:** choose a track and crop, review the ranking evidence and data-quality checks, add a province as separate context and enter a local condition, then download a tailored follow-up brief.
 - **Explore the sample:** independent season, province, reported-loss, and harvest charts. Filters do not cross-tabulate.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
-- The local research edition includes an exploratory classifier for a positive `s2q39` value. **The public aggregate edition does not include respondent-level model inputs or an interactive score. This hosted view does not score or rank farmers.**
+- The local research edition shows retrospective classifier evaluation only. It does not generate an interactive score or future-loss forecast. The public aggregate edition does not include respondent-level model inputs.
 
 The hosted dashboard contains aggregate summaries only. Its current release is marked provisional because NISR disclosure review is not recorded; the app displays this status. The local respondent-level extracts and SQLite database are excluded from the public repository.
 
@@ -54,7 +54,7 @@ NISR's current page lists the registration deadline as 20 October 2026 and the s
 
 ## Data sources and interpretation
 
-The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural practice, and fertilizer/pesticide modules across Seasons A, B, and C. The dashboard reads the production extracts; the other modules are retained for audit/research work and are not currently joined into the app. The [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113) is the source link for the data used. The data audit and research design are in `docs/`.
+The local source package contains 12 JSON extracts for SAS 2024 production, screening, agricultural practice, and fertilizer/pesticide modules across Seasons A, B, and C. The hosted dashboard reads disclosure-reviewed aggregate summaries. Crop and province summaries are separate marginal tables; the selected province is context only and is never combined with crop values. The other respondent-level modules are not joined: the audit found unresolved grain and match-rate issues, including for Season B. The [NISR SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113) is the source link for the data used. The data audit and research design are in `docs/`.
 
 No external dataset is currently integrated. NISR's Track 1 permits solutions using NISR data with or without other open/public datasets. An external weather, climate, or geospatial dataset should be added only with verified source terms, spatial/time alignment, and a clear analytical purpose.
 
@@ -70,7 +70,7 @@ Important boundaries:
 
 The training script creates a binary target from the observed survey field: `s2q39 > 0` means “positive reported-loss value,” and `s2q39 == 0` means “zero reported-loss value.” It excludes blank target responses. This is not a loss-severity threshold, and the target's unit and survey response process remain unresolved.
 
-The model is a histogram gradient-boosting classifier using one-hot-encoded season, reported province/district, farmer/frame category, sex, crop and crop category, plus physical plot area. It excludes the loss-stage and downstream production fields to reduce leakage. Evaluation uses five-fold stratified group cross-validation, with all records sharing `Segment_ID + s2q1` kept in the same fold. Metrics are compared with an always-negative baseline because positive records are uncommon.
+The model is a histogram gradient-boosting classifier using one-hot-encoded season, reported province/district, farmer/frame category, sex, crop and crop category, plus physical plot area. It excludes the loss-stage and downstream production fields to reduce leakage. Evaluation uses five-fold stratified group cross-validation, with all records sharing `Segment_ID + s2q1` kept in the same fold. Metrics are compared with an always-negative baseline because positive records are uncommon. The app displays evaluation metrics only; it does not calculate an individual score.
 
 Accuracy, precision, recall, F1, balanced accuracy, ROC AUC, and average precision are calculated from out-of-fold predictions at a fixed 0.5 threshold. The positive class is uncommon, so accuracy is shown with recall and an always-negative baseline; a high accuracy alone does not mean positive-loss records are reliably detected. Candidate models were compared during development on this same sample, so these cross-validation scores are exploratory rather than an independent estimate. Validate against new data before operational use. The results are retrospective discrimination on the 2024 sample—not a causal model, calibrated risk score, or prediction of future loss. Survey weights are not applied, and the app must not be used to rank or target individual farmers.
 

@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import joblib
 import pandas as pd
 import plotly.express as px
 import streamlit as st
@@ -126,13 +125,6 @@ def load_model_metrics() -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError(f"Model metrics file must contain a JSON object: {METRICS_PATH}")
     return payload
-
-
-@st.cache_resource(show_spinner=False)
-def load_trained_model():
-    if not MODEL_PATH.is_file():
-        return None
-    return joblib.load(MODEL_PATH)
 
 
 def _format_percent(value: float) -> str:
@@ -346,10 +338,9 @@ with loss_tab:
     st.caption("Missing loss responses are excluded from the denominator, not converted to zero.")
 
 with model_tab:
-    st.subheader("Exploratory reported-loss classifier")
+    st.subheader("Retrospective classifier evaluation")
     metrics = load_model_metrics()
-    model = load_trained_model()
-    if not metrics or model is None:
+    if not metrics or not MODEL_PATH.is_file():
         st.warning("The model has not been trained yet.")
         st.code("py -3 -m scripts.train_loss_model", language="powershell")
     else:
@@ -365,7 +356,7 @@ with model_tab:
         )
         st.write(
             f"Positive class prevalence: {_format_percent(metrics['positive_prevalence'])}. "
-            f"Prediction threshold: {metrics['threshold']:.2f} (fixed before evaluation)."
+            f"Classification threshold: {metrics['threshold']:.2f} (fixed before evaluation)."
         )
 
         model_metrics = metrics["metrics"]
@@ -413,49 +404,7 @@ with model_tab:
             st.write(f"- {control}")
         st.write(f"**Important limitation:** {metrics['interpretation']}")
 
-        prediction_model = st.expander("Illustrative model score (not for operational use)", expanded=False)
-        with prediction_model:
-            st.caption(
-                "This input form demonstrates the fitted model only. The output is an uncalibrated model score "
-                "for the retrospective positive-reported-loss label, not a probability that future loss will occur."
-            )
-            with st.form("exploratory-score"):
-                c1, c2 = st.columns(2)
-                season = c1.selectbox("Season", ["A", "B"])
-                province = c2.selectbox("Province", available_values(data[data["season"].isin(["A", "B"])], "s1q1"))
-                districts = available_values(
-                    data[(data["season"].isin(["A", "B"])) & (data["s1q1"] == province)],
-                    "s1q2",
-                )
-                district = c1.selectbox("District", districts)
-                farm_types = available_values(data[data["season"].isin(["A", "B"])], "s1q3")
-                farm_type = c2.selectbox("Farmer/frame category", farm_types)
-                sex_values = available_values(data[data["season"].isin(["A", "B"])], "s1q8")
-                sex = c1.selectbox("Reported sex", sex_values)
-                crop_values = available_values(data[data["season"].isin(["A", "B"])], "s2q4")
-                crop = c2.selectbox("Crop", crop_values)
-                category_values = available_values(data[data["season"].isin(["A", "B"])], "CropCategory")
-                crop_category = c1.selectbox("Crop category", category_values)
-                plot_area = c2.number_input("Physical plot area (ha)", min_value=0.0, value=1.0, step=0.1)
-                submitted = st.form_submit_button("Calculate exploratory model score")
-            if submitted:
-                input_row = pd.DataFrame(
-                    [
-                        {
-                            "season": season,
-                            "s1q1": province,
-                            "s1q2": district,
-                            "s1q3": farm_type,
-                            "s1q8": sex,
-                            "s2q4": crop,
-                            "CropCategory": crop_category,
-                            "s2q2": plot_area,
-                        }
-                    ]
-                )
-                score = float(model.predict_proba(input_row)[0, 1])
-                st.metric("Model score (not calibrated)", _format_percent(score))
-                st.caption("Do not use this score to rank, target, or make decisions about farmers.")
+        st.info("No future-loss forecast is available. The target is a retrospective same-survey response, not a future outcome.")
 
 with methods_tab:
     st.subheader("Data quality and analytical safeguards")

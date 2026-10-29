@@ -6,7 +6,14 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from scripts.build_public_dashboard import _measure_summary
 from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
-from scripts.public_dashboard import _follow_up_brief, _named_crops, _rank_crop_review
+from scripts.public_dashboard import (
+    STORAGE_LENSES,
+    _follow_up_brief,
+    _follow_up_checks,
+    _named_crops,
+    _rank_crop_review,
+    _review_signal,
+)
 
 
 def _crop_summary(**overrides: object) -> dict[str, object]:
@@ -24,18 +31,22 @@ def _crop_summary(**overrides: object) -> dict[str, object]:
         "stored_positive_records": 20,
         "stored_positive_share": 0.111,
         "stored_median_positive_kg": 35,
+        "storage_loss_reported_records": 180,
         "public_stored_positive_records": 0,
         "storage_loss_positive_records": 4,
         "storage_loss_positive_share": 0.022,
         "storage_loss_negative_records": 1,
+        "transformed_reported_records": 180,
         "transformed_positive_records": 80,
         "transformed_positive_share": 0.44,
         "transformed_median_positive_kg": 60,
+        "sold_reported_records": 180,
         "sold_positive_records": 90,
         "sold_positive_share": 0.5,
         "sold_median_positive_kg": 40,
         "sold_with_positive_price_records": 70,
         "sold_with_zero_price_records": 5,
+        "sold_with_missing_price_records": 15,
     }
     row.update(overrides)
     return row
@@ -161,6 +172,35 @@ def test_crop_review_sort_excludes_missing_values_and_breaks_ties_by_records() -
     assert list(ranked["crop"]) == ["Higher count", "Lower count"]
 
 
+def test_review_signal_explains_rank_and_valid_denominator() -> None:
+    signal = _review_signal(
+        pd.Series(_crop_summary()),
+        STORAGE_LENSES[0],
+        "storage",
+        rank=2,
+        ranked_crops=8,
+    )
+
+    assert "ranks 2 of 8 named crop groups" in signal
+    assert "20 of 180 valid answers" in signal
+    assert "not an intervention ranking" in signal
+
+
+def test_follow_up_checks_use_observed_quality_flags_and_local_condition() -> None:
+    crop_row = pd.Series(
+        _crop_summary(
+            stored_missing_records=35,
+            storage_loss_negative_records=2,
+        )
+    )
+
+    checks = _follow_up_checks(crop_row, "storage", "Collection or transport")
+
+    assert any("35 records are missing" in check for check in checks)
+    assert any("2 negative storage-stage loss values" in check for check in checks)
+    assert any("collection distances, transport costs" in check for check in checks)
+
+
 def test_storage_brief_states_limits_and_next_fields() -> None:
     crop_row = pd.Series(_crop_summary(is_priority_crop=True))
 
@@ -169,11 +209,21 @@ def test_storage_brief_states_limits_and_next_fields() -> None:
         "Share of records with stored quantity (kg)",
         "provisional",
         "storage",
+        province_context={
+            "province": "East",
+            "records": 1000,
+            "stored_positive_share": 0.2,
+        },
+        local_condition="Storage capacity",
+        local_notes="Inspect seasonal overflow.",
     )
 
     assert "not Rwanda’s national post-harvest loss rate" in brief
     assert "s2q36" in brief
     assert "Maize" in brief
+    assert "Province values are a separate marginal summary" in brief
+    assert "Inspect seasonal overflow." in brief
+    assert "Compare the survey summary with verified local storage capacity" in brief
 
 
 def test_measure_summary_keeps_blanks_missing_and_flags_negative_storage_loss() -> None:

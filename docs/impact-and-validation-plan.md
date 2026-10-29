@@ -8,24 +8,24 @@
 
 ## Use pathway
 
-1. **Triage:** On Start here, confirm the challenge (storage or value addition). In the Crop workspace, sort named crop groups with one rule, read coverage next to the headline number, and export a brief.
+1. **Triage:** On Start here, review sample indicators. In the Crop workspace, choose a track and crop, inspect the rank and valid denominator, optionally select a province as separate context, record a local condition, and export a brief with evidence checks.
 2. **Verify:** Confirm the `s2q39` unit and skip logic. For storage, review `s2q36`–`s2q38` and `s2q47`. For value addition, review `s2q25`–`s2q28`. Re-estimate with verified weights before any geographic claim.
 3. **Co-design:** Ask intended users whether a verified pattern supports a storage, collection, processing, or market question.
 4. **Pilot and evaluate:** If stakeholders choose an intervention, evaluate its outcomes separately with an appropriate study design.
 
-The current dashboard supports the first step and prepares a follow-up brief; it does not perform the survey-aware estimation or stakeholder validation. Its sorting lenses are descriptive and do not create a combined priority score. It does not identify causes, recommend interventions, target farmers, or estimate changes in productivity.
+The workspace turns observed missingness, negative storage values, and zero/missing prices into explicit data checks. The user-entered local condition adds a question for verification; it is not survey evidence. Province values remain separate from crop values. The workflow does not join SAS modules, use live market feeds, produce forecasts, create a combined priority score, identify causes, recommend investments, target farmers, or estimate changes in productivity.
 
 ## Practical evaluation before operational use
 
 Run a small, documented usability review with intended agricultural data users. Ask each person to:
 
 1. Use two review lenses and explain why their crop-group ordering differs.
-2. Select a crop group and download its follow-up brief.
-3. Explain the difference between positive-response share, valid response count, and missingness; explain why these are not national estimates and why `s2q39` is not labeled in kilograms.
-4. Explain why season and province summaries do not filter the selected crop result.
-5. Describe one follow-up analysis needed before using the pattern in planning.
+2. Select a crop and province, enter a local condition, and download the tailored brief.
+3. Explain which figures are crop evidence and which are province context, and why they are not linked.
+4. Explain the difference between positive-response share, valid response count, and missingness; explain why these are not national estimates and why `s2q39` is not labeled in kilograms.
+5. Describe one follow-up analysis needed before using the pattern in planning, and explain why the current model is not a forecast.
 
-Record task completion, misunderstandings, and requested changes without collecting unnecessary personal information. Fix confusing labels before sharing the app as a decision-support prototype.
+Record task completion, time to complete, misunderstandings (especially whether users infer crop-by-province relationships or interpret a follow-up check as an investment recommendation), and requested changes. Do not retain free-text notes or unnecessary personal information. Fix confusing labels before sharing the app as a decision-support prototype.
 
 ## Evidence needed for an impact claim
 
