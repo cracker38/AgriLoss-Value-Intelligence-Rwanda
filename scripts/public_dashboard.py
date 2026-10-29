@@ -35,6 +35,14 @@ VALUE_LENSES = (
     "Median reported harvest (kg)",
 )
 NO_LOCAL_CONDITION = "Not specified"
+ALL_SURVEY_SEASONS = "All published SAS 2024 seasons"
+USER_ROLE_OPTIONS = (
+    "Farmer or producer",
+    "Cooperative staff",
+    "Agricultural planner",
+    "Researcher or analyst",
+    "Other project partner",
+)
 STORAGE_LOCAL_CONDITIONS = (
     "Storage capacity",
     "Drying or handling",
@@ -51,6 +59,13 @@ PROCESSING_LOCAL_CONDITIONS = (
     "Processor or buyer access",
     "Other / unknown",
 )
+LOCAL_INPUT_LABELS = {
+    "available_supply_kg": ("Expected crop supply for this planning period", "kg"),
+    "storage_capacity_kg": ("Usable storage capacity", "kg"),
+    "processing_capacity_kg": ("Processing capacity for this planning period", "kg"),
+    "buyer_quote_rwf_per_kg": ("Current buyer quote supplied by user", "RWF/kg"),
+    "processing_cost_rwf_per_kg": ("Estimated processing operating cost supplied by user", "RWF/kg"),
+}
 MIN_RECOMMENDATION_RECORDS = 100
 PROCESSING_USE_METRICS = (
     (
@@ -181,7 +196,9 @@ def _bar_chart(
 
 
 def _named_crops(crops: pd.DataFrame) -> pd.DataFrame:
-    reviewable = crops[crops["crop"].astype(str) != POOLED_CROP_LABEL].copy()
+    reviewable = crops.loc[
+        ~crops["crop"].astype(str).isin({POOLED_CROP_LABEL, "Not reported"})
+    ].copy()
     published = (
         reviewable["stored_positive_share"].notna()
         | reviewable["transformed_positive_share"].notna()
@@ -658,6 +675,108 @@ def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
     return display
 
 
+def _render_crop_season_comparison(
+    season_crops: pd.DataFrame,
+    crop: str,
+    track: str,
+) -> None:
+    crop_rows = season_crops.loc[season_crops["crop"].astype(str) == crop].copy()
+    if crop_rows.empty:
+        st.caption("No season-specific crop comparison is available for this published group.")
+        return
+    if crop == POOLED_CROP_LABEL:
+        st.caption(
+            "The pooled row combines different uncommon or unreported crops in each season, so it cannot be compared as one crop."
+        )
+        return
+
+    if track == "storage":
+        measures = {
+            "Storage-stage loss > 0": "storage_loss_positive_share",
+            "Transport-stage loss > 0": "transport_loss_positive_share",
+        }
+        display_rows = []
+        for _, row in crop_rows.sort_values("season").iterrows():
+            display_rows.append(
+                {
+                    "SAS season": row["season"],
+                    "Production records": _int(row["records"]),
+                    "Storage-stage positive": (
+                        f"{_int(row['storage_loss_positive_records']):,}/"
+                        f"{_int(row['storage_loss_reported_records']):,} valid · "
+                        f"{_percent(row['storage_loss_positive_share'])}"
+                    ),
+                    "Transport-stage positive": (
+                        f"{_int(row['transport_loss_positive_records']):,}/"
+                        f"{_int(row['transport_loss_reported_records']):,} valid · "
+                        f"{_percent(row['transport_loss_positive_share'])}"
+                    ),
+                }
+            )
+    else:
+        measures = {
+            "Transformed quantity > 0": "transformed_positive_share",
+            "Quantity sold > 0": "sold_positive_share",
+        }
+        display_rows = []
+        for _, row in crop_rows.sort_values("season").iterrows():
+            display_rows.append(
+                {
+                    "SAS season": row["season"],
+                    "Production records": _int(row["records"]),
+                    "Transformed positive": (
+                        f"{_int(row['transformed_positive_records']):,}/"
+                        f"{_int(row['transformed_reported_records']):,} valid · "
+                        f"{_percent(row['transformed_positive_share'])}"
+                    ),
+                    "Sold positive": (
+                        f"{_int(row['sold_positive_records']):,}/"
+                        f"{_int(row['sold_reported_records']):,} valid · "
+                        f"{_percent(row['sold_positive_share'])}"
+                    ),
+                }
+            )
+
+    chart_data = crop_rows.melt(
+        id_vars=["season"],
+        value_vars=list(measures.values()),
+        var_name="measure",
+        value_name="share",
+    ).dropna(subset=["share"])
+    chart_data["measure"] = chart_data["measure"].map(
+        {value: label for label, value in measures.items()}
+    )
+    st.markdown("#### Compare this crop across SAS seasons")
+    if chart_data.empty:
+        st.info("Season comparisons are suppressed because these groups do not meet the publication threshold.")
+    else:
+        figure = px.bar(
+            chart_data,
+            x="season",
+            y="share",
+            color="measure",
+            barmode="group",
+            title=f"{crop}: reported positive-response shares by SAS season",
+            labels={"season": "SAS 2024 season", "share": "Share of valid answers", "measure": "Measure"},
+            color_discrete_sequence=["#0f6b4e", "#c9862a"],
+        )
+        figure.update_yaxes(tickformat=".0%")
+        figure.update_layout(
+            plot_bgcolor="white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(family="Source Sans 3, Segoe UI, sans-serif", color="#16332c"),
+            margin=dict(l=12, r=12, t=58, b=12),
+            xaxis_title=None,
+            yaxis_title="Share of valid answers",
+            legend_title_text=None,
+        )
+        st.plotly_chart(figure, width="stretch")
+    st.dataframe(pd.DataFrame(display_rows), hide_index=True, width="stretch")
+    st.caption(
+        "Season-by-crop summaries are unweighted, independent seasonal samples, not farm-level trends. A missing crop-season row is suppressed, not zero. Season C is restricted; blank responses stay out of each valid denominator."
+    )
+
+
 def _storage_reading(crop_row: pd.Series) -> str:
     crop = str(crop_row["crop"])
     stored_share = crop_row["stored_positive_share"]
@@ -740,6 +859,9 @@ def _follow_up_brief(
     local_notes: str = "",
     planning_location: str = "",
     planning_period: str = "",
+    survey_season: str = ALL_SURVEY_SEASONS,
+    user_role: str = "Not specified",
+    local_inputs: dict[str, float | None] | None = None,
     recommendations: list[dict[str, str]] | None = None,
 ) -> str:
     crop_name = str(crop_row["crop"])
@@ -803,6 +925,26 @@ def _follow_up_brief(
     local_notes = local_notes.strip()
     condition_text = ", ".join(conditions) if conditions else "None selected"
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    local_inputs = local_inputs or {}
+    local_input_keys = (
+        ("available_supply_kg", "storage_capacity_kg")
+        if track == "storage"
+        else (
+            "available_supply_kg",
+            "processing_capacity_kg",
+            "buyer_quote_rwf_per_kg",
+            "processing_cost_rwf_per_kg",
+        )
+    )
+    local_input_lines = []
+    for key in local_input_keys:
+        label, unit = LOCAL_INPUT_LABELS[key]
+        value = local_inputs.get(key)
+        local_input_lines.append(
+            f"- {label}: {float(value):,.2f} {unit}"
+            if value is not None
+            else f"- {label}: Not supplied"
+        )
     if province_context:
         province_name = str(province_context["province"])
         province_description = (
@@ -823,6 +965,10 @@ Generated: {generated_at}
 ## Review signal
 {signal}
 
+## User and survey scope
+- User role: {user_role}
+- SAS 2024 survey season used for crop evidence: {survey_season}
+
 ## What the SAS 2024 sample shows
 {why}
 
@@ -839,6 +985,11 @@ The planning location is user-entered context. Crop evidence is not filtered to 
 ## Local conditions supplied for review
 - Conditions selected: {condition_text}
 - Notes: {local_notes or "None supplied"}
+
+## Local quantities and market inputs
+{chr(10).join(local_input_lines)}
+
+These entries are user-supplied planning context and are not matched to SAS records. The current SAS release has no verified cost data, so AgriLoss does not estimate costs, margins, or profitability. Validate any quoted prices and costs locally.
 
 ## Local follow-up actions
 {chr(10).join(f"- {action}" for action in condition_actions) or "No local conditions selected. Add relevant conditions before using this report to guide field work."}
@@ -863,7 +1014,7 @@ The planning location is user-entered context. Crop evidence is not filtered to 
 Complete the local follow-up actions and evidence checks above. Confirm seasonal supply, buyer/processor interest, current terms, product quality, yields, and costs before selecting a process, facility, or investment.
 
 ## What this brief is not
-This is not a national estimate, a farmer ranking, a cause of loss, or an investment recommendation. Candidate process routes are evaluation ideas only; season, province, and crop summaries cannot be combined in this public file.
+This is not a national estimate, a farmer ranking, a cause of loss, or an investment recommendation. Candidate process routes are evaluation ideas only; crop-by-season summaries are available, while province values remain separate from crop evidence.
 
 Source: NISR Rwanda Seasonal Agricultural Survey 2024 production data, [NISR Microdata Portal](https://microdata.statistics.gov.rw/index.php/catalog/113).
 Public dashboard status: {release_note}
@@ -872,9 +1023,11 @@ Public dashboard status: {release_note}
 
 def _render_crop_review(
     review_queue: pd.DataFrame,
+    season_crops: pd.DataFrame,
     review_lens: str,
     release_note: str,
     track: str,
+    survey_season: str,
     provinces: pd.DataFrame,
     peer_crops: pd.DataFrame,
     market_rows: list[dict[str, Any]],
@@ -894,6 +1047,7 @@ def _render_crop_review(
     )
     crop_position = crop_options.index(selected_crop)
     crop_row = review_queue.iloc[crop_position]
+    _render_crop_season_comparison(season_crops, selected_crop, track)
     review_signal = _review_signal(
         crop_row,
         review_lens,
@@ -938,6 +1092,10 @@ def _render_crop_review(
             sorted(provinces["province"].dropna().astype(str).unique().tolist())
         )
     with st.form(key=f"crop_follow_up_form_{track}"):
+        user_role = st.selectbox(
+            "Your role",
+            options=USER_ROLE_OPTIONS,
+        )
         location_column, period_column = st.columns(2)
         planning_location = location_column.text_input(
             "Planning location (district, cooperative, or market)",
@@ -959,6 +1117,60 @@ def _render_crop_review(
             options=condition_options,
             help="Select the constraints reported by local partners. These answers guide the checklist; they are not SAS survey observations.",
         )
+        st.markdown("**Optional local quantities and market details**")
+        st.caption("Enter current planning values if known. These values are not checked against or joined to SAS records; leave 0 if unknown.")
+        if track == "storage":
+            supply_column, storage_column = st.columns(2)
+            available_supply_kg = supply_column.number_input(
+                "Expected crop supply for this period (kg)",
+                min_value=0.0,
+                value=0.0,
+                step=100.0,
+                format="%.2f",
+            )
+            storage_capacity_kg = storage_column.number_input(
+                "Usable storage capacity (kg)",
+                min_value=0.0,
+                value=0.0,
+                step=100.0,
+                format="%.2f",
+            )
+            processing_capacity_kg = 0.0
+            buyer_quote_rwf_per_kg = 0.0
+            processing_cost_rwf_per_kg = 0.0
+        else:
+            supply_column, capacity_column = st.columns(2)
+            available_supply_kg = supply_column.number_input(
+                "Expected crop supply for this period (kg)",
+                min_value=0.0,
+                value=0.0,
+                step=100.0,
+                format="%.2f",
+            )
+            processing_capacity_kg = capacity_column.number_input(
+                "Available processing capacity for this period (kg)",
+                min_value=0.0,
+                value=0.0,
+                step=100.0,
+                format="%.2f",
+            )
+            quote_column, cost_column = st.columns(2)
+            buyer_quote_rwf_per_kg = quote_column.number_input(
+                "Current buyer quote (RWF/kg)",
+                min_value=0.0,
+                value=0.0,
+                step=10.0,
+                format="%.2f",
+            )
+            processing_cost_rwf_per_kg = cost_column.number_input(
+                "Estimated variable processing cost (RWF/kg)",
+                min_value=0.0,
+                value=0.0,
+                step=10.0,
+                format="%.2f",
+                help="Enter a current local estimate. The survey has no cost data and this value is not validated.",
+            )
+            storage_capacity_kg = 0.0
         local_notes = st.text_area(
             "Local notes (optional; do not enter personal information)",
             max_chars=500,
@@ -974,6 +1186,16 @@ def _render_crop_review(
     if not planning_location.strip():
         st.error("Enter the planning location or group before reviewing the recommendation.")
         return
+
+    local_inputs: dict[str, float | None] = {
+        "available_supply_kg": available_supply_kg or None,
+    }
+    if track == "storage":
+        local_inputs["storage_capacity_kg"] = storage_capacity_kg or None
+    else:
+        local_inputs["processing_capacity_kg"] = processing_capacity_kg or None
+        local_inputs["buyer_quote_rwf_per_kg"] = buyer_quote_rwf_per_kg or None
+        local_inputs["processing_cost_rwf_per_kg"] = processing_cost_rwf_per_kg or None
 
     province_context = None
     if selected_province != "Not specified":
@@ -1011,6 +1233,23 @@ def _render_crop_review(
                 "(documented example only; it does not establish demand or feasibility)."
             )
 
+    st.markdown("#### Local values you entered")
+    entered_rows = [
+        {
+            "Planning input": LOCAL_INPUT_LABELS[key][0],
+            "Entered value": f"{float(value):,.2f} {LOCAL_INPUT_LABELS[key][1]}",
+        }
+        for key, value in local_inputs.items()
+        if value is not None
+    ]
+    if entered_rows:
+        st.dataframe(pd.DataFrame(entered_rows), hide_index=True, width="stretch")
+    else:
+        st.caption("No local quantities or market values were entered.")
+    st.caption(
+        "The SAS 2024 aggregate contains no verified cost data. AgriLoss does not calculate cost, margin, or profitability estimates."
+    )
+
     st.markdown("#### Local actions prompted by your conditions")
     if local_actions:
         for action in local_actions:
@@ -1033,6 +1272,9 @@ def _render_crop_review(
         local_notes=local_notes,
         planning_location=planning_location,
         planning_period=planning_period,
+        survey_season=survey_season,
+        user_role=user_role,
+        local_inputs=local_inputs,
         recommendations=recommendations,
     )
     file_stub = "storage" if track == "storage" else "value-addition"
@@ -1089,6 +1331,19 @@ def _render_start_tab(
         f"{_int(overall.get('transport_loss_positive_records')):,} · {_percent(overall.get('transport_loss_positive_share'))}",
     )
     st.caption("Unweighted sample summaries; not national estimates. Blank answers are excluded.")
+    st.markdown("#### How to use AgriLoss")
+    st.markdown(
+        """
+        1. Open **Start here** to review the data scope and intended users.
+        2. Choose **post-harvest collection and storage** or **processing and value addition** in Crop workspace.
+        3. Select a SAS 2024 season and crop; identify your role; enter the planning location and period; then add relevant local quantities, prices, costs, and conditions.
+        4. AgriLoss uses grouped NISR data, checks provided numeric values are non-negative, and keeps local entries separate from survey statistics.
+        5. Review the evidence-based follow-up recommendation and the local information still needed.
+        6. Compare crop measures, sales, and historical market evidence where available. The current release has no validated cost or margin estimates.
+        7. Preview and download the report with evidence, local context, actions, and limitations.
+        8. Use the report to plan field checks and decide what to verify next; confirm local evidence before choosing an intervention.
+        """
+    )
 
     if facilities:
         st.markdown("##### Reported storage facility (`s2q37`)")
@@ -1100,6 +1355,7 @@ def _render_start_tab(
 
 def _render_workspace(
     crops: pd.DataFrame,
+    season_crops: pd.DataFrame,
     provinces: pd.DataFrame,
     release_note: str,
     market_rows: list[dict[str, Any]],
@@ -1114,15 +1370,37 @@ def _render_workspace(
         horizontal=True,
     )
     track = "storage" if track_label.startswith("Post-harvest") else "value"
-    peer_crops = _named_crops(crops)
+    season_options = sorted(season_crops["season"].astype(str).unique().tolist())
+    survey_season = st.selectbox(
+        "SAS season for crop evidence",
+        options=[ALL_SURVEY_SEASONS, *season_options],
+    )
+    if survey_season == ALL_SURVEY_SEASONS:
+        workspace_crops = crops
+        st.caption(
+            "Crop summaries pool the published SAS 2024 seasons. Season C is a restricted sample."
+        )
+    else:
+        workspace_crops = season_crops.loc[
+            season_crops["season"].astype(str) == survey_season
+        ].drop(columns="season")
+        if survey_season == "C":
+            st.caption(
+                "Season C is a restricted sample. Its crop-level summaries are not representative of a full seasonal sample."
+            )
+        else:
+            st.caption(
+                f"Crop evidence uses SAS Season {survey_season} only; crop groups below the publication threshold are pooled."
+            )
+    peer_crops = _named_crops(workspace_crops)
 
     if track == "storage":
         st.markdown("#### Crops to investigate for storage or collection")
         st.caption(
             "Flags are crop groups at or above the 75th percentile for positive storage-stage or transport-stage loss share among named crop groups. "
-            "They are relative investigation flags, not acceptable-loss limits or investment rankings. Summaries pool available SAS 2024 seasons and are unweighted."
+            "They are relative investigation flags within the selected season basis, not acceptable-loss limits or investment rankings. Summaries are unweighted."
         )
-        investigation_queue = _storage_investigation_queue(crops)
+        investigation_queue = _storage_investigation_queue(workspace_crops)
         if investigation_queue.empty:
             st.info("No crop group crosses the displayed relative investigation flags. Local evidence may still justify a review.")
         else:
@@ -1132,7 +1410,7 @@ def _render_workspace(
         st.caption(
             "Options are tied to reported food, drink, or other transformation use. A named option appears only when at least 100 records report that use; this is a display rule, not a business-case threshold."
         )
-        processing_queue = _processing_option_queue(crops, market_rows)
+        processing_queue = _processing_option_queue(workspace_crops, market_rows)
         if processing_queue.empty:
             st.info(
                 "No crop-specific processing option meets the minimum evidence rule. "
@@ -1143,6 +1421,15 @@ def _render_workspace(
         st.caption(
             "Market evidence comes from Season A 2024 reports. It does not establish current prices, demand, conversion yields, costs, or profitability."
         )
+        if survey_season != "A":
+            selected_basis = (
+                "the pooled all-season crop evidence"
+                if survey_season == ALL_SURVEY_SEASONS
+                else f"the selected Season {survey_season} crop evidence"
+            )
+            st.caption(
+                f"The displayed historical market prices are Season A only; they are not matched to {selected_basis}."
+            )
 
     if track == "storage":
         review_lens = st.selectbox("Sort crops by", options=list(STORAGE_LENSES))
@@ -1162,7 +1449,7 @@ def _render_workspace(
         }
 
     review_queue = _rank_crop_review(
-        _named_crops(crops),
+        peer_crops,
         sort_columns[review_lens],
     )
     if review_queue.empty:
@@ -1170,9 +1457,11 @@ def _render_workspace(
         return
     _render_crop_review(
         review_queue,
+        season_crops,
         review_lens,
         release_note,
         track,
+        survey_season,
         provinces,
         peer_crops,
         market_rows,
@@ -1314,10 +1603,11 @@ def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> N
         - Negative `s2q46` and `s2q47` values are counted and not clipped.
         - Transport-stage loss is a collection/transport signal; the survey does not include routes, distances, costs, or collection volumes at facilities.
         - Facility codes 12, 13, and 14 are not mapped to a storage type.
-        - Crop, season, and province tables are independent. They cannot be cross-filtered.
-        - Groups with fewer than 100 records are pooled without their original names.
+        - The workspace supports crop summaries by SAS 2024 season. Province summaries remain separate and are not joined to crop or season results.
+        - Season-by-crop groups with fewer than 100 records are pooled within season without their original names.
+        - Seasonal summaries are independent survey samples, not repeated measurements of the same farms. Season C is restricted.
+        - The release contains no verified costs; user-entered prices and costs are context only and are not used to estimate margins.
         - Survey weights are not applied.
-        - Season C is a restricted sample.
         """
     )
 
@@ -1503,6 +1793,7 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     """Render storage and value-addition summaries from SAS 2024 aggregates only."""
     overall = payload["overall"]
     seasons = pd.DataFrame(payload["by_season"])
+    season_crops = pd.DataFrame(payload["by_season_crop"])
     provinces = pd.DataFrame(payload["by_province"])
     crops = pd.DataFrame(payload["by_crop"])
     facilities = payload.get("by_storage_facility") or []
@@ -1517,12 +1808,12 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         st.markdown("### AgriLoss Rwanda")
         st.divider()
         selected_seasons = st.multiselect(
-            "Season",
+            "Explore seasons",
             options=season_options,
             default=season_options,
         )
         selected_provinces = st.multiselect(
-            "Province",
+            "Explore provinces",
             options=province_options,
             default=province_options,
         )
@@ -1559,7 +1850,13 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     with start_tab:
         _render_start_tab(overall, facilities)
     with workspace_tab:
-        _render_workspace(crops, provinces, release_note, crop_market_rows)
+        _render_workspace(
+            crops,
+            season_crops,
+            provinces,
+            release_note,
+            crop_market_rows,
+        )
     with explore_tab:
         _render_explore_tab(
             seasons, provinces, crops, selected_seasons, selected_provinces

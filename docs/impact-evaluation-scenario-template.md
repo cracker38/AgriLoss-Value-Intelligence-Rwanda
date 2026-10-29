@@ -6,6 +6,7 @@ Prepare one card per scenario. Use the same card for the source-based and AgriLo
 
 - Scenario ID: `[A or B]`
 - Challenge track: `[storage/collection or processing/value addition]`
+- SAS 2024 season for crop evidence: `[A, B, C, or all published seasons]`
 - Crop group: `[published crop name]`
 - Planning location: `[fictional district/cooperative/market area]`
 - Planning period: `[fictional period]`

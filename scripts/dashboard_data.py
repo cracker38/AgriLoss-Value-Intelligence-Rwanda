@@ -69,7 +69,13 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
     else:
         raise ValueError("The aggregate release is not authorized for hosted display")
 
-    for section in ("overall", "by_season", "by_province", "by_crop"):
+    for section in (
+        "overall",
+        "by_season",
+        "by_season_crop",
+        "by_province",
+        "by_crop",
+    ):
         if section not in payload:
             raise ValueError(f"Public dashboard data is missing {section}")
     if "by_storage_facility" in payload and not isinstance(payload["by_storage_facility"], list):
@@ -84,7 +90,7 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             raise ValueError(f"Public dashboard section {section} must be a list")
     if "module_linkage" in payload and not isinstance(payload["module_linkage"], dict):
         raise ValueError("Public dashboard section module_linkage must be an object")
-    for section in ("by_season", "by_province", "by_crop"):
+    for section in ("by_season", "by_season_crop", "by_province", "by_crop"):
         if not isinstance(payload[section], list):
             raise ValueError(f"Public dashboard section {section} must be a list")
     if not isinstance(payload["overall"], dict):
@@ -124,6 +130,52 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "transformed_positive_records",
             "sold_positive_records",
             "transport_loss_positive_records",
+        },
+        "by_season_crop": {
+            "season",
+            "crop",
+            "records",
+            "loss_reported_records",
+            "positive_reported_loss_records",
+            "positive_reported_loss_share",
+            "median_reported_harvest_kg",
+            "harvest_reported_records",
+            "stored_reported_records",
+            "stored_missing_records",
+            "stored_positive_records",
+            "stored_positive_share",
+            "stored_median_positive_kg",
+            "public_stored_positive_records",
+            "storage_loss_reported_records",
+            "storage_loss_positive_records",
+            "storage_loss_positive_share",
+            "storage_loss_negative_records",
+            "transport_loss_reported_records",
+            "transport_loss_positive_records",
+            "transport_loss_positive_share",
+            "transport_loss_negative_records",
+            "transformed_positive_records",
+            "transformed_positive_share",
+            "transformed_median_positive_kg",
+            "transformed_food_reported_records",
+            "transformed_food_positive_records",
+            "transformed_food_positive_share",
+            "transformed_food_median_positive_kg",
+            "transformed_drink_reported_records",
+            "transformed_drink_positive_records",
+            "transformed_drink_positive_share",
+            "transformed_drink_median_positive_kg",
+            "transformed_other_reported_records",
+            "transformed_other_positive_records",
+            "transformed_other_positive_share",
+            "transformed_other_median_positive_kg",
+            "sold_reported_records",
+            "sold_positive_records",
+            "sold_positive_share",
+            "sold_median_positive_kg",
+            "sold_with_positive_price_records",
+            "sold_with_zero_price_records",
+            "sold_with_missing_price_records",
         },
         "by_province": {"province", "records"},
         "by_crop": {

@@ -445,6 +445,19 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         row["distinct_crop_values"] = int(frame["s2q4"].nunique(dropna=True))
         season_rows.append(row)
 
+    season_crop_rows: list[dict[str, Any]] = []
+    for season, frame in data.groupby("season", sort=True):
+        rows = _marginal_summaries(
+            frame,
+            "s2q4",
+            label_column="crop",
+            pooled_label="Other or unreported crops (pooled)",
+            include_measures=True,
+        )
+        for row in rows:
+            row["season"] = str(season)
+            season_crop_rows.append(row)
+
     province_rows = _marginal_summaries(
         data,
         "s1q1",
@@ -474,12 +487,13 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         "aggregation": {
             "minimum_group_records": MIN_GROUP_RECORDS,
             "grouping": (
-                "Independent season, province, and crop summaries, plus Season A crop-by-one-practice "
-                "associations, Season A market-channel summaries, and crop-by-channel summaries; "
+                "Independent season, province, and crop summaries; season-by-crop summaries; "
+                "Season A crop-by-one-practice associations, market-channel summaries, and crop-by-channel summaries; "
                 "no respondent rows or geographic cross-tabulations."
             ),
             "notes": [
                 "Crop and province groups below the minimum size are pooled without their original labels.",
+                "Season-by-crop groups below the minimum size are pooled within each season without their original crop labels.",
                 "The group-size rule is a coarse suppression measure, not NISR disclosure approval.",
                 "Obtain the required data-use and disclosure review before placing this file in a public repository.",
                 "Stored, transformed, sold, transport-stage loss, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
@@ -502,6 +516,7 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         },
         "overall": overall,
         "by_season": season_rows,
+        "by_season_crop": season_crop_rows,
         "by_province": province_rows,
         "by_crop": crop_rows,
         "by_storage_facility": _facility_summary(data),
