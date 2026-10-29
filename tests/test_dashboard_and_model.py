@@ -6,7 +6,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from scripts.build_public_dashboard import _measure_summary
 from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
-from scripts.public_dashboard import _follow_up_brief, _named_crops
+from scripts.public_dashboard import _follow_up_brief, _named_crops, _rank_crop_review
 
 
 def _crop_summary(**overrides: object) -> dict[str, object]:
@@ -145,6 +145,20 @@ def test_named_crops_exclude_pooled_groups_and_tag_nst2_priority() -> None:
 
     assert list(named["crop"]) == ["Maize"]
     assert bool(named.iloc[0]["is_priority_crop"]) is True
+
+
+def test_crop_review_sort_excludes_missing_values_and_breaks_ties_by_records() -> None:
+    crops = pd.DataFrame(
+        [
+            _crop_summary(crop="Lower count", records=300, storage_loss_positive_share=0.05),
+            _crop_summary(crop="Higher count", records=400, storage_loss_positive_share=0.05),
+            _crop_summary(crop="Unavailable", records=500, storage_loss_positive_share=None),
+        ]
+    )
+
+    ranked = _rank_crop_review(crops, "storage_loss_positive_share")
+
+    assert list(ranked["crop"]) == ["Higher count", "Lower count"]
 
 
 def test_storage_brief_states_limits_and_next_fields() -> None:
