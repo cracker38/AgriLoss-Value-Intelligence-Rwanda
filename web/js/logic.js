@@ -352,10 +352,17 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     return (marketRows || []).filter((row) => row.crop === cropName);
   }
 
+  function isFeatureCrop(row) {
+    const name = String(row.crop || "").toLowerCase();
+    if (name.includes("other") || name.includes("specify")) return false;
+    return (row.records || 0) >= 400;
+  }
+
   function featuredStories(crops, overall) {
-    const stored = rankCrops(crops, "stored_positive_share")[0];
-    const processed = rankCrops(crops, "transformed_positive_share")[0];
-    const sold = rankCrops(crops, "sold_positive_share")[0];
+    const focus = namedCrops(crops).filter(isFeatureCrop);
+    const stored = rankCrops(focus, "stored_positive_share")[0];
+    const processed = rankCrops(focus, "transformed_positive_share")[0];
+    const sold = rankCrops(focus, "sold_positive_share")[0];
     return [
       stored && {
         crop: stored,
