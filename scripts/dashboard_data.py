@@ -74,11 +74,7 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             raise ValueError(f"Public dashboard data is missing {section}")
     if "by_storage_facility" in payload and not isinstance(payload["by_storage_facility"], list):
         raise ValueError("Public dashboard section by_storage_facility must be a list")
-    optional_list_sections = (
-        "by_crop_practice",
-        "by_market_channel",
-        "by_province_district",
-    )
+    optional_list_sections = ("by_crop_practice", "by_market_channel")
     for section in optional_list_sections:
         if section in payload and not isinstance(payload[section], list):
             raise ValueError(f"Public dashboard section {section} must be a list")
@@ -162,15 +158,6 @@ def load_public_dashboard_data(path: Path = PUBLIC_DASHBOARD_PATH) -> dict:
             "median_positive_sales_kg",
             "positive_price_records",
             "median_positive_price_rwf_per_kg",
-        },
-        "by_province_district": {
-            "province",
-            "district",
-            "records",
-            "positive_reported_loss_share",
-            "stored_positive_share",
-            "transformed_positive_share",
-            "sold_positive_share",
         },
     }
     for section, fields in optional_required_fields.items():

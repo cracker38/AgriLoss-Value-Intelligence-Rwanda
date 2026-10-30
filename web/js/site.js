@@ -434,7 +434,7 @@
       <section class="hero hero-compact">
         <div class="eyebrow">Sample map</div>
         <h1>Compare places in the sample.</h1>
-        <p>Choose a province to see its summary, then choose a district when district aggregates are available. Geographic charts are separate sample summaries, not population estimates.</p>
+        <p>Choose a province to see its summary. Geographic charts are separate sample summaries, not population estimates.</p>
       </section>
       <section class="section grid grid-2">
         <article class="card">
@@ -446,15 +446,6 @@
           </label>
           <p class="stat-note" id="province-records"></p>
           <div class="chart-box"><canvas id="selected-province-chart"></canvas></div>
-        </article>
-        <article class="card">
-          <h3>Selected district</h3>
-          <label class="geo-select" for="district-select">District
-            <select id="district-select" disabled><option value="">Select a province first</option></select>
-          </label>
-          <p class="stat-note" id="district-status" role="status"></p>
-          <p class="stat-note" id="district-records"></p>
-          <div class="chart-box"><canvas id="selected-district-chart"></canvas></div>
         </article>
       </section>
       <section class="section grid grid-2">
@@ -709,9 +700,7 @@
       const provinces = (data.by_province || []).filter((row) => row.stored_positive_share != null);
       barChart("province-chart", provinces.map((row) => row.province), provinces.map((row) => row.stored_positive_share), "Stored share", true);
       const provinceSelect = $("#province-select");
-      const districtSelect = $("#district-select");
-      const byProvinceDistrict = data.by_province_district;
-      const renderGeographicCharts = () => {
+      const renderProvinceChart = () => {
         const selectedProvince = (data.by_province || []).find(
           (row) => row.province === provinceSelect.value
         );
@@ -734,49 +723,9 @@
         $("#province-records").textContent = selectedProvince
           ? `${AgriLoss.count(selectedProvince.records)} survey records in this separate province summary.`
           : "";
-
-        const districts = Array.isArray(byProvinceDistrict)
-          ? byProvinceDistrict.filter((row) => row.province === provinceSelect.value)
-          : [];
-
-        const selectedDistrict = districts.find(
-          (row) => row.district === districtSelect.value
-        );
-        $("#district-status").textContent = !Array.isArray(byProvinceDistrict)
-          ? "District summaries are not in the current data release. They will appear after the new aggregate tables complete disclosure review."
-          : districts.length
-            ? "Districts below the publication threshold are pooled and are not individually selectable."
-            : "No district group for this province meets the publication threshold.";
-        const districtValues = selectedDistrict
-          ? metricRows.map(([, field]) => selectedDistrict[field])
-          : [];
-        barChart(
-          "selected-district-chart",
-          metricRows.map(([label]) => label),
-          districtValues,
-          "Share of complete answers",
-          true
-        );
-        $("#district-records").textContent = selectedDistrict
-          ? `${AgriLoss.count(selectedDistrict.records)} survey records in this separate district summary.`
-          : "";
       };
-      const selectProvinceDistricts = () => {
-        const districts = Array.isArray(byProvinceDistrict)
-          ? byProvinceDistrict.filter((row) => row.province === provinceSelect.value)
-          : [];
-        districtSelect.innerHTML = districts.length
-          ? districts.map((row) => `<option value="${AgriLoss.escapeHtml(row.district)}">${AgriLoss.escapeHtml(row.district)}</option>`).join("")
-          : `<option value="">No district summaries available</option>`;
-        districtSelect.disabled = districts.length === 0;
-      };
-      provinceSelect.addEventListener("change", () => {
-        selectProvinceDistricts();
-        renderGeographicCharts();
-      });
-      districtSelect.addEventListener("change", renderGeographicCharts);
-      selectProvinceDistricts();
-      renderGeographicCharts();
+      provinceSelect.addEventListener("change", renderProvinceChart);
+      renderProvinceChart();
       const stored = AgriLoss.rankCrops(data.by_crop, "stored_positive_share").slice(0, 8);
       barChart("stored-chart", stored.map((row) => row.crop), stored.map((row) => row.stored_positive_share), "Stored", true);
       const processed = AgriLoss.rankCrops(data.by_crop, "transformed_positive_share").slice(0, 8);
