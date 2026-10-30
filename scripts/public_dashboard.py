@@ -35,7 +35,6 @@ VALUE_LENSES = (
     "Median reported harvest (kg)",
 )
 NO_LOCAL_CONDITION = "Not specified"
-ALL_SURVEY_SEASONS = "All published SAS 2024 seasons"
 USER_ROLE_OPTIONS = (
     "Farmer or producer",
     "Cooperative staff",
@@ -859,7 +858,7 @@ def _follow_up_brief(
     local_notes: str = "",
     planning_location: str = "",
     planning_period: str = "",
-    survey_season: str = ALL_SURVEY_SEASONS,
+    survey_season: str = "Not specified",
     user_role: str = "Not specified",
     local_inputs: dict[str, float | None] | None = None,
     recommendations: list[dict[str, str]] | None = None,
@@ -1354,7 +1353,6 @@ def _render_start_tab(
 
 
 def _render_workspace(
-    crops: pd.DataFrame,
     season_crops: pd.DataFrame,
     provinces: pd.DataFrame,
     release_note: str,
@@ -1373,25 +1371,19 @@ def _render_workspace(
     season_options = sorted(season_crops["season"].astype(str).unique().tolist())
     survey_season = st.selectbox(
         "SAS season for crop evidence",
-        options=[ALL_SURVEY_SEASONS, *season_options],
+        options=season_options,
     )
-    if survey_season == ALL_SURVEY_SEASONS:
-        workspace_crops = crops
+    workspace_crops = season_crops.loc[
+        season_crops["season"].astype(str) == survey_season
+    ].drop(columns="season")
+    if survey_season == "C":
         st.caption(
-            "Crop summaries pool the published SAS 2024 seasons. Season C is a restricted sample."
+            "Season C is a restricted sample. Its crop-level summaries are not representative of a full seasonal sample."
         )
     else:
-        workspace_crops = season_crops.loc[
-            season_crops["season"].astype(str) == survey_season
-        ].drop(columns="season")
-        if survey_season == "C":
-            st.caption(
-                "Season C is a restricted sample. Its crop-level summaries are not representative of a full seasonal sample."
-            )
-        else:
-            st.caption(
-                f"Crop evidence uses SAS Season {survey_season} only; crop groups below the publication threshold are pooled."
-            )
+        st.caption(
+            f"Crop evidence uses SAS Season {survey_season} only; crop groups below the publication threshold are pooled."
+        )
     peer_crops = _named_crops(workspace_crops)
 
     if track == "storage":
@@ -1422,13 +1414,8 @@ def _render_workspace(
             "Market evidence comes from Season A 2024 reports. It does not establish current prices, demand, conversion yields, costs, or profitability."
         )
         if survey_season != "A":
-            selected_basis = (
-                "the pooled all-season crop evidence"
-                if survey_season == ALL_SURVEY_SEASONS
-                else f"the selected Season {survey_season} crop evidence"
-            )
             st.caption(
-                f"The displayed historical market prices are Season A only; they are not matched to {selected_basis}."
+                f"The displayed historical market prices are Season A only; they are not matched to the selected Season {survey_season} crop evidence."
             )
 
     if track == "storage":
@@ -1476,6 +1463,9 @@ def _render_explore_tab(
     selected_provinces: list[str],
 ) -> None:
     st.markdown("### Look around the sample")
+    st.caption(
+        "The season chart follows the selected seasons. Province and crop charts use separate all-season summaries, including restricted Season C; they are not cross-filtered with one another. Use Crop workspace for season-specific crop review."
+    )
     left, right = st.columns(2)
     with left:
         season_view = seasons[seasons["season"].astype(str).isin(selected_seasons)].copy()
@@ -1852,7 +1842,6 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         _render_start_tab(overall, facilities)
     with workspace_tab:
         _render_workspace(
-            crops,
             season_crops,
             provinces,
             release_note,
