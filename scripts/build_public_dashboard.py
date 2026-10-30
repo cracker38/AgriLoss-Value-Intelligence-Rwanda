@@ -25,11 +25,6 @@ INPUT_FIELDS = {
     "s3q19": "Pesticide or fungicide used",
 }
 LINKED_BINARY_FIELDS = {**PRACTICE_FIELDS, **INPUT_FIELDS}
-TRANSFORM_USE_FIELDS = {
-    "s2q25_1": "transformed_food",
-    "s2q25_2": "transformed_drink",
-    "s2q25_3": "transformed_other",
-}
 MARKET_CHANNELS = {
     "Market",
     "Farm/Home",
@@ -125,15 +120,7 @@ def _measure_summary(frame: pd.DataFrame) -> dict[str, Any]:
         _quantity_summary(frame, "s2q47", keep_negatives=True),
         kg=True,
     )
-    _attach(
-        summary,
-        "transport_loss",
-        _quantity_summary(frame, "s2q46", keep_negatives=True),
-        kg=True,
-    )
     _attach(summary, "transformed", _quantity_summary(frame, "s2q25"), kg=True)
-    for field, prefix in TRANSFORM_USE_FIELDS.items():
-        _attach(summary, prefix, _quantity_summary(frame, field), kg=True)
     _attach(summary, "sold", _quantity_summary(frame, "s2q26"), kg=True)
     summary.update(_price_quality(frame))
     return summary
@@ -294,9 +281,7 @@ def _crop_practice_associations(frame: pd.DataFrame) -> list[dict[str, Any]]:
     return rows
 
 
-def _market_channel_summaries(
-    frame: pd.DataFrame, *, by_crop: bool = False
-) -> list[dict[str, Any]]:
+def _market_channel_summaries(frame: pd.DataFrame) -> list[dict[str, Any]]:
     working = frame.copy()
     channels = working["s2q27"].astype("string").str.strip().replace("", pd.NA)
     channels = channels.fillna("Not reported")
@@ -313,16 +298,7 @@ def _market_channel_summaries(
         raise ValueError(f"Unexpected reported market channels: {unexpected}")
 
     rows: list[dict[str, Any]] = []
-    grouped = (
-        working.groupby(["s2q4", "_market_channel"], sort=True, dropna=False)
-        if by_crop
-        else working.groupby("_market_channel", sort=True, dropna=False)
-    )
-    for group_key, group in grouped:
-        if by_crop:
-            crop, channel = group_key
-        else:
-            crop, channel = None, group_key
+    for channel, group in working.groupby("_market_channel", sort=True):
         if len(group) < MIN_GROUP_RECORDS:
             continue
         sold = pd.to_numeric(group["s2q26"], errors="coerce")
@@ -331,44 +307,38 @@ def _market_channel_summaries(
         valid_sales = sold.notna()
         positive_prices = positive_sales & price.gt(0)
         positive_price_values = price.loc[positive_prices]
-        row = {
-            "market_channel": str(channel),
-            "production_records": int(len(group)),
-            "valid_sales_records": int(valid_sales.sum()),
-            "positive_sales_records": int(positive_sales.sum()),
-            "positive_sales_share": (
-                round(float(positive_sales.sum() / valid_sales.sum()), 4)
-                if valid_sales.sum() >= MIN_GROUP_RECORDS
-                else None
-            ),
-            "median_positive_sales_kg": (
-                _number_or_none(sold.loc[positive_sales].median())
-                if positive_sales.sum() >= MIN_GROUP_RECORDS
-                else None
-            ),
-            "positive_price_records": (
-                int(positive_prices.sum())
-                if positive_prices.sum() >= MIN_GROUP_RECORDS
-                else None
-            ),
-            "median_positive_price_rwf_per_kg": (
-                _number_or_none(positive_price_values.median())
-                if positive_prices.sum() >= MIN_GROUP_RECORDS
-                else None
-            ),
-        }
-        if by_crop:
-            row["crop"] = str(crop) if pd.notna(crop) else "Not reported"
-        rows.append(row)
+        rows.append(
+            {
+                "market_channel": str(channel),
+                "production_records": int(len(group)),
+                "valid_sales_records": int(valid_sales.sum()),
+                "positive_sales_records": int(positive_sales.sum()),
+                "positive_sales_share": (
+                    round(float(positive_sales.sum() / valid_sales.sum()), 4)
+                    if valid_sales.sum() >= MIN_GROUP_RECORDS
+                    else None
+                ),
+                "median_positive_sales_kg": (
+                    _number_or_none(sold.loc[positive_sales].median())
+                    if positive_sales.sum() >= MIN_GROUP_RECORDS
+                    else None
+                ),
+                "positive_price_records": (
+                    int(positive_prices.sum())
+                    if positive_prices.sum() >= MIN_GROUP_RECORDS
+                    else None
+                ),
+                "median_positive_price_rwf_per_kg": (
+                    _number_or_none(positive_price_values.median())
+                    if positive_prices.sum() >= MIN_GROUP_RECORDS
+                    else None
+                ),
+            }
+        )
     return rows
 
 
-def _build_linked_analysis() -> tuple[
-    list[dict[str, Any]],
-    list[dict[str, Any]],
-    list[dict[str, Any]],
-    dict[str, Any],
-]:
+def _build_linked_analysis() -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     production = load_production_data(seasons=(LINKED_ANALYSIS_SEASON,))
     practice = _read_module_frame(
         LINKED_ANALYSIS_SEASON,
@@ -384,7 +354,6 @@ def _build_linked_analysis() -> tuple[
     return (
         _crop_practice_associations(linked),
         _market_channel_summaries(production),
-        _market_channel_summaries(production, by_crop=True),
         {
             "season": LINKED_ANALYSIS_SEASON,
             "join_key": list(PLOT_KEY_COLUMNS),
@@ -432,9 +401,7 @@ def _marginal_summaries(
 def build_public_dashboard_candidate() -> dict[str, Any]:
     """Build coarse marginal summaries for disclosure review; never copy source rows."""
     data = load_production_data()
-    crop_practice_rows, market_channel_rows, crop_market_rows, linkage = (
-        _build_linked_analysis()
-    )
+    crop_practice_rows, market_channel_rows, linkage = _build_linked_analysis()
     overall = _measure_summary(data)
     overall["distinct_crop_values"] = int(data["s2q4"].nunique(dropna=True))
 
@@ -444,19 +411,6 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         row["season"] = str(season)
         row["distinct_crop_values"] = int(frame["s2q4"].nunique(dropna=True))
         season_rows.append(row)
-
-    season_crop_rows: list[dict[str, Any]] = []
-    for season, frame in data.groupby("season", sort=True):
-        rows = _marginal_summaries(
-            frame,
-            "s2q4",
-            label_column="crop",
-            pooled_label="Other or unreported crops (pooled)",
-            include_measures=True,
-        )
-        for row in rows:
-            row["season"] = str(season)
-            season_crop_rows.append(row)
 
     province_rows = _marginal_summaries(
         data,
@@ -487,23 +441,19 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         "aggregation": {
             "minimum_group_records": MIN_GROUP_RECORDS,
             "grouping": (
-                "Independent season, province, and crop summaries; season-by-crop summaries; "
-                "Season A crop-by-one-practice associations, market-channel summaries, and crop-by-channel summaries; "
-                "no respondent rows or geographic cross-tabulations."
+                "Independent season, province, and crop summaries, plus Season A crop-by-one-practice "
+                "associations and Season A market-channel summaries; no respondent rows or geographic cross-tabulations."
             ),
             "notes": [
-                "Crop and province groups below the minimum size are pooled without their original labels.",
-                "Season-by-crop groups below the minimum size are pooled within each season without their original crop labels.",
+                "Groups below the minimum size are pooled without their original labels.",
                 "The group-size rule is a coarse suppression measure, not NISR disclosure approval.",
                 "Obtain the required data-use and disclosure review before placing this file in a public repository.",
-                "Stored, transformed, sold, transport-stage loss, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
-                "Transformed-use quantities for food, drink, and other uses (s2q25_1–s2q25_3) are summarized separately for the overall and published group rows; they show reported use, not processor demand or profitability.",
-                "Blank responses remain missing. Negative transport- and storage-stage loss values are counted, not clipped.",
+                "Stored, transformed, sold, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
+                "Blank responses remain missing. Negative storage-stage loss values are counted, not clipped.",
                 "Crop-by-practice tables include a crop/response cell only when both Yes and No groups have at least 100 crop records.",
                 "Season A practice/input links use Segment_ID + s2q1 after one-row-per-plot reduction, response consistency checks, complete key matching, and plot-weight equality checks.",
                 "Season B practice data are excluded because their provenance is not confirmed. Season C is excluded because its sample is restricted.",
-                "Season A market summaries are used. Cooperative/company and other selling-place responses are pooled; market-channel groups below 100 records are suppressed. Market and price values are historical SAS 2024 reports, not a current market feed.",
-                "Crop-by-market-channel cells below 100 records are suppressed. Prices are median reported positive prices among records with positive sales and positive prices.",
+                "Market channel categories below 100 records are pooled. Market and price values are historical SAS 2024 reports, not a current market feed.",
                 "Practice/input associations are unweighted and observational; they are not causal or population estimates.",
             ],
         },
@@ -512,17 +462,15 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
             "survey_weights_applied": False,
             "s2q39_unit_confirmed": False,
             "s2q39_note": "Reported values are shown without a unit; the unit is unconfirmed.",
-            "kilogram_fields": ["s2q21", "s2q25", "s2q25_1", "s2q25_2", "s2q25_3", "s2q26", "s2q36", "s2q38", "s2q46", "s2q47"],
+            "kilogram_fields": ["s2q21", "s2q25", "s2q26", "s2q36", "s2q38", "s2q47"],
         },
         "overall": overall,
         "by_season": season_rows,
-        "by_season_crop": season_crop_rows,
         "by_province": province_rows,
         "by_crop": crop_rows,
         "by_storage_facility": _facility_summary(data),
         "by_crop_practice": crop_practice_rows,
         "by_market_channel": market_channel_rows,
-        "by_crop_market_channel": crop_market_rows,
         "module_linkage": linkage,
     }
 

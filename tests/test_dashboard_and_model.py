@@ -19,8 +19,6 @@ from scripts.public_dashboard import (
     _follow_up_brief,
     _follow_up_checks,
     _named_crops,
-    _planning_capacity_check,
-    _planning_location_label,
     _rank_crop_review,
     _review_signal,
 )
@@ -221,39 +219,6 @@ def test_value_addition_checks_flag_sales_price_quality() -> None:
     assert any("5 zero-price responses" in check for check in checks)
     assert any("15 records with positive sales have no reported price" in check for check in checks)
     assert any("current buyer prices" in check for check in checks)
-
-
-def test_planning_location_keeps_local_context_structured() -> None:
-    location = _planning_location_label(
-        "East",
-        "  Kayonza ",
-        "  Imbaraga Cooperative  ",
-    )
-
-    assert location == (
-        "Province: East · District: Kayonza · "
-        "Cooperative / market group: Imbaraga Cooperative"
-    )
-
-
-def test_planning_capacity_check_reports_only_user_input_arithmetic() -> None:
-    gap = _planning_capacity_check(1200, 900, "usable storage capacity")
-    coverage = _planning_capacity_check(800, 1000, "processing capacity")
-
-    assert "exceeds usable storage capacity by 300.00 kg" in gap
-    assert "25.0% of the entered supply is not covered" in gap
-    assert "not a forecast" in gap
-    assert "covers the stated supply" in coverage
-    assert "200.00 kg remaining (80.0% utilization)" in coverage
-
-
-def test_planning_capacity_check_requires_both_values() -> None:
-    assert "no supply or capacity values were supplied" in _planning_capacity_check(
-        None, None, "usable storage capacity"
-    )
-    assert "enter both expected supply and available capacity" in _planning_capacity_check(
-        500, None, "usable storage capacity"
-    )
 
 
 def test_storage_brief_states_limits_and_next_fields() -> None:

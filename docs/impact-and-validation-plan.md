@@ -8,20 +8,28 @@
 
 ## Use pathway
 
-1. **Triage:** On Start here, review the scope. In Crop workspace, choose a challenge, SAS season, and crop; enter your role, planning location, optional period, relevant local values/conditions, and optional separate province context. Review the crop-season evidence and field actions, preview the report, and download it. See the [eight-step user workflow](user-workflow.md).
-2. **Verify:** Confirm the `s2q39` unit and skip logic. For collection and storage, review `s2q36`–`s2q38` and the transport/storage loss fields `s2q46`–`s2q47`. For processing and sales, review `s2q25`–`s2q28`; confirm zero and missing prices. Compare Season A practice/input associations only after checking their plot linkage and response definitions. Verify current prices and collection conditions locally. Re-estimate with verified weights before any population or geographic claim.
+1. **Triage:** On Start here, review sample indicators. In the Crop workspace, choose a track and crop, inspect the rank and valid denominator, optionally select a province as separate context, record a local condition, and export a brief with evidence checks.
+2. **Verify:** Confirm the `s2q39` unit and skip logic. For storage, review `s2q36`–`s2q38` and `s2q47`. For value addition, review `s2q25`–`s2q28`. Re-estimate with verified weights before any geographic claim.
 3. **Co-design:** Ask intended users whether a verified pattern supports a storage, collection, processing, or market question.
 4. **Pilot and evaluate:** If stakeholders choose an intervention, evaluate its outcomes separately with an appropriate study design.
 
-The workspace turns observed missingness, negative transport/storage values, and zero/missing prices into explicit data checks. It flags crop groups at or above the named-crop upper quartile for positive storage/transport loss shares within the selected season basis, and ties processing routes to reported food, drink, or other transformed use. The displayed routes are investigation ideas supported by sample evidence and documented Rwanda examples; they are not feasibility or investment recommendations. The entered planning location, period, role, local numeric values, and conditions generate local follow-up actions but do not filter or relabel the survey data. The public aggregate supports crop comparisons by SAS season; province remains a separate margin. User-entered prices and costs are not validated, and the current release does not estimate margins. Season A agricultural-practice and fertilizer/pesticide answers are joined to production plots after grain and weight checks; Season B and C module joins are not published. Season A comparisons are unweighted and observational. The market view uses historical SAS 2024 sales-channel and price responses, not a live market feed. The classifier is a retrospective experiment with an A-to-B cross-season holdout, not a future-loss forecast. The workflow does not create a combined priority score, identify causes, recommend investments, target farmers, or estimate changes in productivity.
+The workspace turns observed missingness, negative storage values, and zero/missing prices into explicit data checks. The user-entered local condition adds a question for verification; it is not survey evidence. Province values remain separate from crop values. The workflow does not join SAS modules, use live market feeds, produce forecasts, create a combined priority score, identify causes, recommend investments, target farmers, or estimate changes in productivity.
 
 ## Practical evaluation before operational use
 
-No participant sessions have been conducted. The team should run the [decision-support evaluation protocol](impact-evaluation-protocol.md), which contains matched task instructions, an evidence-and-actionability rubric, critical interpretation errors to watch for, and a coded [session results template](impact-evaluation-results-template.csv). It compares AgriLoss with a source-based workflow and measures task-level decision quality. Keep the completed results CSV private, then use `scripts.summarize_impact_evaluation` to validate and summarize scores without exposing participant-level notes. The protocol and summary tool are ready to run; they are not evidence that the tool improves decisions.
+Run a small, documented usability review with intended agricultural data users. Ask each person to:
+
+1. Use two review lenses and explain why their crop-group ordering differs.
+2. Select a crop and province, enter a local condition, and download the tailored brief.
+3. Explain which figures are crop evidence and which are province context, and why they are not linked.
+4. Explain the difference between positive-response share, valid response count, and missingness; explain why these are not national estimates and why `s2q39` is not labeled in kilograms.
+5. Describe one follow-up analysis needed before using the pattern in planning, and explain why the current model is not a forecast.
+
+Record task completion, time to complete, misunderstandings (especially whether users infer crop-by-province relationships or interpret a follow-up check as an investment recommendation), and requested changes. Do not retain free-text notes or unnecessary personal information. Fix confusing labels before sharing the app as a decision-support prototype.
 
 ## Evidence needed for an impact claim
 
-No impact has been measured. A formative task-score improvement would support a limited decision-support claim, not an outcome or farmer-impact claim. Before claiming that AgriLoss improves a decision or outcome, document a baseline and a follow-up measure, such as:
+No impact has been measured. Before claiming that AgriLoss improves a decision or outcome, document a baseline and a follow-up measure, such as:
 
 - Whether analysts can identify and explain a candidate pattern more quickly than with the source report alone.
 - Whether the dashboard leads to a specific, validated analysis question accepted by an agricultural stakeholder.

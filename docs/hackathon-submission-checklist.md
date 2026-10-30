@@ -39,10 +39,10 @@ Check the official page again before submitting in case NISR updates its dates o
 | Criterion | Current evidence | Last-mile improvement |
 |---|---|---|
 | Problem understanding and relevance | Two Track 1 challenges (storage; processing/value addition) are mapped to NST2, Vision 2050, and PSTA 5, then to SAS 2024 crop groups. | Validate usefulness with intended Rwandan users. |
-| Data use and methodology | Production patterns span storage, transport-stage loss, processing, sales, and historical survey prices. Season A practice/input modules are joined to production after plot-key and weight checks. | Do not present sample shares as the NST2 13.8% or PSTA 5 study rates. Summaries are unweighted; Season B/C module links remain out. |
-| Tech innovation | Two-track workspace, transparent sort rules, Plotly charts, briefs, Season A cross-module summaries, and local retrospective classifier evaluation with a Season A-to-B holdout. | The holdout tests cross-season transfer of the same survey response, not future losses. Keep the classifier exploratory and do not describe it as a forecast. |
+| Data use and methodology | NISR SAS 2024 aggregates, documented cleaning, public policy context labelled separately from sample shares. | Do not present sample shares as the NST2 13.8% or PSTA 5 study rates. Weights are still unimplemented. |
+| Tech innovation | Two-track workspace, transparent sort rules, Plotly charts, briefs, local exploratory classifier kept off the public score surface. | Keep the model exploratory; do not describe it as a forecast. |
 | Usability and design | Start-here page, glossary, storage vs value-addition radio, plain-language metrics, downloadable brief. | Record the 3-minute demo; test a small screen. |
-| Tangible impact | A crop pattern becomes a written next check for government, civil society, or partners. A paired decision-support study is specified. | Run the [evaluation protocol](impact-evaluation-protocol.md) with intended users; no sessions or outcomes have been measured yet. |
+| Tangible impact | A crop pattern becomes a written next check for government, civil society, or partners. | Follow the [impact and validation plan](impact-and-validation-plan.md); no measured impact exists yet. |
 
 ## Submission-day checks
 
