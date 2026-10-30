@@ -1416,18 +1416,36 @@ def _render_start_tab(
         f"{_int(overall.get('transport_loss_positive_records')):,} · {_percent(overall.get('transport_loss_positive_share'))}",
     )
     st.caption("Unweighted sample summaries; not national estimates. Blank answers are excluded.")
-    st.markdown("#### How to use AgriLoss")
-    st.markdown(
-        """
-        1. Open **Start here** to review the data scope and intended users.
-        2. Choose **post-harvest collection and storage** or **processing and value addition** in Crop workspace.
-        3. Select a SAS 2024 season and crop; identify your role; enter the planning location and period; then add relevant local quantities, prices, costs, and conditions.
-        4. AgriLoss uses grouped NISR data, checks provided numeric values are non-negative, and keeps local entries separate from survey statistics.
-        5. Review the evidence-based follow-up recommendation and the local information still needed.
-        6. Compare crop measures, sales, and historical market evidence where available. The current release has no validated cost or margin estimates.
-        7. Preview and download the report with evidence, local context, actions, and limitations.
-        8. Use the report to plan field checks and decide what to verify next; confirm local evidence before choosing an intervention.
-        """
+    st.markdown("#### A simple way to get started")
+    st.caption("Use the Crop workspace to move from survey evidence to a practical local follow-up plan.")
+    step_columns = st.columns(3)
+    steps = (
+        (
+            "1",
+            "Choose a focus",
+            "Select storage and collection or processing and value addition, then choose a survey season and crop.",
+        ),
+        (
+            "2",
+            "Add local context",
+            "Enter your role, planning area, and any known quantities or conditions. These stay separate from survey results.",
+        ),
+        (
+            "3",
+            "Review and share",
+            "Compare crop evidence and available market context, identify what needs local verification, then preview or download a follow-up report.",
+        ),
+    )
+    for column, (number, title, description) in zip(step_columns, steps):
+        with column:
+            st.markdown(
+                f'<div class="step-card"><span>{number}</span><div><strong>{title}</strong>'
+                f'<p>{description}</p></div></div>',
+                unsafe_allow_html=True,
+            )
+    st.caption(
+        "Numeric planning inputs are checked and kept separate from survey results. "
+        "The current release does not provide verified costs, margins, or profitability estimates."
     )
 
     if facilities:

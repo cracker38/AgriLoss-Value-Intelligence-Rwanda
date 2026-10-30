@@ -24,68 +24,96 @@ st.set_page_config(
     page_title="AgriLoss Rwanda | Post-harvest & value addition",
     page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(
     """
     <style>
-    @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap");
-    html, body, [class*="css"] { font-family: "Source Sans 3", "Segoe UI", sans-serif; }
-    .stApp { background: #f4f7f5; }
-    .block-container { max-width: 1180px; padding-top: 1.1rem; padding-bottom: 2.6rem; }
-    [data-testid="stSidebar"] { background: #0c241e; }
-    [data-testid="stSidebar"] * { color: #e7f3ed; }
-    [data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] p { color: #c5ddd3 !important; }
+    html, body, [class*="css"] {
+        font-family: "Inter", "Segoe UI", sans-serif;
+        color: #18352d;
+    }
+    .stApp {
+        background:
+            radial-gradient(ellipse at 12% 0%, rgba(221, 239, 229, 0.6), transparent 34rem),
+            #f5f8f6;
+    }
+    .block-container { max-width: 1320px; padding-top: 1.6rem; padding-bottom: 3rem; }
+    [data-testid="stSidebar"] {
+        background: #102c24;
+        border-right: 1px solid rgba(255,255,255,0.08);
+    }
+    [data-testid="stSidebar"] * { color: #edf6f1; }
+    [data-testid="stSidebar"] .stCaption,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label { color: #c8ddd3 !important; }
+    [data-testid="stSidebar"] [data-testid="stMultiSelect"] > div,
+    [data-testid="stSidebar"] [data-testid="stSelectbox"] > div {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.17);
+    }
     .hero {
-        padding: 1.55rem 1.8rem 1.35rem 1.8rem;
-        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        padding: 2rem 2.2rem 1.8rem;
+        border: 1px solid rgba(255,255,255,0.13);
+        border-radius: 24px;
         color: #f6fbf7;
         background:
-            radial-gradient(1200px 280px at 90% -20%, rgba(201, 168, 76, 0.28), transparent 50%),
-            linear-gradient(118deg, #0c241e 0%, #13543f 58%, #1d7a58 100%);
-        margin: 0 0 1rem 0;
-        box-shadow: 0 10px 28px rgba(12, 36, 30, 0.18);
+            radial-gradient(ellipse at 92% 8%, rgba(215, 187, 111, 0.3), transparent 38%),
+            linear-gradient(120deg, #102c24 0%, #155640 62%, #1c7655 100%);
+        margin: 0 0 1.5rem;
+        box-shadow: 0 18px 42px rgba(16, 44, 36, 0.15);
     }
     .hero .eyebrow {
         display: inline-block;
-        font-size: 0.78rem;
+        font-size: 0.74rem;
+        font-weight: 700;
         letter-spacing: 0.08em;
         text-transform: uppercase;
-        background: rgba(255,255,255,0.12);
-        border: 1px solid rgba(255,255,255,0.16);
-        padding: 0.22rem 0.6rem;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 0.3rem 0.72rem;
         border-radius: 999px;
-        margin-bottom: 0.7rem;
+        margin-bottom: 0.85rem;
     }
-    .hero h1 { font-size: clamp(1.85rem, 3.6vw, 2.6rem); letter-spacing: -0.03em; margin: 0 0 0.35rem 0; }
-    .hero p { color: #d7ebe2; margin: 0; max-width: 46rem; font-size: 1.05rem; line-height: 1.45; }
-    .hero-meta { margin-top: 0.85rem; color: #c9e2d7; font-size: 0.92rem; }
+    .hero h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+        letter-spacing: -0.045em;
+        line-height: 1.08;
+        margin: 0 0 0.65rem;
+    }
+    .hero p { color: #e0eee7; margin: 0; max-width: 52rem; font-size: 1.08rem; line-height: 1.55; }
+    .hero-meta { margin-top: 1rem; color: #cbe0d5; font-size: 0.88rem; }
     .callout {
-        padding: 0.9rem 1rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid #f0dfc3;
         border-left: 4px solid #c9862a;
-        border-radius: 8px;
-        background: #fff7ea;
-        color: #3f382b;
-        margin: 0.7rem 0 1rem 0;
+        border-radius: 12px;
+        background: #fffaf1;
+        color: #493d2d;
+        margin: 0.9rem 0 1.2rem;
     }
     .info-card, .step-card {
-        background: #ffffff;
-        border: 1px solid #dce7e1;
-        border-radius: 14px;
-        padding: 1rem 1.05rem;
-        min-height: 8.2rem;
-        margin-bottom: 0.6rem;
+        background: linear-gradient(145deg, #fff 0%, #fbfdfb 100%);
+        border: 1px solid #e1ebe5;
+        border-radius: 18px;
+        padding: 1.2rem;
+        min-height: 8.5rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 5px 16px rgba(22, 61, 47, 0.045);
     }
-    .info-card h4 { margin: 0 0 0.35rem 0; color: #0f6b4e; font-size: 1.02rem; }
-    .info-card p, .step-card p { margin: 0; color: #315248; line-height: 1.45; }
-    .step-card { display: flex; gap: 0.75rem; align-items: flex-start; min-height: 6.4rem; }
+    .info-card h4 { margin: 0 0 0.45rem; color: #126246; font-size: 1.04rem; }
+    .info-card p, .step-card p { margin: 0; color: #456157; line-height: 1.55; }
+    .step-card { display: flex; gap: 0.85rem; align-items: flex-start; min-height: 7rem; }
     .step-card span {
         flex: 0 0 1.7rem;
         height: 1.7rem;
         border-radius: 999px;
-        background: #0f6b4e;
-        color: white;
+        background: #e6f3eb;
+        border: 1px solid #cfe5d8;
+        color: #126246;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -93,16 +121,58 @@ st.markdown(
         font-size: 0.9rem;
     }
     [data-testid="stMetric"] {
-        background: #ffffff;
-        border: 1px solid #dce7e1;
-        border-radius: 14px;
-        padding: 0.85rem 1rem;
+        background: #fff;
+        border: 1px solid #e1ebe5;
+        border-radius: 16px;
+        padding: 1rem 1.05rem;
+        box-shadow: 0 5px 16px rgba(22, 61, 47, 0.04);
     }
-    [data-testid="stTabs"] button { font-weight: 650; }
+    [data-testid="stTabs"] [role="tablist"] {
+        gap: 0.4rem;
+        border-bottom: 1px solid #dfe9e3;
+    }
+    [data-testid="stTabs"] button {
+        font-weight: 650;
+        color: #5b7068;
+        border-radius: 10px 10px 0 0;
+        padding: 0.75rem 1rem;
+    }
+    [data-testid="stTabs"] button[aria-selected="true"] {
+        color: #126246;
+        background: #eaf4ee;
+    }
+    [data-testid="stTextInput"] input,
+    [data-testid="stNumberInput"] input,
+    [data-testid="stSelectbox"] [role="combobox"],
+    [data-testid="stMultiSelect"] [role="combobox"] {
+        border-radius: 10px;
+    }
+    [data-testid="stTextInput"] input:focus,
+    [data-testid="stNumberInput"] input:focus {
+        border-color: #16805d;
+        box-shadow: 0 0 0 2px rgba(22, 128, 93, 0.15);
+    }
+    [data-testid="stDataFrame"], [data-testid="stTable"] {
+        border: 1px solid #e1ebe5;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    [data-testid="stPlotlyChart"] {
+        background: rgba(255,255,255,0.75);
+        border: 1px solid #e7eee9;
+        border-radius: 16px;
+        padding: 0.35rem;
+    }
     div[data-testid="stAlert"] { border-radius: 12px; }
-    @media (max-width: 640px) {
-        .block-container { padding-left: 0.85rem; padding-right: 0.85rem; }
-        .hero { padding: 1.15rem 1.15rem; }
+    button[kind="primary"] {
+        border-radius: 10px;
+        font-weight: 650;
+        box-shadow: 0 4px 10px rgba(15, 107, 78, 0.14);
+    }
+    @media (max-width: 700px) {
+        .block-container { padding: 1rem 0.85rem 2rem; }
+        .hero { padding: 1.4rem 1.25rem; border-radius: 18px; }
+        .hero p { font-size: 1rem; }
         .info-card, .step-card { min-height: 0; }
     }
     </style>
