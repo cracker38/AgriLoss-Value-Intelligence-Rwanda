@@ -23,7 +23,7 @@ Open `index.html` through XAMPP at `http://localhost/AgriLoss/` (or run Streamli
 - **Find a crop / header search:** look up maize, beans, cassava, and other named crops.
 - **Storage and processing:** sort crops by stored harvest, storage-stage loss, processing, or sales.
 - **Crop page:** plain-language readings, season comparison, Season A sales places and practices, and a downloadable follow-up note.
-- **Compare / practices / about:** season and province charts, practice tables, and how to read the numbers.
+- **Compare / practices / about:** season charts, a selectable province summary, district summaries when present in the reviewed public aggregate release, practice tables, and how to read the numbers.
 - The public file contains grouped SAS 2024 summaries only. No farmer or plot rows are shown.
 
 The hosted dashboard contains aggregate summaries only. Its current release is marked provisional because NISR disclosure review is not recorded; the app displays this status. The local respondent-level extracts and SQLite database are excluded from the public repository.

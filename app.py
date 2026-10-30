@@ -36,7 +36,7 @@ def _website_html() -> str:
     html = INDEX.read_text(encoding="utf-8")
     assets = (
         (
-            '<link rel="stylesheet" href="web/css/site.css?v=7">',
+            '<link rel="stylesheet" href="web/css/site.css?v=8">',
             ROOT / "web" / "css" / "site.css",
             "style",
         ),
@@ -46,7 +46,7 @@ def _website_html() -> str:
             "script",
         ),
         (
-            '<script src="web/js/site.js?v=8"></script>',
+            '<script src="web/js/site.js?v=9"></script>',
             ROOT / "web" / "js" / "site.js",
             "script",
         ),

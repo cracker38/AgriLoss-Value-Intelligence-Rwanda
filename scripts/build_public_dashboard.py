@@ -398,6 +398,52 @@ def _marginal_summaries(
     return rows
 
 
+def _province_district_summaries(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    working = frame.assign(
+        _release_province=frame["s1q1"].astype("string").fillna("Not reported"),
+        _release_district=frame["s1q2"].astype("string").fillna("Not reported"),
+    )
+    province_counts = working.groupby("_release_province", dropna=False).size()
+    published_provinces = {
+        str(value)
+        for value in province_counts[province_counts >= MIN_GROUP_RECORDS].index
+        if str(value) not in {"Not reported", "Other or unreported provinces (pooled)"}
+    }
+
+    rows: list[dict[str, Any]] = []
+    for province in sorted(published_provinces):
+        province_frame = working[working["_release_province"].astype(str) == province]
+        district_counts = province_frame.groupby("_release_district", dropna=False).size()
+        published_districts = set(
+            district_counts[district_counts >= MIN_GROUP_RECORDS].index.astype(str)
+        )
+
+        for district, group in province_frame.groupby("_release_district", sort=True, dropna=False):
+            district_name = str(district)
+            if district_name not in published_districts:
+                continue
+            rows.append(
+                {
+                    "province": province,
+                    "district": district_name,
+                    **_measure_summary(group),
+                }
+            )
+
+        suppressed = province_frame[
+            ~province_frame["_release_district"].astype(str).isin(published_districts)
+        ]
+        if len(suppressed) >= MIN_GROUP_RECORDS:
+            rows.append(
+                {
+                    "province": province,
+                    "district": "Other or unreported districts (pooled)",
+                    **_measure_summary(suppressed),
+                }
+            )
+    return rows
+
+
 def build_public_dashboard_candidate() -> dict[str, Any]:
     """Build coarse marginal summaries for disclosure review; never copy source rows."""
     data = load_production_data()
@@ -441,11 +487,14 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         "aggregation": {
             "minimum_group_records": MIN_GROUP_RECORDS,
             "grouping": (
-                "Independent season, province, and crop summaries, plus Season A crop-by-one-practice "
-                "associations and Season A market-channel summaries; no respondent rows or geographic cross-tabulations."
+                "Independent season, province, and crop summaries; province-by-district summaries "
+                "with within-province pooling; Season A crop-by-one-practice associations and "
+                "Season A market-channel summaries; no respondent rows."
             ),
             "notes": [
                 "Groups below the minimum size are pooled without their original labels.",
+                "District cells are grouped within province; district labels below the minimum size are pooled within their province.",
+                "Province-by-district summaries are a new cross-tabulation and require NISR disclosure review before publication.",
                 "The group-size rule is a coarse suppression measure, not NISR disclosure approval.",
                 "Obtain the required data-use and disclosure review before placing this file in a public repository.",
                 "Stored, transformed, sold, and storage-stage loss quantities use NISR kilogram labels. Total reported loss (s2q39) still has no confirmed unit.",
@@ -467,6 +516,7 @@ def build_public_dashboard_candidate() -> dict[str, Any]:
         "overall": overall,
         "by_season": season_rows,
         "by_province": province_rows,
+        "by_province_district": _province_district_summaries(data),
         "by_crop": crop_rows,
         "by_storage_facility": _facility_summary(data),
         "by_crop_practice": crop_practice_rows,

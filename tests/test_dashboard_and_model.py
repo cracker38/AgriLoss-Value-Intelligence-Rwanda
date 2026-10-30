@@ -11,6 +11,7 @@ from scripts.build_public_dashboard import (
     _join_plot_modules,
     _market_channel_summaries,
     _measure_summary,
+    _province_district_summaries,
 )
 from scripts.dashboard_data import filter_production_data, load_public_dashboard_data
 from scripts.public_dashboard import (
@@ -405,6 +406,33 @@ def test_market_summary_pools_rare_channels_and_uses_valid_sales_denominator() -
     assert not any(row["market_channel"] == "Other selling place" for row in rows)
 
 
+def test_province_district_summaries_pool_small_cells_within_each_province() -> None:
+    frame = pd.DataFrame(
+        {
+            "s1q1": ["East"] * 220 + ["West"] * 100,
+            "s1q2": ["District A"] * 100
+            + ["District B"] * 80
+            + ["District C"] * 40
+            + ["District A"] * 100,
+            "s2q39": [1] * 100 + [0] * 120 + [1] * 100,
+            "s2q36": [1] * 100 + [0] * 120 + [1] * 100,
+            "s2q25": [0] * 320,
+            "s2q26": [0] * 320,
+            "s2q21": [1] * 320,
+            "s2q38": [0] * 320,
+            "s2q47": [0] * 320,
+        }
+    )
+
+    rows = _province_district_summaries(frame)
+
+    assert [(row["province"], row["district"], row["records"]) for row in rows] == [
+        ("East", "District A", 100),
+        ("East", "Other or unreported districts (pooled)", 120),
+        ("West", "District A", 100),
+    ]
+
+
 def test_public_aggregates_file_loads() -> None:
     payload = load_public_dashboard_data()
 
@@ -418,6 +446,16 @@ def test_public_aggregates_file_loads() -> None:
 def test_public_aggregate_loader_validates_optional_module_sections(tmp_path) -> None:
     payload = load_public_dashboard_data()
     payload["by_crop_practice"] = [{"crop": "Maize"}]
+    path = tmp_path / "aggregate.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="missing"):
+        load_public_dashboard_data(path)
+
+
+def test_public_aggregate_loader_validates_optional_geographic_summaries(tmp_path) -> None:
+    payload = load_public_dashboard_data()
+    payload["by_province_district"] = [{"province": "East"}]
     path = tmp_path / "aggregate.json"
     path.write_text(json.dumps(payload), encoding="utf-8")
 

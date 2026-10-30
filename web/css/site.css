@@ -511,6 +511,9 @@ button { cursor: pointer; }
 .plan-form { display: grid; gap: 0.8rem; grid-template-columns: 1fr 1fr; }
 .plan-form label:nth-last-child(-n+2), .plan-form button { grid-column: 1 / -1; }
 .plan-form label { display: grid; gap: 0.32rem; font-weight: 700; color: var(--ink-soft); }
+.geo-select { display: grid; gap: 0.32rem; margin: 0.6rem 0; font-weight: 700; color: var(--ink-soft); }
+.geo-select select { width: 100%; border: 1px solid var(--line); background: white; border-radius: 14px; padding: 0.72rem 0.85rem; }
+.geo-select select:disabled { color: var(--muted); background: #f3f6f4; cursor: not-allowed; }
 .table-wrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
 th, td { text-align: left; padding: 0.7rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
