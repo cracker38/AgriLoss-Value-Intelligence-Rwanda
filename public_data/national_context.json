@@ -39,7 +39,7 @@
     "Bananas"
   ],
   "survey_fields_for_follow_up": {
-    "note": "These production questions exist in SAS 2024. Crop-level storage and processing shares are not published in the current aggregate file; the dashboard uses harvest and reported-loss summaries as a triage step.",
+    "note": "These production questions exist in SAS 2024. Crop-level stored, processed, sold, and storage-stage loss shares are published in the grouped aggregate file used by this website.",
     "storage": [
       "s2q36 quantity stored (kg)",
       "s2q37 storage facility (codes need verification)",

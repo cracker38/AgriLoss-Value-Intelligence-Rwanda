@@ -60,8 +60,10 @@ def _crop_summary(**overrides: object) -> dict[str, object]:
     return row
 from scripts.train_loss_model import (
     FEATURES,
+    PUBLIC_MODEL_CARD_PATH,
     _grouped_cv_splits,
     build_classifier,
+    choose_operating_threshold,
     prepare_model_data,
 )
 
@@ -149,7 +151,29 @@ def test_classifier_uses_dense_categorical_inputs_for_gradient_boosting() -> Non
     categorical_pipeline = classifier.named_steps["preprocess"].transformers[0][1]
 
     assert isinstance(classifier.named_steps["classifier"], HistGradientBoostingClassifier)
+    assert classifier.named_steps["classifier"].class_weight == "balanced"
     assert categorical_pipeline.named_steps["encode"].sparse_output is False
+
+
+def test_operating_threshold_finds_a_positive_f1_cutoff() -> None:
+    target = pd.Series([0, 0, 0, 0, 1, 1, 1, 1])
+    probabilities = [0.05, 0.15, 0.25, 0.35, 0.65, 0.75, 0.85, 0.95]
+    chosen = choose_operating_threshold(target, probabilities)
+
+    assert chosen["selection_rule"].startswith("Maximum F1")
+    assert 0 < chosen["threshold"] <= 1
+    assert chosen["f1"] > 0.5
+
+
+def test_public_model_card_is_respondent_free() -> None:
+    card = json.loads(PUBLIC_MODEL_CARD_PATH.read_text(encoding="utf-8"))
+
+    assert card["schema_version"] == 1
+    assert card["public_safe"] is True
+    assert card["training"]["rows_evaluated"] > 0
+    assert "roc_auc" in card["out_of_fold_metrics"]
+    assert "not an operational alert or farmer score" in card["status"]
+    assert card["out_of_fold_metrics"]["roc_auc"] > card["always_negative_baseline"]["roc_auc"]
 
 
 def test_named_crops_exclude_pooled_groups_and_tag_nst2_priority() -> None:

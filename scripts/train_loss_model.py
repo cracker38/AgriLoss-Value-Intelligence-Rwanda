@@ -214,6 +214,7 @@ def _season_holdout_evaluation(
 
 def choose_operating_threshold(target: pd.Series, probabilities: np.ndarray) -> dict[str, Any]:
     """Pick a cutoff by maximum F1 on out-of-fold scores. 0.5 is kept for comparison."""
+    probabilities = np.asarray(probabilities, dtype=float)
     precision, recall, thresholds = precision_recall_curve(target, probabilities)
     if thresholds.size == 0:
         return {

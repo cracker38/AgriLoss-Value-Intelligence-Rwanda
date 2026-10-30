@@ -14,7 +14,7 @@
     ["#/compare", "Compare"],
     ["#/practices", "Practices & markets"],
     ["#/plan", "Plan a follow-up"],
-    ["#/about", "About the numbers"],
+    ["#/about", "Methods"],
   ];
 
   function releaseNote() {
@@ -498,6 +498,10 @@
 
   function aboutPage() {
     const seasons = data.by_season || [];
+    const metrics = (modelCard && modelCard.out_of_fold_metrics) || {};
+    const baseline = (modelCard && modelCard.always_negative_baseline) || {};
+    const training = (modelCard && modelCard.training) || {};
+    const metric = (value) => (typeof value === "number" ? value.toFixed(3) : "—");
     return `
       <section class="hero hero-compact">
         <div class="eyebrow">Methods in plain language</div>
@@ -524,6 +528,35 @@
             <li>Tell you to build a store, dryer, or factory.</li>
             <li>Show live market prices or profit.</li>
           </ul>
+        </article>
+      </section>
+      <section class="section card">
+        <h3>Exploratory reported-loss model</h3>
+        <p class="stat-note">${modelCard ? AgriLoss.escapeHtml(modelCard.status || "") : "The public methods card is not loaded."} It classifies whether survey field s2q39 is greater than zero in the same 2024 survey. It is not a forecast of next season and is not shown as a farmer score.</p>
+        <div class="table-wrap" style="margin-top:1rem">
+          <table>
+            <thead><tr><th>Measure</th><th>Model</th><th>Always-negative baseline</th></tr></thead>
+            <tbody>
+              <tr><td>ROC AUC</td><td>${metric(metrics.roc_auc)}</td><td>${metric(baseline.roc_auc)}</td></tr>
+              <tr><td>Average precision</td><td>${metric(metrics.average_precision)}</td><td>${metric(baseline.average_precision)}</td></tr>
+              <tr><td>Recall at the reported cutoff</td><td>${metric(metrics.recall)}</td><td>${metric(baseline.recall)}</td></tr>
+              <tr><td>Accuracy</td><td>${metric(metrics.accuracy)}</td><td>${metric(baseline.accuracy)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul class="checks">
+          ${(modelCard && modelCard.reading_for_users ? modelCard.reading_for_users : []).map((item) => `<li>${AgriLoss.escapeHtml(item)}</li>`).join("")}
+          <li>${AgriLoss.count(training.rows_evaluated)} Season A and B records in grouped cross-validation. Season C is excluded. Plot groups do not cross folds.</li>
+        </ul>
+      </section>
+      <section class="section grid grid-2">
+        <article class="card">
+          <h3>Who can use the follow-up note</h3>
+          <p>Cooperatives, MINAGRI and district planners, researchers, and development partners can take a crop file to a meeting as a first checklist. It names what the 2024 sample shows and what still must be checked locally. It does not approve a warehouse, mill, or subsidy.</p>
+        </article>
+        <article class="card">
+          <h3>Alignment, not a measured target</h3>
+          <p>NST2 aims to cut food-crop post-harvest losses from 13.8% to 4.8%. This website does not measure that rate. It shows which SAS 2024 crop groups already report storing, processing, or selling harvest, then writes a next check.</p>
         </article>
       </section>
       <section class="section card">
@@ -611,6 +644,7 @@
           province,
           localCondition: form.condition.value,
           localNotes: form.notes.value,
+          overall: data.overall,
         });
         const blob = new Blob([markdown], { type: "text/markdown" });
         const link = document.createElement("a");
@@ -693,7 +727,7 @@
       compare: "Compare · AgriLoss Rwanda",
       practices: "Practices & markets · AgriLoss Rwanda",
       plan: "Plan a follow-up · AgriLoss Rwanda",
-      about: "About the numbers · AgriLoss Rwanda",
+      about: "Methods · AgriLoss Rwanda",
       crop: `${decodeURIComponent(route.parts[1] || "Crop")} · AgriLoss Rwanda`,
     };
     document.title = titles[route.parts[0] || ""] || titles[""];
@@ -712,6 +746,15 @@
 
   async function boot() {
     try {
+      const optionalJson = async (path) => {
+        try {
+          const response = await fetch(path);
+          if (response.ok) return await response.json();
+        } catch (error) {
+          return null;
+        }
+        return null;
+      };
       if (window.AGRILOSS_DATA) {
         data = window.AGRILOSS_DATA;
       } else {
@@ -719,6 +762,8 @@
         if (!response.ok) throw new Error("Could not load survey summaries.");
         data = await response.json();
       }
+      context = window.AGRILOSS_CONTEXT || (await optionalJson("public_data/national_context.json"));
+      modelCard = window.AGRILOSS_MODEL || (await optionalJson("public_data/model_card.json"));
       render();
     } catch (error) {
       $("#view").innerHTML = `<section class="section card"><h2>The survey file could not be loaded</h2><p>${AgriLoss.escapeHtml(error.message)}</p><p>Open this site through XAMPP at <code>http://localhost/AgriLoss/</code> so the data file can be read.</p></section>`;

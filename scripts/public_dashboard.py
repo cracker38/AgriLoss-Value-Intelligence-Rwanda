@@ -480,11 +480,11 @@ def _render_crop_review(
     if track == "storage":
         crop_metrics[0].metric("Stored quantity > 0", f"{_int(crop_row['stored_positive_records']):,}")
         crop_metrics[1].metric("Share of valid stored answers", _percent(crop_row["stored_positive_share"]))
-    crop_metrics[2].metric(
+        crop_metrics[2].metric(
             "Median stored (when > 0)",
             _kg(crop_row["stored_median_positive_kg"]),
-    )
-    crop_metrics[3].metric(
+        )
+        crop_metrics[3].metric(
             "Storage-stage loss > 0",
             f"{_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])}",
         )
