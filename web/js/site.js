@@ -37,22 +37,44 @@
       type: "bar",
       data: {
         labels,
-        datasets: [{ label, data: values, backgroundColor: "#1a6b4e", borderRadius: 8 }],
+        datasets: [{
+          label,
+          data: values,
+          backgroundColor: labels.map((_, index) => (index % 2 ? "#d4a017" : "#157a56")),
+          borderRadius: 10,
+          maxBarThickness: 42,
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
+          x: { grid: { display: false } },
           y: {
+            grid: { color: "rgba(16,35,27,0.06)" },
             ticks: {
-              callback: (value) => (percentAxis ? `${Math.round(value * 100)}%` : value),
+              callback: (value) => (percentAxis ? `${Math.round(value * 100)}%` : Number(value).toLocaleString()),
             },
           },
         },
       },
     });
     charts.push(chart);
+  }
+
+  function meter(share) {
+    const width = typeof share === "number" ? Math.max(2, Math.min(100, share * 100)) : 0;
+    return `<div class="meter" aria-hidden="true"><span style="width:${width}%"></span></div>`;
+  }
+
+  function toast(message) {
+    document.querySelectorAll(".toast").forEach((node) => node.remove());
+    const note = document.createElement("div");
+    note.className = "toast";
+    note.textContent = message;
+    document.body.appendChild(note);
+    setTimeout(() => note.remove(), 2800);
   }
 
   function navHtml(hash) {
@@ -86,8 +108,8 @@
     }
     box.innerHTML = hits
       .map(
-        (crop) =>
-          `<a href="#/crop/${AgriLoss.slug(crop.crop)}"><strong>${crop.crop}</strong><br><small>${AgriLoss.count(crop.records)} survey records · stored ${AgriLoss.percent(crop.stored_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)}</small></a>`
+        (crop, index) =>
+          `<a href="#/crop/${AgriLoss.slug(crop.crop)}" class="${index === 0 ? "active" : ""}"><strong>${crop.crop}</strong><br><small>${AgriLoss.count(crop.records)} records · stored ${AgriLoss.percent(crop.stored_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)}</small></a>`
       )
       .join("");
   }
@@ -107,12 +129,23 @@
           <a class="btn btn-ghost" href="#/storage">After-harvest storage</a>
           <a class="btn btn-ghost" href="#/processing">Processing and sales</a>
         </div>
+        <div class="quick-chips">
+          ${["Maize", "Bush bean", "Cassava", "Irish potato", "Paddy rice", "Cooking banana"].map((name) => `<a class="chip" href="#/crop/${AgriLoss.slug(name)}">${name}</a>`).join("")}
+        </div>
       </section>
       <div class="notice">This website shows grouped survey summaries from real SAS 2024 records. They are not official national estimates. ${releaseNote()}.</div>
+      <section class="section">
+        <div class="section-head"><h2>How to use AgriLoss</h2></div>
+        <div class="grid grid-3 steps">
+          <article class="card"><div class="step-num">1</div><h3>Find your crop</h3><p>Search maize, beans, cassava, or any named crop in the 2024 survey sample.</p></article>
+          <article class="card"><div class="step-num">2</div><h3>See what happened after harvest</h3><p>Read, in simple words, how often that crop was stored, processed, or sold.</p></article>
+          <article class="card"><div class="step-num">3</div><h3>Download a follow-up note</h3><p>Add your local situation and take a short note to a meeting. It does not approve a project.</p></article>
+        </div>
+      </section>
       <section class="section grid grid-3">
-        <article class="card"><h3>Who it is for</h3><p>Farmers and producer groups, cooperative staff, agricultural planners, researchers, and partners who need a first, honest look at the survey.</p></article>
-        <article class="card"><h3>What you can do</h3><p>Search a crop, compare storage and processing, add your local situation, and download a short follow-up note.</p></article>
-        <article class="card"><h3>What you should not do</h3><p>Do not treat these shares as Rwanda’s national loss rate, score individual farmers, or site a warehouse or factory from this page.</p></article>
+        <article class="card"><div class="icon-bubble">1</div><h3>Who it is for</h3><p>Farmers, cooperatives, agricultural planners, researchers, and partners who need a first, honest look at the survey.</p></article>
+        <article class="card"><div class="icon-bubble">2</div><h3>What you can do</h3><p>Search a crop, compare storage and processing, add your local situation, and download a short follow-up note.</p></article>
+        <article class="card"><div class="icon-bubble">3</div><h3>What you should not do</h3><p>Do not treat these shares as Rwanda’s national loss rate, score farmers, or decide where to build a warehouse from this page.</p></article>
       </section>
       <section class="section">
         <h2>What the 2024 survey recorded</h2>
@@ -138,12 +171,16 @@
         </article>
       </section>
       <section class="section">
-        <h2>Named crops in this release</h2>
-        <p class="stat-note" style="margin-bottom:0.8rem">${crops.length} crop groups have enough complete answers to publish a share. Search above or browse the full list.</p>
+        <div class="section-head">
+          <div>
+            <h2>Named crops in this release</h2>
+            <p class="stat-note">${crops.length} crop groups have enough complete answers to publish a share.</p>
+          </div>
+          <a class="btn btn-line" href="#/crops">See all crops</a>
+        </div>
         <div class="crop-list">
           ${crops.slice(0, 8).map(cropCard).join("")}
         </div>
-        <p style="margin-top:1rem"><a class="btn btn-line" href="#/crops">See all crops</a></p>
       </section>
     `;
   }
@@ -151,9 +188,9 @@
   function cropCard(crop) {
     return `<a class="crop-row" href="#/crop/${AgriLoss.slug(crop.crop)}">
       <div><strong>${crop.crop}</strong>${crop.is_priority_crop ? '<span class="pill">National priority crop</span>' : ""}<small style="display:block;color:var(--muted)">${AgriLoss.count(crop.records)} survey records</small></div>
-      <div><span class="stat-label">Stored</span><div>${AgriLoss.percent(crop.stored_positive_share)}</div></div>
-      <div><span class="stat-label">Processed</span><div>${AgriLoss.percent(crop.transformed_positive_share)}</div></div>
-      <div><span class="stat-label">Sold</span><div>${AgriLoss.percent(crop.sold_positive_share)}</div></div>
+      <div><span class="stat-label">Stored</span><div>${AgriLoss.percent(crop.stored_positive_share)}</div>${meter(crop.stored_positive_share)}</div>
+      <div><span class="stat-label">Processed</span><div>${AgriLoss.percent(crop.transformed_positive_share)}</div>${meter(crop.transformed_positive_share)}</div>
+      <div><span class="stat-label">Sold</span><div>${AgriLoss.percent(crop.sold_positive_share)}</div>${meter(crop.sold_positive_share)}</div>
     </a>`;
   }
 
@@ -178,7 +215,7 @@
           </select>
           <button class="btn btn-dark" type="submit">Search</button>
         </form>
-        <div class="crop-list">${rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`}</div>
+        <div class="crop-list" id="crop-list">${rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`}</div>
       </section>
     `;
   }
@@ -201,7 +238,10 @@
         <p>${intro}</p>
       </section>
       <section class="section">
-        <form class="filters" id="sort-form">
+        <div class="sort-chips" id="sort-chips">
+          ${sorts.map((item) => `<a class="${item.id === sort.id ? "active" : ""}" href="#/${track === "storage" ? "storage" : "processing"}?sort=${item.id}">${item.label}</a>`).join("")}
+        </div>
+        <form class="filters hidden" id="sort-form">
           <label>Sort crops by
             <select name="sort">${sorts.map((item) => `<option value="${item.id}" ${item.id === sort.id ? "selected" : ""}>${item.label}</option>`).join("")}</select>
           </label>
@@ -232,6 +272,7 @@
     const provinces = data.by_province || [];
     return `
       <section class="hero">
+        <div class="crumb"><a href="#/crops">Crops</a> / ${crop.crop}</div>
         <div class="eyebrow">Crop file</div>
         <h1>${crop.crop}</h1>
         <p>${crop.is_priority_crop ? "This crop is among national priority food crops." : "This crop is published in the SAS 2024 sample."} ${AgriLoss.count(crop.records)} survey records. Figures below are unweighted sample descriptions.</p>
@@ -419,12 +460,19 @@
   function bindCropsForm() {
     const form = $("#crop-filter-form");
     if (!form) return;
+    const list = $(".crop-list");
+    const paint = () => {
+      let rows = AgriLoss.searchCrops(data.by_crop, form.q.value);
+      if (form.filter.value === "priority") rows = rows.filter((row) => row.is_priority_crop);
+      rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
+      list.innerHTML = rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`;
+    };
     form.addEventListener("submit", (event) => {
       event.preventDefault();
-      const q = form.q.value.trim();
-      const filter = form.filter.value;
-      location.hash = `#/crops?q=${encodeURIComponent(q)}&filter=${filter}`;
+      location.hash = `#/crops?q=${encodeURIComponent(form.q.value.trim())}&filter=${form.filter.value}`;
     });
+    form.filter.addEventListener("change", paint);
+    form.q.addEventListener("input", paint);
   }
 
   function bindSortForm(track) {
@@ -481,6 +529,7 @@
         link.href = URL.createObjectURL(blob);
         link.download = `agriloss-${track}-${crop.crop.toLowerCase().replace(/\s+/g, "-")}.md`;
         link.click();
+        toast("Follow-up note downloaded. It is a checklist, not a project approval.");
       });
     }
     const practiceSelect = $("#practice-select");
@@ -582,10 +631,23 @@
     const input = $("#global-search");
     input.addEventListener("input", () => headerSearch(input.value));
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
+      const links = $$("#search-results a");
+      const current = $("#search-results a.active");
+      const index = links.indexOf(current);
+      if (event.key === "ArrowDown" && links.length) {
         event.preventDefault();
-        const first = $("#search-results a");
-        if (first) location.hash = first.getAttribute("href");
+        const next = links[Math.min(links.length - 1, index + 1)] || links[0];
+        links.forEach((node) => node.classList.remove("active"));
+        next.classList.add("active");
+      } else if (event.key === "ArrowUp" && links.length) {
+        event.preventDefault();
+        const prev = links[Math.max(0, index - 1)] || links[0];
+        links.forEach((node) => node.classList.remove("active"));
+        prev.classList.add("active");
+      } else if (event.key === "Enter") {
+        event.preventDefault();
+        const chosen = $("#search-results a.active") || $("#search-results a");
+        if (chosen) location.hash = chosen.getAttribute("href");
         else location.hash = `#/crops?q=${encodeURIComponent(input.value)}`;
         $("#search-results").classList.remove("open");
       }
