@@ -46,7 +46,7 @@ def _website_html() -> str:
             "script",
         ),
         (
-            '<script src="web/js/site.js?v=7"></script>',
+            '<script src="web/js/site.js?v=8"></script>',
             ROOT / "web" / "js" / "site.js",
             "script",
         ),

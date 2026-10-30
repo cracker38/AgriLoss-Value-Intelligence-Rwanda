@@ -802,8 +802,14 @@
       }
     });
     document.addEventListener("click", (event) => {
+      const routeLink = event.target.closest('a[href^="#/"]');
+      if (routeLink) {
+        event.preventDefault();
+        const href = routeLink.getAttribute("href");
+        if (href && location.hash !== href) location.hash = href;
+      }
       if (!event.target.closest(".search")) $("#search-results").classList.remove("open");
-    });
+    }, true);
     $("#menu-toggle").addEventListener("click", () => $("#main-nav").classList.toggle("open"));
     boot();
   });
