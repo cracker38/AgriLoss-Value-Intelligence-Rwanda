@@ -24,7 +24,7 @@ st.set_page_config(
     page_title="AgriLoss Rwanda | Post-harvest & value addition",
     page_icon="🌾",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="collapsed",
 )
 
 st.markdown(
@@ -140,6 +140,24 @@ st.markdown(
     [data-testid="stTabs"] button[aria-selected="true"] {
         color: #126246;
         background: #eaf4ee;
+    }
+    [data-testid="stRadio"] [role="radiogroup"] {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        padding: 0.45rem 0;
+        border-bottom: 1px solid #dfe9e3;
+    }
+    [data-testid="stRadio"] [role="radio"] {
+        border: 1px solid #e1ebe5;
+        border-radius: 10px;
+        background: #fff;
+        padding: 0.65rem 1rem;
+    }
+    [data-testid="stRadio"] [role="radio"][aria-checked="true"] {
+        border-color: #cfe5d8;
+        background: #eaf4ee;
+        color: #126246;
     }
     [data-testid="stTextInput"] input,
     [data-testid="stNumberInput"] input,
@@ -266,7 +284,8 @@ except (OSError, ValueError, json.JSONDecodeError) as error:
     st.stop()
 
 with st.sidebar:
-    st.markdown("## Explore the survey")
+    st.markdown("## Refine the sample")
+    st.caption("Filters update aggregate summaries only. Respondent records are not shown.")
     selected_seasons = st.multiselect(
         "Survey seasons",
         options=["A", "B", "C"],
@@ -284,7 +303,9 @@ with st.sidebar:
     crops = available_values(province_data, "s2q4")
     selected_crops = st.multiselect("Crop", crops, default=[])
     st.divider()
-    st.caption("Filters update descriptive aggregates only. No respondent records are displayed.")
+    st.markdown(
+        "[About the SAS 2024 source](https://microdata.statistics.gov.rw/index.php/catalog/113)"
+    )
 
 filtered = filter_production_data(
     data,
@@ -302,25 +323,59 @@ positive_loss_count = int(loss.gt(0).sum())
 positive_share = positive_loss_count / len(loss) if len(loss) else 0.0
 reported_harvest = filtered["s2q21"].dropna()
 
-metric_columns = st.columns(5)
-metric_columns[0].metric("Production records", f"{len(filtered):,}")
-metric_columns[1].metric("Distinct crops", f"{filtered['s2q4'].nunique():,}")
-metric_columns[2].metric("Loss values reported", f"{len(loss):,}")
-metric_columns[3].metric("Positive reported loss", f"{positive_loss_count:,}")
-metric_columns[4].metric("Median harvest reported", f"{reported_harvest.median():,.0f} kg" if len(reported_harvest) else "—")
-
-st.markdown(
-    '<div class="callout"><strong>A quick note about these numbers:</strong> They describe the survey records '
-    'shown here and are not estimates for Rwanda’s whole population. The unit for the reported-loss field '
-    '<code>s2q39</code> has not been confirmed, so we show it as reported—not as kilograms or a loss rate.</div>',
-    unsafe_allow_html=True,
+page = st.radio(
+    "Main navigation",
+    options=[
+        "Welcome",
+        "Survey overview",
+        "Crop & loss analysis",
+        "Model evaluation",
+        "Data & methods",
+    ],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="local_site_page",
 )
 
-overview_tab, loss_tab, model_tab, methods_tab = st.tabs(
-    ["Overview", "Crop & loss analysis", "Model lab", "Data quality & methods"]
-)
-
-with overview_tab:
+if page == "Welcome":
+    st.markdown("### Welcome to AgriLoss Rwanda")
+    st.write(
+        "Use grouped SAS 2024 survey evidence to explore post-harvest patterns and identify "
+        "questions for local follow-up. This research prototype does not rank farmers or decide "
+        "which intervention to fund."
+    )
+    welcome_columns = st.columns(2)
+    with welcome_columns[0]:
+        st.markdown(
+            '<div class="info-card"><h4>Explore the survey</h4>'
+            '<p>Review sample size, reported harvest, crop patterns, and loss responses using '
+            'the filters in the left-hand panel.</p></div>',
+            unsafe_allow_html=True,
+        )
+    with welcome_columns[1]:
+        st.markdown(
+            '<div class="info-card"><h4>Understand the limits</h4>'
+            '<p>These are unweighted sample descriptions. The reported-loss unit is unconfirmed, '
+            'so values are never presented as kilograms or a loss rate.</p></div>',
+            unsafe_allow_html=True,
+        )
+    st.info("Choose a section above to review the survey evidence, model evaluation, and methods.")
+elif page == "Survey overview":
+    metric_columns = st.columns(5)
+    metric_columns[0].metric("Production records", f"{len(filtered):,}")
+    metric_columns[1].metric("Distinct crops", f"{filtered['s2q4'].nunique():,}")
+    metric_columns[2].metric("Loss values reported", f"{len(loss):,}")
+    metric_columns[3].metric("Positive reported loss", f"{positive_loss_count:,}")
+    metric_columns[4].metric(
+        "Median harvest reported",
+        f"{reported_harvest.median():,.0f} kg" if len(reported_harvest) else "—",
+    )
+    st.markdown(
+        '<div class="callout"><strong>A quick note about these numbers:</strong> They describe the survey records '
+        'shown here and are not estimates for Rwanda’s whole population. The unit for the reported-loss field '
+        '<code>s2q39</code> has not been confirmed, so we show it as reported—not as kilograms or a loss rate.</div>',
+        unsafe_allow_html=True,
+    )
     st.subheader("What the survey records")
     st.write(
         "Intended users include public planners, researchers, civil society, and development partners. "
@@ -371,7 +426,7 @@ with overview_tab:
         "The threshold is a display safeguard, not a survey-design or disclosure review."
     )
 
-with loss_tab:
+elif page == "Crop & loss analysis":
     st.subheader("Reported loss patterns")
     st.caption("s2q39 unit is undocumented in the available dictionary. The chart uses raw reported values, not kilograms.")
     loss_by_crop = (
@@ -407,7 +462,7 @@ with loss_tab:
         st.info("No crop group meets the 30-record display threshold for loss comparisons.")
     st.caption("Missing loss responses are excluded from the denominator, not converted to zero.")
 
-with model_tab:
+elif page == "Model evaluation":
     st.subheader("Retrospective classifier evaluation")
     metrics = load_model_metrics()
     if not metrics or not MODEL_PATH.is_file():
@@ -513,7 +568,7 @@ with model_tab:
 
         st.info("No future-loss forecast is available. The target is a retrospective same-survey response, not a future outcome.")
 
-with methods_tab:
+else:
     st.subheader("Data quality and analytical safeguards")
     st.markdown(
         "**Data source:** [NISR Rwanda Seasonal Agricultural Survey 2024 catalog]"

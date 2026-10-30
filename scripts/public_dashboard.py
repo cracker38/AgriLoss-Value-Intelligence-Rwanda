@@ -1375,49 +1375,45 @@ def _render_crop_review(
 
 
 
-def _render_start_tab(
-    overall: dict[str, Any],
-    facilities: list[dict[str, Any]],
-) -> None:
-    st.markdown("### SAS 2024 sample")
-    metric_columns = st.columns(4)
-    metric_columns[0].metric("Production records", f"{overall['records']:,}")
-    metric_columns[1].metric(
-        "Stored quantity > 0",
-        f"{_int(overall['stored_positive_records']):,} · {_percent(overall['stored_positive_share'])}",
+def _render_start_tab() -> None:
+    st.markdown("### Welcome to AgriLoss Rwanda")
+    st.markdown(
+        "Explore what the 2024 Seasonal Agricultural Survey records about crop storage, "
+        "collection, processing, and sales. Use the evidence to shape local questions and "
+        "follow-up—not as a ranking or a ready-made investment decision."
     )
-    metric_columns[2].metric(
-        "Transformed quantity > 0",
-        f"{_int(overall['transformed_positive_records']):,} · {_percent(overall['transformed_positive_share'])}",
-    )
-    metric_columns[3].metric(
-        "Quantity sold > 0",
-        f"{_int(overall['sold_positive_records']):,} · {_percent(overall['sold_positive_share'])}",
-    )
-    extra = st.columns(5)
-    extra[0].metric(
-        "Storage-stage loss > 0",
-        f"{_int(overall['storage_loss_positive_records']):,} · {_percent(overall.get('storage_loss_positive_share'))}",
-    )
-    extra[1].metric(
-        "Negative storage-stage values",
-        f"{_int(overall.get('storage_loss_negative_records')):,}",
-    )
-    extra[2].metric(
-        "Public-storage quantity > 0",
-        f"{_int(overall['public_stored_positive_records']):,}",
-    )
-    extra[3].metric(
-        "Median harvest reported",
-        _kg(overall.get("median_reported_harvest_kg")),
-    )
-    extra[4].metric(
-        "Transport-stage loss > 0",
-        f"{_int(overall.get('transport_loss_positive_records')):,} · {_percent(overall.get('transport_loss_positive_share'))}",
-    )
-    st.caption("Unweighted sample summaries; not national estimates. Blank answers are excluded.")
-    st.markdown("#### A simple way to get started")
-    st.caption("Use the Crop workspace to move from survey evidence to a practical local follow-up plan.")
+    st.markdown("#### What would you like to work on?")
+    path_columns = st.columns(2)
+    with path_columns[0]:
+        st.markdown(
+            '<div class="info-card"><h4>Post-harvest, collection & storage</h4>'
+            '<p>Review crop evidence about stored quantities and storage or transport-stage '
+            'loss, then build a local follow-up checklist.</p></div>',
+            unsafe_allow_html=True,
+        )
+        st.button(
+            "Plan a storage follow-up",
+            key="open_storage_workspace",
+            type="primary",
+            on_click=_set_public_site_page,
+            args=("Crop planning", "Post-harvest collection and storage"),
+        )
+    with path_columns[1]:
+        st.markdown(
+            '<div class="info-card"><h4>Processing & value addition</h4>'
+            '<p>Review transformation and sales evidence, consider options to evaluate, '
+            'and note what needs local verification.</p></div>',
+            unsafe_allow_html=True,
+        )
+        st.button(
+            "Explore value addition",
+            key="open_value_workspace",
+            on_click=_set_public_site_page,
+            args=("Crop planning", "Processing and value addition"),
+        )
+
+    st.markdown("#### How it works")
+    st.caption("Use the Crop planning section to move from grouped survey evidence to a practical local follow-up plan.")
     step_columns = st.columns(3)
     steps = (
         (
@@ -1448,12 +1444,17 @@ def _render_start_tab(
         "The current release does not provide verified costs, margins, or profitability estimates."
     )
 
-    if facilities:
-        st.markdown("##### Reported storage facility (`s2q37`)")
-        facility_frame = pd.DataFrame(facilities).rename(
-            columns={"facility": "Facility response", "records": "Production records"}
-        )
-        st.dataframe(facility_frame, hide_index=True, width="stretch")
+    st.markdown("#### A note about the evidence")
+    st.info(
+        "AgriLoss shows unweighted sample descriptions from SAS 2024, not estimates for Rwanda's "
+        "whole population. User-entered planning details stay separate from the survey data."
+    )
+
+
+def _set_public_site_page(page: str, challenge: str | None = None) -> None:
+    st.session_state["public_site_page"] = page
+    if challenge is not None:
+        st.session_state["planning_challenge"] = challenge
 
 
 def _render_workspace(
@@ -1470,6 +1471,7 @@ def _render_workspace(
             "Processing and value addition",
         ],
         horizontal=True,
+        key="planning_challenge",
     )
     track = "storage" if track_label.startswith("Post-harvest") else "value"
     season_options = sorted(season_crops["season"].astype(str).unique().tolist())
@@ -1560,13 +1562,60 @@ def _render_workspace(
 
 
 def _render_explore_tab(
+    overall: dict[str, Any],
     seasons: pd.DataFrame,
     provinces: pd.DataFrame,
     crops: pd.DataFrame,
-    selected_seasons: list[str],
-    selected_provinces: list[str],
+    facilities: list[dict[str, Any]],
 ) -> None:
-    st.markdown("### Look around the sample")
+    st.markdown("### Explore the SAS 2024 sample")
+    st.caption(
+        "Choose what to compare. The sample figures are descriptive, unweighted, and not national estimates."
+    )
+    metric_columns = st.columns(4)
+    metric_columns[0].metric("Production records", f"{overall['records']:,}")
+    metric_columns[1].metric(
+        "Stored quantity > 0",
+        f"{_int(overall['stored_positive_records']):,} · {_percent(overall['stored_positive_share'])}",
+    )
+    metric_columns[2].metric(
+        "Transformed quantity > 0",
+        f"{_int(overall['transformed_positive_records']):,} · {_percent(overall['transformed_positive_share'])}",
+    )
+    metric_columns[3].metric(
+        "Quantity sold > 0",
+        f"{_int(overall['sold_positive_records']):,} · {_percent(overall['sold_positive_share'])}",
+    )
+    extra = st.columns(5)
+    extra[0].metric(
+        "Storage-stage loss > 0",
+        f"{_int(overall['storage_loss_positive_records']):,} · {_percent(overall.get('storage_loss_positive_share'))}",
+    )
+    extra[1].metric("Negative storage-stage values", f"{_int(overall.get('storage_loss_negative_records')):,}")
+    extra[2].metric("Public-storage quantity > 0", f"{_int(overall['public_stored_positive_records']):,}")
+    extra[3].metric("Median harvest reported", _kg(overall.get("median_reported_harvest_kg")))
+    extra[4].metric(
+        "Transport-stage loss > 0",
+        f"{_int(overall.get('transport_loss_positive_records')):,} · {_percent(overall.get('transport_loss_positive_share'))}",
+    )
+    st.caption("Blank answers are excluded from valid-answer denominators.")
+
+    filter_columns = st.columns(2)
+    season_options = sorted(seasons["season"].astype(str).unique().tolist())
+    province_options = sorted(provinces["province"].astype(str).unique().tolist())
+    selected_seasons = filter_columns[0].multiselect(
+        "Survey seasons",
+        options=season_options,
+        default=season_options,
+        help="Season C has a restricted sample and is shown separately.",
+        key="site_explore_seasons",
+    )
+    selected_provinces = filter_columns[1].multiselect(
+        "Provinces",
+        options=province_options,
+        default=province_options,
+        key="site_explore_provinces",
+    )
     st.caption(
         "The season chart follows the selected seasons. Province and crop charts use separate all-season summaries, including restricted Season C; they are not cross-filtered with one another. Use Crop workspace for season-specific crop review."
     )
@@ -1574,7 +1623,7 @@ def _render_explore_tab(
     with left:
         season_view = seasons[seasons["season"].astype(str).isin(selected_seasons)].copy()
         if season_view.empty:
-            st.info("Select at least one season in the sidebar.")
+            st.info("Select at least one season to view the seasonal summary.")
         else:
             st.plotly_chart(
                 _bar_chart(
@@ -1591,7 +1640,7 @@ def _render_explore_tab(
             provinces["province"].astype(str).isin(selected_provinces)
         ].sort_values("records", ascending=False)
         if province_view.empty:
-            st.info("Select at least one province in the sidebar.")
+            st.info("Select at least one province to view the provincial sample context.")
         else:
             has_published_shares = (
                 "stored_positive_share" in province_view.columns
@@ -1650,6 +1699,12 @@ def _render_explore_tab(
                 ),
                 width="stretch",
             )
+    if facilities:
+        st.markdown("#### Reported storage facility (`s2q37`)")
+        facility_frame = pd.DataFrame(facilities).rename(
+            columns={"facility": "Facility response", "records": "Production records"}
+        )
+        st.dataframe(facility_frame, hide_index=True, width="stretch")
 def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> None:
     st.markdown("### Data and methods")
     st.markdown(
@@ -1897,26 +1952,6 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
     crop_market_rows = payload.get("by_crop_market_channel") or []
     linkage = payload.get("module_linkage") or {}
 
-    season_options = sorted(seasons["season"].astype(str).unique().tolist())
-    province_options = sorted(provinces["province"].astype(str).unique().tolist())
-    with st.sidebar:
-        st.markdown("### AgriLoss Rwanda")
-        st.divider()
-        selected_seasons = st.multiselect(
-            "Explore seasons",
-            options=season_options,
-            default=season_options,
-        )
-        selected_provinces = st.multiselect(
-            "Explore provinces",
-            options=province_options,
-            default=province_options,
-        )
-        st.divider()
-        st.markdown(
-            "[SAS 2024 catalog](https://microdata.statistics.gov.rw/index.php/catalog/113)"
-        )
-
     if payload["release_status"] == "owner_authorized_unreviewed":
         review = payload["review"]
         release_note = "provisional; NISR disclosure review is not recorded."
@@ -1933,31 +1968,41 @@ def render_public_dashboard(payload: dict[str, Any]) -> None:
         )
         st.info("These are unweighted sample descriptions, not population estimates for Rwanda.")
 
-    start_tab, workspace_tab, explore_tab, linked_tab, methods_tab = st.tabs(
-        [
-            "Start here",
-            "Crop workspace",
+    page = st.radio(
+        "Main navigation",
+        options=[
+            "Welcome",
+            "Crop planning",
             "Explore the sample",
-            "SAS module links",
-            "Data and methods",
-        ]
+            "Module links",
+            "Data & methods",
+        ],
+        horizontal=True,
+        label_visibility="collapsed",
+        key="public_site_page",
     )
-    with start_tab:
-        _render_start_tab(overall, facilities)
-    with workspace_tab:
+
+    if page == "Welcome":
+        _render_start_tab()
+    elif page == "Crop planning":
         _render_workspace(
             season_crops,
             provinces,
             release_note,
             crop_market_rows,
         )
-    with explore_tab:
+    elif page == "Explore the sample":
         _render_explore_tab(
-            seasons, provinces, crops, selected_seasons, selected_provinces
+            overall,
+            seasons,
+            provinces,
+            crops,
+            facilities,
         )
-    with linked_tab:
+    elif page == "Module links":
         _render_linked_analysis(practice_rows, market_rows, crop_market_rows, linkage)
-    with methods_tab:
+    else:
+        selected_seasons = sorted(seasons["season"].astype(str).unique().tolist())
         _render_methods_tab(seasons, selected_seasons)
 
     st.caption(

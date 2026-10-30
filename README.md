@@ -15,12 +15,12 @@ AgriLoss answers a practical first question: what do SAS 2024 production records
 
 The tool is an exploratory prototype, not an operational early-warning or farmer-targeting system.
 
-## What is in the dashboard
+## What the website offers
 
-- **Start here:** unweighted SAS 2024 sample indicators, data scope, and the eight-step user workflow.
-- **Crop workspace:** choose a challenge, SAS season, and crop; enter your role, province, district, cooperative or market group, optional period, local conditions, and relevant supply/storage/processing/market values. When both supply and capacity are provided, review their simple arithmetic coverage or gap. Review crop evidence and field actions, compare the crop across seasons, then preview and download the report. Province evidence remains separate from crop evidence; district and cooperative entries are not survey filters.
-- **SAS module links:** compare crop and post-harvest patterns with Season A agricultural-practice and fertilizer/pesticide responses, and inspect production-linked sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
-- **Explore the sample:** independent season, province, crop, and harvest summaries. Crop-by-season views are available in Crop workspace; province and crop values are not cross-tabulated.
+- **Welcome:** an introduction to the evidence and two planning pathways.
+- **Crop planning:** choose a challenge, SAS season, and crop; enter your role, province, district, cooperative or market group, optional period, local conditions, and relevant supply/storage/processing/market values. When both supply and capacity are provided, review their simple arithmetic coverage or gap. Review crop evidence and field actions, compare the crop across seasons, then preview and download the report. Province evidence remains separate from crop evidence; district and cooperative entries are not survey filters.
+- **Explore the sample:** independent season, province, crop, and harvest summaries, with filters on the page. Crop-by-season views are available in Crop planning; province and crop values are not cross-tabulated.
+- **Module links:** compare crop and post-harvest patterns with Season A agricultural-practice and fertilizer/pesticide responses, and inspect production-linked sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
 - **User workflow:** [`docs/user-workflow.md`](docs/user-workflow.md) maps the eight steps to available data and explains which inputs are contextual and which estimates the system cannot support.
 - The local research edition shows retrospective classifier evaluation only. It does not generate an interactive score or a future-loss forecast. The public aggregate edition does not include respondent-level model inputs.
@@ -163,10 +163,10 @@ The SQLite database created by the raw staging loader contains respondent-level 
 
 ## Repository structure
 
-- `app.py` — Streamlit dashboard
+- `app.py` — Streamlit website and local research edition
 - `scripts/dashboard_data.py` — production source loading and filtering
 - `scripts/build_public_dashboard.py` — local aggregate release-candidate builder
-- `scripts/public_dashboard.py` — public aggregate-only dashboard renderer
+- `scripts/public_dashboard.py` — public aggregate-only website renderer
 - `scripts/train_loss_model.py` — reproducible model training and grouped evaluation
 - `scripts/summarize_impact_evaluation.py` — validation and aggregate summary of private user-study results
 - `scripts/audit_sas_2024.py` — source and data-quality audit
