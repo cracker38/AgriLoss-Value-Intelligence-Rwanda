@@ -133,7 +133,6 @@
           ${["Maize", "Bush bean", "Cassava", "Irish potato", "Paddy rice", "Cooking banana"].map((name) => `<a class="chip" href="#/crop/${AgriLoss.slug(name)}">${name}</a>`).join("")}
         </div>
       </section>
-      <div class="notice">This website shows grouped survey summaries from real SAS 2024 records. They are not official national estimates. ${releaseNote()}.</div>
       <section class="section">
         <div class="section-head"><h2>How to use AgriLoss</h2></div>
         <div class="grid grid-3 steps">
