@@ -23,6 +23,31 @@
     { id: "sold", label: "Most often sold", field: "sold_positive_share" },
     { id: "harvest", label: "Highest typical harvest reported", field: "median_reported_harvest_kg" },
   ];
+  const SEARCH_ALIASES = {
+    bean: ["bush bean", "climbing bean"],
+    beans: ["bush bean", "climbing bean"],
+    "bush beans": ["bush bean"],
+    banana: ["cooking banana", "dessert banana", "banana for beer"],
+    bananas: ["cooking banana", "dessert banana", "banana for beer"],
+    beer: ["banana for beer"],
+    potato: ["irish potato", "sweet potato"],
+    potatoes: ["irish potato", "sweet potato"],
+    "irish potatoes": ["irish potato"],
+    rice: ["paddy rice"],
+    paddy: ["paddy rice"],
+    maize: ["maize"],
+    corn: ["maize"],
+    cassava: ["cassava"],
+    wheat: ["wheat"],
+    sorghum: ["sorghum"],
+    ibigori: ["maize"],
+    ibirayi: ["irish potato"],
+    imyumbati: ["cassava"],
+    umuceri: ["paddy rice"],
+    ibishyimbo: ["bush bean", "climbing bean"],
+    priority: ["maize", "bush bean", "climbing bean", "irish potato", "paddy rice", "cassava", "wheat", "cooking banana"],
+    nst2: ["maize", "bush bean", "climbing bean", "irish potato", "paddy rice", "cassava", "wheat", "cooking banana"],
+  };
 
   function isNumber(value) {
     return typeof value === "number" && Number.isFinite(value);
@@ -38,6 +63,14 @@
 
   function count(value) {
     return isNumber(value) ? Math.round(value).toLocaleString() : "0";
+  }
+
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   }
 
   function slug(name) {
@@ -70,18 +103,105 @@
       });
   }
 
+  function aliasHits(query) {
+    const needle = String(query || "").trim().toLowerCase();
+    const names = new Set();
+    Object.entries(SEARCH_ALIASES).forEach(([key, values]) => {
+      if (needle === key || key.includes(needle) || needle.includes(key)) {
+        values.forEach((name) => names.add(name));
+      }
+    });
+    return names;
+  }
+
+  function searchScore(crop, query) {
+    const needle = String(query || "").trim().toLowerCase();
+    const name = String(crop.crop || "").toLowerCase();
+    let score = 0;
+    if (name === needle) score = 100;
+    else if (name.startsWith(needle)) score = 82;
+    else if (name.includes(needle)) score = 64;
+    else if (aliasHits(query).has(name)) score = 58;
+    else return 0;
+    if (crop.is_priority_crop) score += 4;
+    if (isNumber(crop.records)) score += Math.min(6, Math.log10(crop.records + 1));
+    return score;
+  }
+
   function searchCrops(crops, query) {
     const needle = String(query || "").trim().toLowerCase();
     const rows = namedCrops(crops);
     if (!needle) return rows;
-    return rows.filter((row) => {
-      const hay = `${row.crop} ${row.is_priority_crop ? "priority nst2 maize beans rice" : ""}`.toLowerCase();
-      return hay.includes(needle);
-    });
+    return rows
+      .map((row) => ({ row, score: searchScore(row, needle) }))
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score || a.row.crop.localeCompare(b.row.crop))
+      .map((item) => item.row);
   }
 
   function cropByName(crops, name) {
-    return namedCrops(crops).find((row) => row.crop === name) || null;
+    const decoded = decodeURIComponent(String(name || "")).trim();
+    return namedCrops(crops).find((row) => row.crop.toLowerCase() === decoded.toLowerCase()) || null;
+  }
+
+  function cropPathway(crop) {
+    const values = [
+      { id: "storage", label: "Stored more often than processed or sold", short: "Storage-led", share: crop.stored_positive_share },
+      { id: "processing", label: "Processed at home more often than stored or sold", short: "Processing-led", share: crop.transformed_positive_share },
+      { id: "sales", label: "Sold more often than stored or processed", short: "Sales-led", share: crop.sold_positive_share },
+    ].filter((item) => isNumber(item.share));
+    if (!values.length) {
+      return { id: "unknown", short: "Limited answers", label: "Not enough complete answers to describe after-harvest use.", lead: null, values: [] };
+    }
+    values.sort((a, b) => b.share - a.share);
+    const lead = values[0];
+    const second = values[1];
+    const gap = second ? lead.share - second.share : lead.share;
+    if (lead.share < 0.08) {
+      return { id: "thin", short: "Low reported use", label: "Few complete answers reported storing, processing, or selling this harvest.", lead, values, gap };
+    }
+    if (second && gap < 0.08) {
+      return {
+        id: "mixed",
+        short: "Mixed use",
+        label: `${lead.short.replace("-led", "")} and ${second.short.replace("-led", "")} both show up often in this sample.`,
+        lead,
+        values,
+        gap,
+      };
+    }
+    return { id: lead.id, short: lead.short, label: lead.label, lead, values, gap };
+  }
+
+  function contrastLines(crop, overall) {
+    if (!overall) return [];
+    const pairs = [
+      ["stored", crop.stored_positive_share, overall.stored_positive_share],
+      ["processed", crop.transformed_positive_share, overall.transformed_positive_share],
+      ["sold", crop.sold_positive_share, overall.sold_positive_share],
+    ];
+    return pairs
+      .map(([name, cropShare, allShare]) => {
+        if (!isNumber(cropShare) || !isNumber(allShare) || allShare <= 0) return null;
+        if (cropShare >= allShare * 1.6 && cropShare - allShare >= 0.04) {
+          return `${percent(cropShare)} ${name} — higher than the overall sample (${percent(allShare)}).`;
+        }
+        if (cropShare <= allShare * 0.5 && allShare - cropShare >= 0.04) {
+          return `${percent(cropShare)} ${name} — lower than the overall sample (${percent(allShare)}).`;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  function qualityFlags(crop) {
+    const flags = [];
+    if (crop.stored_missing_records) flags.push(`${count(crop.stored_missing_records)} missing storage answers`);
+    if (crop.storage_loss_negative_records) flags.push(`${count(crop.storage_loss_negative_records)} negative storage-loss values`);
+    if (crop.sold_with_zero_price_records) flags.push(`${count(crop.sold_with_zero_price_records)} sales with a zero price`);
+    if (crop.sold_with_missing_price_records) flags.push(`${count(crop.sold_with_missing_price_records)} sales with no price`);
+    if (crop.public_stored_positive_records) flags.push(`${count(crop.public_stored_positive_records)} public-storage reports`);
+    return flags;
   }
 
   function storageReading(crop) {
@@ -114,7 +234,11 @@
 
   function followUpChecks(crop, track, localCondition) {
     const checks = [];
+    const pathway = cropPathway(crop);
     if (track === "storage") {
+      if (pathway.id === "sales" || pathway.id === "processing") {
+        checks.push(`${crop.crop} is ${pathway.short.toLowerCase()} in this sample. Confirm whether storage is even the local bottleneck before planning a store.`);
+      }
       if (crop.stored_missing_records) {
         checks.push(`Check missing storage answers: ${count(crop.stored_missing_records)} crop records have no stored-quantity answer.`);
       }
@@ -135,6 +259,9 @@
       };
       if (extra[localCondition]) checks.push(extra[localCondition]);
     } else {
+      if (pathway.id === "storage") {
+        checks.push(`${crop.crop} is storage-led in this sample. Confirm that processing or sales is the local issue before planning equipment.`);
+      }
       if (crop.sold_with_zero_price_records) {
         checks.push(`Check ${count(crop.sold_with_zero_price_records)} sales with a zero price before valuing output.`);
       }
@@ -150,7 +277,7 @@
       };
       if (extra[localCondition]) checks.push(extra[localCondition]);
     }
-    return checks;
+    return [...new Set(checks)];
   }
 
   function reviewSignal(crop, sortLabel, rank, total) {
@@ -166,6 +293,7 @@
     const title = track === "storage" ? "After harvest: collection and storage" : "Processing and adding value";
     const why = track === "storage" ? storageReading(crop) : valueReading(crop);
     const checks = followUpChecks(crop, track, localCondition || "Not specified");
+    const pathway = cropPathway(crop);
     const priority = crop.is_priority_crop
       ? "Yes — this crop is among national priority food crops (maize, beans, potatoes, rice, cassava, wheat, bananas)."
       : "Not listed here as a national priority food crop.";
@@ -173,6 +301,9 @@
 
 ## Challenge
 ${title}
+
+## After-harvest pattern in this sample
+${pathway.short}: ${pathway.label}
 
 ## Why this crop is on the list
 ${reviewSignal(crop, sortLabel, rank, total)}
@@ -221,6 +352,35 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     return (marketRows || []).filter((row) => row.crop === cropName);
   }
 
+  function featuredStories(crops, overall) {
+    const stored = rankCrops(crops, "stored_positive_share")[0];
+    const processed = rankCrops(crops, "transformed_positive_share")[0];
+    const sold = rankCrops(crops, "sold_positive_share")[0];
+    return [
+      stored && {
+        crop: stored,
+        kicker: "Storage pattern",
+        title: stored.crop,
+        text: `${percent(stored.stored_positive_share)} of complete storage answers reported storing some harvest${overall ? `, against ${percent(overall.stored_positive_share)} in the overall sample` : ""}.`,
+        href: `#/crop/${slug(stored.crop)}?track=storage`,
+      },
+      processed && {
+        crop: processed,
+        kicker: "Processing pattern",
+        title: processed.crop,
+        text: `${percent(processed.transformed_positive_share)} of complete processing answers reported transforming some harvest.`,
+        href: `#/crop/${slug(processed.crop)}?track=value`,
+      },
+      sold && {
+        crop: sold,
+        kicker: "Sales pattern",
+        title: sold.crop,
+        text: `${percent(sold.sold_positive_share)} of complete sales answers reported a sale. That is a market signal in the sample, not a factory plan.`,
+        href: `#/crop/${slug(sold.crop)}?track=value`,
+      },
+    ].filter(Boolean);
+  }
+
   global.AgriLoss = {
     POOLED,
     NST2,
@@ -230,10 +390,14 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     kg,
     count,
     slug,
+    escapeHtml,
     namedCrops,
     rankCrops,
     searchCrops,
     cropByName,
+    cropPathway,
+    contrastLines,
+    qualityFlags,
     storageReading,
     valueReading,
     followUpChecks,
@@ -243,5 +407,6 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     practicesForCrop,
     marketsForCrop,
     provinceContextText,
+    featuredStories,
   };
 })(window);

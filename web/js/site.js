@@ -2,7 +2,6 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
   let data = null;
-  let context = null;
   let charts = [];
 
   const ROUTES = [
@@ -19,7 +18,7 @@
   function releaseNote() {
     if (!data) return "";
     if (data.release_status === "owner_authorized_unreviewed") {
-      return "provisional grouped summary; not an official NISR statistic";
+      return "grouped sample summary; not an official NISR statistic";
     }
     const review = data.review || {};
     return `reviewed by ${review.reviewed_by || "—"} on ${review.reviewed_on || "—"}`;
@@ -97,6 +96,16 @@
     return `<div class="meter" aria-hidden="true"><span style="width:${width}%"></span></div>`;
   }
 
+  function ring(share, color) {
+    const value = typeof share === "number" ? Math.max(0, Math.min(100, share * 100)) : 0;
+    return `<div class="ring" style="--p:${value};--c:${color}"><b>${AgriLoss.percent(share)}</b></div>`;
+  }
+
+  function pathPill(crop) {
+    const path = AgriLoss.cropPathway(crop);
+    return `<span class="path-pill ${path.id}">${path.short}</span>`;
+  }
+
   function toast(message) {
     document.querySelectorAll(".toast").forEach((node) => node.remove());
     const note = document.createElement("div");
@@ -132,29 +141,28 @@
     const hits = AgriLoss.searchCrops(data.by_crop, query).slice(0, 8);
     box.classList.add("open");
     if (!hits.length) {
-      box.innerHTML = `<div class="empty">No crop matches “${query}”.</div>`;
+      box.innerHTML = `<div class="empty">No crop matches “${AgriLoss.escapeHtml(query)}”.</div>`;
       return;
     }
     box.innerHTML = hits
-      .map(
-        (crop, index) =>
-          `<a href="#/crop/${AgriLoss.slug(crop.crop)}" class="${index === 0 ? "active" : ""}"><strong>${crop.crop}</strong><br><small>${AgriLoss.count(crop.records)} records · stored ${AgriLoss.percent(crop.stored_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)}</small></a>`
-      )
+      .map((crop, index) => {
+        const path = AgriLoss.cropPathway(crop);
+        return `<a href="#/crop/${AgriLoss.slug(crop.crop)}" class="${index === 0 ? "active" : ""}"><strong>${AgriLoss.escapeHtml(crop.crop)}</strong> ${pathPill(crop)}<br><small>${AgriLoss.count(crop.records)} records · stored ${AgriLoss.percent(crop.stored_positive_share)} · processed ${AgriLoss.percent(crop.transformed_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)} · ${path.short}</small></a>`;
+      })
       .join("");
   }
 
   function homePage() {
     const overall = data.overall;
     const crops = AgriLoss.namedCrops(data.by_crop);
-    const stored = AgriLoss.rankCrops(data.by_crop, "stored_positive_share")[0];
-    const processed = AgriLoss.rankCrops(data.by_crop, "transformed_positive_share")[0];
+    const stories = AgriLoss.featuredStories(data.by_crop, overall);
     return `
       <section class="hero">
         <div class="hero-grid">
           <div>
-            <div class="eyebrow">NISR 2026 hackathon · Agricultural productivity</div>
+            <div class="eyebrow">NISR 2026 · Agricultural productivity</div>
             <h1>See what happens after harvest, crop by crop.</h1>
-            <p>AgriLoss uses Rwanda’s 2024 Seasonal Agricultural Survey to help farmers, cooperatives, and planners see which crops were stored, processed, or sold — and what to check next.</p>
+            <p>AgriLoss turns Rwanda’s 2024 Seasonal Agricultural Survey into a clear website: which crops were stored, processed, or sold — and what a careful follow-up should check next.</p>
             <div class="hero-actions">
               <a class="btn btn-primary" href="#/crops">Search crops</a>
               <a class="btn btn-ghost" href="#/storage">After-harvest storage</a>
@@ -173,10 +181,21 @@
         </div>
       </section>
       <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>Three patterns in this sample</h2>
+            <p class="stat-note">Each card is the named crop with the highest share for that after-harvest use. Shares can overlap; they are not a closed pie.</p>
+          </div>
+        </div>
+        <div class="grid grid-3">
+          ${stories.map((story) => `<a class="card story-card" href="${story.href}"><div class="kicker">${story.kicker}</div><h3>${AgriLoss.escapeHtml(story.title)}</h3><p>${story.text}</p></a>`).join("")}
+        </div>
+      </section>
+      <section class="section">
         <div class="section-head"><h2>How to use AgriLoss</h2></div>
         <div class="grid grid-3 steps">
           <article class="card"><div class="step-num">1</div><h3>Find your crop</h3><p>Search maize, beans, cassava, or any named crop in the 2024 survey sample.</p></article>
-          <article class="card"><div class="step-num">2</div><h3>See what happened after harvest</h3><p>Read, in simple words, how often that crop was stored, processed, or sold.</p></article>
+          <article class="card"><div class="step-num">2</div><h3>Read the after-harvest pattern</h3><p>See whether the crop was mostly stored, processed, or sold — in simple words, with the survey counts beside it.</p></article>
           <article class="card"><div class="step-num">3</div><h3>Download a follow-up note</h3><p>Add your local situation and take a short note to a meeting. It does not approve a project.</p></article>
         </div>
       </section>
@@ -184,20 +203,6 @@
         <article class="card"><div class="icon-bubble">1</div><h3>Who it is for</h3><p>Farmers, cooperatives, agricultural planners, researchers, and partners who need a first, honest look at the survey.</p></article>
         <article class="card"><div class="icon-bubble">2</div><h3>What you can do</h3><p>Search a crop, compare storage and processing, add your local situation, and download a short follow-up note.</p></article>
         <article class="card"><div class="icon-bubble">3</div><h3>What you should not do</h3><p>Do not treat these shares as Rwanda’s national loss rate, score farmers, or decide where to build a warehouse from this page.</p></article>
-      </section>
-      <section class="section grid grid-2">
-        <article class="card">
-          <h3>After harvest: collection and storage</h3>
-          <p>NST2 aims to cut food-crop losses after harvest from 13.8% to 4.8%. This site does not measure that target. It shows which crops in the survey already report storing harvest or losing it in storage.</p>
-          <p style="margin-top:.7rem">${stored ? `<strong>${stored.crop}</strong> has the highest share of storage answers in this sample (${AgriLoss.percent(stored.stored_positive_share)}).` : ""}</p>
-          <p style="margin-top:.9rem"><a class="btn btn-dark" href="#/storage">Open storage</a></p>
-        </article>
-        <article class="card">
-          <h3>Processing and adding value</h3>
-          <p>Some harvest is turned into food or drink at home, and some is sold. That is a starting point for value-addition follow-up — not a business plan.</p>
-          <p style="margin-top:.7rem">${processed ? `<strong>${processed.crop}</strong> has the highest share of processing answers in this sample (${AgriLoss.percent(processed.transformed_positive_share)}).` : ""}</p>
-          <p style="margin-top:.9rem"><a class="btn btn-dark" href="#/processing">Open processing</a></p>
-        </article>
       </section>
       <section class="section">
         <div class="section-head">
@@ -216,7 +221,7 @@
 
   function cropCard(crop) {
     return `<a class="crop-row" href="#/crop/${AgriLoss.slug(crop.crop)}">
-      <div><strong>${crop.crop}</strong>${crop.is_priority_crop ? '<span class="pill">National priority crop</span>' : ""}<small style="display:block;color:var(--muted)">${AgriLoss.count(crop.records)} survey records</small></div>
+      <div><strong>${AgriLoss.escapeHtml(crop.crop)}</strong>${crop.is_priority_crop ? '<span class="pill">National priority crop</span>' : ""}${pathPill(crop)}<small style="display:block;color:var(--muted)">${AgriLoss.count(crop.records)} survey records</small></div>
       <div><span class="stat-label">Stored</span><div>${AgriLoss.percent(crop.stored_positive_share)}</div>${meter(crop.stored_positive_share)}</div>
       <div><span class="stat-label">Processed</span><div>${AgriLoss.percent(crop.transformed_positive_share)}</div>${meter(crop.transformed_positive_share)}</div>
       <div><span class="stat-label">Sold</span><div>${AgriLoss.percent(crop.sold_positive_share)}</div>${meter(crop.sold_positive_share)}</div>
@@ -228,16 +233,16 @@
     const filter = params.filter || "all";
     let rows = AgriLoss.searchCrops(data.by_crop, query);
     if (filter === "priority") rows = rows.filter((row) => row.is_priority_crop);
-    rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
+    if (!query) rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
     return `
       <section class="hero">
         <div class="eyebrow">Crop directory</div>
         <h1>Find a crop in the 2024 survey.</h1>
-        <p>Type a crop name. You will see how often that crop was stored, processed, or sold in this sample.</p>
+        <p>Type a crop name, or a common word such as beans, banana, or potato. You will see how often that crop was stored, processed, or sold in this sample.</p>
       </section>
       <section class="section">
         <form class="filters" id="crop-filter-form">
-          <input name="q" value="${query.replace(/"/g, "&quot;")}" placeholder="Search maize, beans, cassava…" aria-label="Search crops">
+          <input name="q" value="${AgriLoss.escapeHtml(query)}" placeholder="Search maize, beans, cassava…" aria-label="Search crops">
           <select name="filter" aria-label="Filter crops">
             <option value="all" ${filter === "all" ? "selected" : ""}>All named crops</option>
             <option value="priority" ${filter === "priority" ? "selected" : ""}>National priority food crops</option>
@@ -256,11 +261,16 @@
     const sortId = route.params.sort || sorts[0].id;
     const sort = sorts.find((item) => item.id === sortId) || sorts[0];
     const ranked = AgriLoss.rankCrops(data.by_crop, sort.field);
+    const top = ranked.slice(0, 3).map((row) => row.crop).join(", ");
     const title = track === "storage" ? "After harvest: collection and storage" : "Processing and adding value";
     const intro =
       track === "storage"
         ? "This page uses the survey questions on stored quantity and loss during storage. It does not measure Rwanda’s national post-harvest loss target."
         : "This page uses the survey questions on harvest that was processed and harvest that was sold. It is not a mill or factory siting tool.";
+    const insight =
+      track === "storage"
+        ? `Highest storage shares in this sample: ${top || "—"}. Storage here means a survey answer that some harvest was stored, not a warehouse inventory.`
+        : `Highest processing or sales shares in this sample: ${top || "—"}. Processing here means harvest transformed at home, not industrial capacity.`;
     return `
       <section class="hero">
         <div class="eyebrow">${track === "storage" ? "Track: storage" : "Track: processing"}</div>
@@ -268,6 +278,7 @@
         <p>${intro}</p>
       </section>
       <section class="section">
+        <div class="insight">${insight}</div>
         <div class="sort-chips" id="sort-chips">
           ${sorts.map((item) => `<a class="${item.id === sort.id ? "active" : ""}" href="#/${track === "storage" ? "storage" : "processing"}?sort=${item.id}">${item.label}</a>`).join("")}
         </div>
@@ -278,7 +289,7 @@
         </form>
         <div class="crop-list">
           ${ranked.map((crop, index) => `<a class="crop-row" href="#/crop/${AgriLoss.slug(crop.crop)}?track=${track}&sort=${sort.id}">
-            <div><strong>${index + 1}. ${crop.crop}</strong>${crop.is_priority_crop ? '<span class="pill">National priority crop</span>' : ""}</div>
+            <div><strong>${index + 1}. ${AgriLoss.escapeHtml(crop.crop)}</strong>${crop.is_priority_crop ? '<span class="pill">National priority crop</span>' : ""}${pathPill(crop)}</div>
             <div><span class="stat-label">${sort.label}</span><div>${sort.field.includes("records") ? AgriLoss.count(crop[sort.field]) : sort.field.includes("kg") ? AgriLoss.kg(crop[sort.field]) : AgriLoss.percent(crop[sort.field])}</div></div>
             <div><span class="stat-label">Stored</span><div>${AgriLoss.percent(crop.stored_positive_share)}</div></div>
             <div><span class="stat-label">Processed / sold</span><div>${AgriLoss.percent(crop.transformed_positive_share)} / ${AgriLoss.percent(crop.sold_positive_share)}</div></div>
@@ -300,12 +311,27 @@
     const practiceNames = [...new Set((data.by_crop_practice || []).filter((row) => row.crop === crop.crop).map((row) => row.practice))];
     const markets = AgriLoss.marketsForCrop(data.by_crop_market_channel, crop.crop);
     const provinces = data.by_province || [];
+    const path = AgriLoss.cropPathway(crop);
+    const contrast = AgriLoss.contrastLines(crop, data.overall);
+    const flags = AgriLoss.qualityFlags(crop);
     return `
       <section class="hero">
-        <div class="crumb"><a href="#/crops">Crops</a> / ${crop.crop}</div>
+        <div class="crumb"><a href="#/crops">Crops</a> / ${AgriLoss.escapeHtml(crop.crop)}</div>
         <div class="eyebrow">Crop file</div>
-        <h1>${crop.crop}</h1>
+        <h1>${AgriLoss.escapeHtml(crop.crop)}</h1>
         <p>${crop.is_priority_crop ? "This crop is among national priority food crops." : "This crop is published in the SAS 2024 sample."} ${AgriLoss.count(crop.records)} survey records. Figures below are unweighted sample descriptions.</p>
+      </section>
+      <section class="section pathway-banner ${path.id}">
+        <strong>${path.short}</strong>
+        <p>${path.label}${contrast.length ? ` ${contrast[0]}` : ""} These shares can overlap because one record can store, process, and sell different parts of harvest.</p>
+      </section>
+      <section class="section card">
+        <div class="rings">
+          <div class="ring-wrap">${ring(crop.stored_positive_share, "#157a56")}<div class="stat-label">Stored</div></div>
+          <div class="ring-wrap">${ring(crop.transformed_positive_share, "#0f4a36")}<div class="stat-label">Processed</div></div>
+          <div class="ring-wrap">${ring(crop.sold_positive_share, "#d4a017")}<div class="stat-label">Sold</div></div>
+        </div>
+        ${flags.length ? `<div class="flag-row">${flags.map((item) => `<span class="flag">${item}</span>`).join("")}</div>` : ""}
       </section>
       <section class="section grid grid-4">
         <div class="card"><div class="stat-label">Stored some harvest</div><div class="stat-value">${AgriLoss.percent(crop.stored_positive_share)}</div><div class="stat-note">${AgriLoss.count(crop.stored_positive_records)} records</div></div>
@@ -331,14 +357,14 @@
           ? `<section class="section card"><h3>Where this crop was reported as sold (Season A)</h3>
         <p class="stat-note">These are 2024 survey answers, not today’s market prices.</p>
         <div class="table-wrap"><table><thead><tr><th>Sales place</th><th>Records with a sale</th><th>Typical amount sold</th><th>Typical reported price</th></tr></thead>
-        <tbody>${markets.map((row) => `<tr><td>${row.market_channel}</td><td>${AgriLoss.count(row.positive_sales_records)}</td><td>${AgriLoss.kg(row.median_positive_sales_kg)}</td><td>${row.median_positive_price_rwf_per_kg != null ? `${AgriLoss.count(row.median_positive_price_rwf_per_kg)} RWF/kg` : "—"}</td></tr>`).join("")}</tbody></table></div></section>`
+        <tbody>${markets.map((row) => `<tr><td>${AgriLoss.escapeHtml(row.market_channel)}</td><td>${AgriLoss.count(row.positive_sales_records)}</td><td>${AgriLoss.kg(row.median_positive_sales_kg)}</td><td>${row.median_positive_price_rwf_per_kg != null ? `${AgriLoss.count(row.median_positive_price_rwf_per_kg)} RWF/kg` : "—"}</td></tr>`).join("")}</tbody></table></div></section>`
           : ""
       }
       ${
         practiceNames.length
           ? `<section class="section card"><h3>Practices reported with this crop (Season A)</h3>
         <p class="stat-note">These are side-by-side sample descriptions, not proof that a practice caused storage or sales.</p>
-        <label>Practice <select id="practice-select">${practiceNames.map((name) => `<option>${name}</option>`).join("")}</select></label>
+        <label>Practice <select id="practice-select">${practiceNames.map((name) => `<option>${AgriLoss.escapeHtml(name)}</option>`).join("")}</select></label>
         <div class="table-wrap" style="margin-top:0.8rem" id="practice-table"></div></section>`
           : ""
       }
@@ -355,7 +381,7 @@
           <label>Province context (separate sample summary)
             <select name="province">
               <option value="">Not specified</option>
-              ${provinces.map((row) => `<option value="${row.province}">${row.province}</option>`).join("")}
+              ${provinces.map((row) => `<option value="${AgriLoss.escapeHtml(row.province)}">${AgriLoss.escapeHtml(row.province)}</option>`).join("")}
             </select>
           </label>
           <label>Local issue to investigate
@@ -382,15 +408,16 @@
         <article class="card"><h3>Records by season</h3><div class="chart-box"><canvas id="season-chart"></canvas></div></article>
         <article class="card"><h3>Stored harvest by province</h3><div class="chart-box"><canvas id="province-chart"></canvas></div></article>
       </section>
-      <section class="section grid grid-2">
-        <article class="card"><h3>Crops most often stored</h3><div class="chart-box"><canvas id="stored-chart"></canvas></div></article>
-        <article class="card"><h3>Crops most often processed</h3><div class="chart-box"><canvas id="processed-chart"></canvas></div></article>
+      <section class="section grid grid-3">
+        <article class="card"><h3>Most often stored</h3><div class="chart-box"><canvas id="stored-chart"></canvas></div></article>
+        <article class="card"><h3>Most often processed</h3><div class="chart-box"><canvas id="processed-chart"></canvas></div></article>
+        <article class="card"><h3>Most often sold</h3><div class="chart-box"><canvas id="sold-chart"></canvas></div></article>
       </section>
       <section class="section card">
         <h3>Reported storage place</h3>
         <p class="stat-note">Most records have no facility answer. Unmapped codes stay unmapped.</p>
         <div class="table-wrap"><table><thead><tr><th>Facility answer</th><th>Records</th></tr></thead>
-        <tbody>${(data.by_storage_facility || []).map((row) => `<tr><td>${row.facility}</td><td>${AgriLoss.count(row.records)}</td></tr>`).join("")}</tbody></table></div>
+        <tbody>${(data.by_storage_facility || []).map((row) => `<tr><td>${AgriLoss.escapeHtml(row.facility)}</td><td>${AgriLoss.count(row.records)}</td></tr>`).join("")}</tbody></table></div>
       </section>
     `;
   }
@@ -406,8 +433,8 @@
       </section>
       <section class="section card">
         <div class="filters">
-          <label>Practice or input <select id="link-practice">${names.map((name) => `<option>${name}</option>`).join("")}</select></label>
-          <label>Crop <select id="link-crop">${crops.map((name) => `<option>${name}</option>`).join("")}</select></label>
+          <label>Practice or input <select id="link-practice">${names.map((name) => `<option>${AgriLoss.escapeHtml(name)}</option>`).join("")}</select></label>
+          <label>Crop <select id="link-crop">${crops.map((name) => `<option>${AgriLoss.escapeHtml(name)}</option>`).join("")}</select></label>
         </div>
         <div id="link-table"></div>
       </section>
@@ -415,7 +442,7 @@
         <h3>Reported sales places (Season A)</h3>
         <p class="stat-note">Prices are historical 2024 reports, not a live market.</p>
         <div class="table-wrap"><table><thead><tr><th>Sales place</th><th>Records</th><th>Share with a sale</th><th>Typical amount sold</th><th>Typical price</th></tr></thead>
-        <tbody>${(data.by_market_channel || []).map((row) => `<tr><td>${row.market_channel}</td><td>${AgriLoss.count(row.production_records)}</td><td>${AgriLoss.percent(row.positive_sales_share)}</td><td>${AgriLoss.kg(row.median_positive_sales_kg)}</td><td>${row.median_positive_price_rwf_per_kg != null ? `${AgriLoss.count(row.median_positive_price_rwf_per_kg)} RWF/kg` : "—"}</td></tr>`).join("")}</tbody></table></div>
+        <tbody>${(data.by_market_channel || []).map((row) => `<tr><td>${AgriLoss.escapeHtml(row.market_channel)}</td><td>${AgriLoss.count(row.production_records)}</td><td>${AgriLoss.percent(row.positive_sales_share)}</td><td>${AgriLoss.kg(row.median_positive_sales_kg)}</td><td>${row.median_positive_price_rwf_per_kg != null ? `${AgriLoss.count(row.median_positive_price_rwf_per_kg)} RWF/kg` : "—"}</td></tr>`).join("")}</tbody></table></div>
       </section>
     `;
   }
@@ -431,7 +458,7 @@
       <section class="section card">
         <form class="plan-form" id="standalone-plan">
           <label>Crop
-            <select name="crop">${crops.map((row) => `<option>${row.crop}</option>`).join("")}</select>
+            <select name="crop">${crops.map((row) => `<option>${AgriLoss.escapeHtml(row.crop)}</option>`).join("")}</select>
           </label>
           <label>Challenge
             <select name="track">
@@ -490,11 +517,11 @@
   function bindCropsForm() {
     const form = $("#crop-filter-form");
     if (!form) return;
-    const list = $(".crop-list");
+    const list = $("#crop-list");
     const paint = () => {
       let rows = AgriLoss.searchCrops(data.by_crop, form.q.value);
       if (form.filter.value === "priority") rows = rows.filter((row) => row.is_priority_crop);
-      rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
+      if (!String(form.q.value || "").trim()) rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
       list.innerHTML = rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`;
       const count = $("#crop-count");
       if (count) count.textContent = `${rows.length} crop${rows.length === 1 ? "" : "s"} shown`;
@@ -526,6 +553,7 @@
     const condition = $("#condition-select");
     const list = $("#check-list");
     function refreshChecks() {
+      if (!trackSelect || !condition || !list) return;
       const track = trackSelect.value;
       const current = condition.value;
       const options = conditionOptions(track);
@@ -537,7 +565,7 @@
     }
     if (trackSelect) {
       trackSelect.addEventListener("change", refreshChecks);
-      condition.addEventListener("change", refreshChecks);
+      if (condition) condition.addEventListener("change", refreshChecks);
       refreshChecks();
     }
     const form = $("#brief-form");
@@ -572,15 +600,13 @@
     if (practiceSelect) {
       const renderPractice = () => {
         const rows = AgriLoss.practicesForCrop(data.by_crop_practice, crop.crop, practiceSelect.value);
-        $("#practice-table").innerHTML = `<table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${row.status}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table>`;
+        $("#practice-table").innerHTML = `<table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${AgriLoss.escapeHtml(row.status)}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table>`;
       };
       practiceSelect.addEventListener("change", renderPractice);
       renderPractice();
     }
     const seasons = AgriLoss.seasonRowsForCrop(data.by_season_crop, crop.crop);
-    if (seasons.length) {
-      groupedSeasonChart(seasons);
-    }
+    if (seasons.length) groupedSeasonChart(seasons);
   }
 
   function afterRender(route) {
@@ -599,6 +625,8 @@
       barChart("stored-chart", stored.map((row) => row.crop), stored.map((row) => row.stored_positive_share), "Stored", true);
       const processed = AgriLoss.rankCrops(data.by_crop, "transformed_positive_share").slice(0, 8);
       barChart("processed-chart", processed.map((row) => row.crop), processed.map((row) => row.transformed_positive_share), "Processed", true);
+      const sold = AgriLoss.rankCrops(data.by_crop, "sold_positive_share").slice(0, 8);
+      barChart("sold-chart", sold.map((row) => row.crop), sold.map((row) => row.sold_positive_share), "Sold", true);
     }
     if (route.path.startsWith("#/practices") && $("#link-practice") && $("#link-crop")) {
       const render = () => {
@@ -606,7 +634,7 @@
         const crop = $("#link-crop").value;
         const rows = AgriLoss.practicesForCrop(data.by_crop_practice, crop, practice);
         $("#link-table").innerHTML = rows.length
-          ? `<div class="table-wrap"><table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${row.status}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table></div>`
+          ? `<div class="table-wrap"><table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${AgriLoss.escapeHtml(row.status)}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table></div>`
           : `<p>No published Yes/No comparison for that crop and practice.</p>`;
       };
       $("#link-practice").addEventListener("change", render);
@@ -630,6 +658,8 @@
     $("#main-nav").classList.remove("open");
     const results = $("#search-results");
     if (results) results.classList.remove("open");
+    const search = $("#global-search");
+    if (search && route.parts[0] === "crop") search.value = "";
     const view = $("#view");
     const titles = {
       "": "AgriLoss Rwanda · After harvest, crop by crop",
@@ -665,15 +695,9 @@
         if (!response.ok) throw new Error("Could not load survey summaries.");
         data = await response.json();
       }
-      try {
-        const ctx = await fetch("public_data/national_context.json");
-        if (ctx.ok) context = await ctx.json();
-      } catch (error) {
-        context = null;
-      }
       render();
     } catch (error) {
-      $("#view").innerHTML = `<section class="section card"><h2>The survey file could not be loaded</h2><p>${error.message}</p><p>Open this site through XAMPP at <code>http://localhost/AgriLoss/</code> so the data file can be read.</p></section>`;
+      $("#view").innerHTML = `<section class="section card"><h2>The survey file could not be loaded</h2><p>${AgriLoss.escapeHtml(error.message)}</p><p>Open this site through XAMPP at <code>http://localhost/AgriLoss/</code> so the data file can be read.</p></section>`;
     }
   }
 
@@ -685,6 +709,11 @@
       const links = $$("#search-results a");
       const current = $("#search-results a.active");
       const index = links.indexOf(current);
+      if (event.key === "Escape") {
+        $("#search-results").classList.remove("open");
+        input.blur();
+        return;
+      }
       if (event.key === "ArrowDown" && links.length) {
         event.preventDefault();
         const next = links[Math.min(links.length - 1, index + 1)] || links[0];
