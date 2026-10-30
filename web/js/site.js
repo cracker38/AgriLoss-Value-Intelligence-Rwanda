@@ -145,10 +145,10 @@
       return;
     }
     box.innerHTML = hits
-      .map((crop, index) => {
-        const path = AgriLoss.cropPathway(crop);
-        return `<a href="#/crop/${AgriLoss.slug(crop.crop)}" class="${index === 0 ? "active" : ""}"><strong>${AgriLoss.escapeHtml(crop.crop)}</strong> ${pathPill(crop)}<br><small>${AgriLoss.count(crop.records)} records · stored ${AgriLoss.percent(crop.stored_positive_share)} · processed ${AgriLoss.percent(crop.transformed_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)} · ${path.short}</small></a>`;
-      })
+      .map(
+        (crop, index) =>
+          `<a href="#/crop/${AgriLoss.slug(crop.crop)}" class="${index === 0 ? "active" : ""}"><strong>${AgriLoss.escapeHtml(crop.crop)}</strong> ${pathPill(crop)}<br><small>${AgriLoss.count(crop.records)} records · stored ${AgriLoss.percent(crop.stored_positive_share)} · processed ${AgriLoss.percent(crop.transformed_positive_share)} · sold ${AgriLoss.percent(crop.sold_positive_share)}</small></a>`
+      )
       .join("");
   }
 
@@ -157,7 +157,7 @@
     const crops = AgriLoss.namedCrops(data.by_crop);
     const stories = AgriLoss.featuredStories(data.by_crop, overall);
     return `
-      <section class="hero">
+      <section class="hero hero-home">
         <div class="hero-grid">
           <div>
             <div class="eyebrow">NISR 2026 · Agricultural productivity</div>
@@ -235,7 +235,7 @@
     if (filter === "priority") rows = rows.filter((row) => row.is_priority_crop);
     if (!query) rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">Crop directory</div>
         <h1>Find a crop in the 2024 survey.</h1>
         <p>Type a crop name, or a common word such as beans, banana, or potato. You will see how often that crop was stored, processed, or sold in this sample.</p>
@@ -272,7 +272,7 @@
         ? `Highest storage shares in this sample: ${top || "—"}. Storage here means a survey answer that some harvest was stored, not a warehouse inventory.`
         : `Highest processing or sales shares in this sample: ${top || "—"}. Processing here means harvest transformed at home, not industrial capacity.`;
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">${track === "storage" ? "Track: storage" : "Track: processing"}</div>
         <h1>${title}</h1>
         <p>${intro}</p>
@@ -315,7 +315,7 @@
     const contrast = AgriLoss.contrastLines(crop, data.overall);
     const flags = AgriLoss.qualityFlags(crop);
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="crumb"><a href="#/crops">Crops</a> / ${AgriLoss.escapeHtml(crop.crop)}</div>
         <div class="eyebrow">Crop file</div>
         <h1>${AgriLoss.escapeHtml(crop.crop)}</h1>
@@ -323,7 +323,7 @@
       </section>
       <section class="section pathway-banner ${path.id}">
         <strong>${path.short}</strong>
-        <p>${path.label}${contrast.length ? ` ${contrast[0]}` : ""} These shares can overlap because one record can store, process, and sell different parts of harvest.</p>
+        <p>${path.label}.${contrast.length ? ` ${contrast[0]}` : ""} These shares can overlap because one record can store, process, and sell different parts of harvest.</p>
       </section>
       <section class="section card">
         <div class="rings">
@@ -399,7 +399,7 @@
 
   function comparePage() {
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">Sample map</div>
         <h1>Compare seasons and provinces.</h1>
         <p>Each chart is its own summary. Changing season does not change the crop list. Province numbers are not combined with crop numbers.</p>
@@ -426,7 +426,7 @@
     const names = [...new Set((data.by_crop_practice || []).map((row) => row.practice))];
     const crops = [...new Set((data.by_crop_practice || []).map((row) => row.crop))].sort();
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">Season A only</div>
         <h1>Practices, inputs, and sales places.</h1>
         <p>These tables sit next to production answers for Season A. They do not prove that a practice caused storage or sales. Season B practice files are not used because their source is not confirmed.</p>
@@ -450,7 +450,7 @@
   function planPage() {
     const crops = AgriLoss.namedCrops(data.by_crop).sort((a, b) => a.crop.localeCompare(b.crop));
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">Follow-up note</div>
         <h1>Plan the next check, not the building.</h1>
         <p>Choose a crop and a challenge, add your local situation, and download a note you can take to a cooperative meeting or a planner. The note does not approve a project.</p>
@@ -458,7 +458,7 @@
       <section class="section card">
         <form class="plan-form" id="standalone-plan">
           <label>Crop
-            <select name="crop">${crops.map((row) => `<option>${AgriLoss.escapeHtml(row.crop)}</option>`).join("")}</select>
+            <select name="crop">${crops.map((row) => `<option value="${AgriLoss.escapeHtml(row.crop)}">${AgriLoss.escapeHtml(row.crop)}</option>`).join("")}</select>
           </label>
           <label>Challenge
             <select name="track">
@@ -475,7 +475,7 @@
   function aboutPage() {
     const seasons = data.by_season || [];
     return `
-      <section class="hero">
+      <section class="hero hero-compact">
         <div class="eyebrow">Methods in plain language</div>
         <h1>How to read these numbers.</h1>
         <p>Every figure on this website comes from grouped NISR SAS 2024 production records. Empty answers stay empty. No farmer names are shown.</p>

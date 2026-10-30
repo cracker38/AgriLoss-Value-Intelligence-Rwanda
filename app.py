@@ -36,17 +36,17 @@ def _website_html() -> str:
     html = INDEX.read_text(encoding="utf-8")
     assets = (
         (
-            '<link rel="stylesheet" href="web/css/site.css?v=4">',
+            '<link rel="stylesheet" href="web/css/site.css?v=6">',
             ROOT / "web" / "css" / "site.css",
             "style",
         ),
         (
-            '<script src="web/js/logic.js?v=4"></script>',
+            '<script src="web/js/logic.js?v=6"></script>',
             ROOT / "web" / "js" / "logic.js",
             "script",
         ),
         (
-            '<script src="web/js/site.js?v=4"></script>',
+            '<script src="web/js/site.js?v=6"></script>',
             ROOT / "web" / "js" / "site.js",
             "script",
         ),

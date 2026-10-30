@@ -366,21 +366,21 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     return [
       stored && {
         crop: stored,
-        kicker: "Storage pattern",
+        kicker: "Highest storage share",
         title: stored.crop,
         text: `${percent(stored.stored_positive_share)} of complete storage answers reported storing some harvest${overall ? `, against ${percent(overall.stored_positive_share)} in the overall sample` : ""}.`,
         href: `#/crop/${slug(stored.crop)}?track=storage`,
       },
       processed && {
         crop: processed,
-        kicker: "Processing pattern",
+        kicker: "Highest processing share",
         title: processed.crop,
         text: `${percent(processed.transformed_positive_share)} of complete processing answers reported transforming some harvest.`,
         href: `#/crop/${slug(processed.crop)}?track=value`,
       },
       sold && {
         crop: sold,
-        kicker: "Sales pattern",
+        kicker: "Highest sales share",
         title: sold.crop,
         text: `${percent(sold.sold_positive_share)} of complete sales answers reported a sale. That is a market signal in the sample, not a factory plan.`,
         href: `#/crop/${slug(sold.crop)}?track=value`,

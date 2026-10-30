@@ -222,13 +222,21 @@ button { cursor: pointer; }
 }
 .hero h1 {
   font-family: Fraunces, Georgia, serif;
-  font-size: clamp(2.15rem, 5.2vw, 3.7rem);
+  font-size: clamp(2.05rem, 4.6vw, 3.4rem);
   letter-spacing: -0.045em;
-  line-height: 1.02;
+  line-height: 1.04;
   margin: 0 0 0.8rem;
-  max-width: 15ch;
+  max-width: 22ch;
   position: relative;
   z-index: 1;
+}
+.hero-home h1 { max-width: 15ch; }
+.hero-compact {
+  padding: 1.7rem 1.8rem 1.5rem;
+}
+.hero-compact h1 {
+  max-width: none;
+  font-size: clamp(1.75rem, 3.6vw, 2.7rem);
 }
 .hero p { max-width: 41rem; color: #d7ebe2; margin: 0; font-size: 1.08rem; position: relative; z-index: 1; }
 .hero-grid {
