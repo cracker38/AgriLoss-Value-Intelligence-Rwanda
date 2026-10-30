@@ -30,6 +30,35 @@
     charts = [];
   }
 
+  function groupedSeasonChart(seasons) {
+    const canvas = document.getElementById("season-crop-chart");
+    if (!canvas || !window.Chart) return;
+    const chart = new Chart(canvas, {
+      type: "bar",
+      data: {
+        labels: seasons.map((row) => `Season ${row.season}`),
+        datasets: [
+          { label: "Stored", data: seasons.map((row) => row.stored_positive_share || 0), backgroundColor: "#157a56", borderRadius: 8 },
+          { label: "Processed", data: seasons.map((row) => row.transformed_positive_share || 0), backgroundColor: "#0f4a36", borderRadius: 8 },
+          { label: "Sold", data: seasons.map((row) => row.sold_positive_share || 0), backgroundColor: "#d4a017", borderRadius: 8 },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: "bottom" } },
+        scales: {
+          x: { grid: { display: false } },
+          y: {
+            ticks: { callback: (value) => `${Math.round(value * 100)}%` },
+            grid: { color: "rgba(16,35,27,0.06)" },
+          },
+        },
+      },
+    });
+    charts.push(chart);
+  }
+
   function barChart(canvasId, labels, values, label, percentAxis) {
     const canvas = document.getElementById(canvasId);
     if (!canvas || !window.Chart) return;
@@ -94,7 +123,7 @@
 
   function headerSearch(query) {
     const box = $("#search-results");
-    if (!box) return;
+    if (!box || !data) return;
     if (!query) {
       box.classList.remove("open");
       box.innerHTML = "";
@@ -121,16 +150,26 @@
     const processed = AgriLoss.rankCrops(data.by_crop, "transformed_positive_share")[0];
     return `
       <section class="hero">
-        <div class="eyebrow">NISR 2026 hackathon · Agricultural productivity</div>
-        <h1>See what happens after harvest, crop by crop.</h1>
-        <p>AgriLoss uses Rwanda’s 2024 Seasonal Agricultural Survey to help farmers, cooperatives, and planners see which crops were stored, processed, or sold — and what to check next. It does not rank farmers or tell anyone to build a store.</p>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="#/crops">Search crops</a>
-          <a class="btn btn-ghost" href="#/storage">After-harvest storage</a>
-          <a class="btn btn-ghost" href="#/processing">Processing and sales</a>
-        </div>
-        <div class="quick-chips">
-          ${["Maize", "Bush bean", "Cassava", "Irish potato", "Paddy rice", "Cooking banana"].map((name) => `<a class="chip" href="#/crop/${AgriLoss.slug(name)}">${name}</a>`).join("")}
+        <div class="hero-grid">
+          <div>
+            <div class="eyebrow">NISR 2026 hackathon · Agricultural productivity</div>
+            <h1>See what happens after harvest, crop by crop.</h1>
+            <p>AgriLoss uses Rwanda’s 2024 Seasonal Agricultural Survey to help farmers, cooperatives, and planners see which crops were stored, processed, or sold — and what to check next.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#/crops">Search crops</a>
+              <a class="btn btn-ghost" href="#/storage">After-harvest storage</a>
+              <a class="btn btn-ghost" href="#/processing">Processing and sales</a>
+            </div>
+            <div class="quick-chips">
+              ${["Maize", "Bush bean", "Cassava", "Irish potato", "Paddy rice", "Cooking banana"].map((name) => `<a class="chip" href="#/crop/${AgriLoss.slug(name)}">${name}</a>`).join("")}
+            </div>
+          </div>
+          <aside class="hero-panel">
+            <div><span>Crop records</span><strong>${AgriLoss.count(overall.records)}</strong></div>
+            <div><span>Stored some harvest</span><strong>${AgriLoss.percent(overall.stored_positive_share)}</strong></div>
+            <div><span>Processed some harvest</span><strong>${AgriLoss.percent(overall.transformed_positive_share)}</strong></div>
+            <div><span>Sold some harvest</span><strong>${AgriLoss.percent(overall.sold_positive_share)}</strong></div>
+          </aside>
         </div>
       </section>
       <section class="section">
@@ -145,15 +184,6 @@
         <article class="card"><div class="icon-bubble">1</div><h3>Who it is for</h3><p>Farmers, cooperatives, agricultural planners, researchers, and partners who need a first, honest look at the survey.</p></article>
         <article class="card"><div class="icon-bubble">2</div><h3>What you can do</h3><p>Search a crop, compare storage and processing, add your local situation, and download a short follow-up note.</p></article>
         <article class="card"><div class="icon-bubble">3</div><h3>What you should not do</h3><p>Do not treat these shares as Rwanda’s national loss rate, score farmers, or decide where to build a warehouse from this page.</p></article>
-      </section>
-      <section class="section">
-        <h2>What the 2024 survey recorded</h2>
-        <div class="grid grid-4">
-          <div class="card"><div class="stat-label">Crop records in the sample</div><div class="stat-value">${AgriLoss.count(overall.records)}</div><div class="stat-note">One record is one crop on one plot, not one farmer.</div></div>
-          <div class="card"><div class="stat-label">Stored some harvest</div><div class="stat-value">${AgriLoss.percent(overall.stored_positive_share)}</div><div class="stat-note">${AgriLoss.count(overall.stored_positive_records)} complete storage answers.</div></div>
-          <div class="card"><div class="stat-label">Processed some harvest</div><div class="stat-value">${AgriLoss.percent(overall.transformed_positive_share)}</div><div class="stat-note">${AgriLoss.count(overall.transformed_positive_records)} complete processing answers.</div></div>
-          <div class="card"><div class="stat-label">Sold some harvest</div><div class="stat-value">${AgriLoss.percent(overall.sold_positive_share)}</div><div class="stat-note">${AgriLoss.count(overall.sold_positive_records)} complete sales answers.</div></div>
-        </div>
       </section>
       <section class="section grid grid-2">
         <article class="card">
@@ -214,6 +244,7 @@
           </select>
           <button class="btn btn-dark" type="submit">Search</button>
         </form>
+        <p class="stat-note" id="crop-count">${rows.length} crop${rows.length === 1 ? "" : "s"} shown</p>
         <div class="crop-list" id="crop-list">${rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`}</div>
       </section>
     `;
@@ -260,7 +291,7 @@
   function cropPage(name, params) {
     const crop = AgriLoss.cropByName(data.by_crop, name);
     if (!crop) return `<section class="section card"><h2>Crop not found</h2><p>Use search to pick a named crop from the published sample.</p></section>`;
-    const track = params.track === "processing" ? "value" : params.track === "storage" ? "storage" : "storage";
+    const track = params.track === "value" || params.track === "processing" ? "value" : "storage";
     const sorts = track === "storage" ? AgriLoss.STORAGE_SORTS : AgriLoss.VALUE_SORTS;
     const sort = sorts.find((item) => item.id === params.sort) || sorts[0];
     const ranked = AgriLoss.rankCrops(data.by_crop, sort.field);
@@ -465,6 +496,8 @@
       if (form.filter.value === "priority") rows = rows.filter((row) => row.is_priority_crop);
       rows = rows.sort((a, b) => a.crop.localeCompare(b.crop));
       list.innerHTML = rows.map(cropCard).join("") || `<div class="card">No crops match that search.</div>`;
+      const count = $("#crop-count");
+      if (count) count.textContent = `${rows.length} crop${rows.length === 1 ? "" : "s"} shown`;
     };
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -494,7 +527,11 @@
     const list = $("#check-list");
     function refreshChecks() {
       const track = trackSelect.value;
-      condition.innerHTML = conditionOptions(track).map((name) => `<option>${name}</option>`).join("");
+      const current = condition.value;
+      const options = conditionOptions(track);
+      condition.innerHTML = options
+        .map((name) => `<option${name === current ? " selected" : ""}>${name}</option>`)
+        .join("");
       const checks = AgriLoss.followUpChecks(crop, track, condition.value);
       list.innerHTML = checks.map((item) => `<li>${item}</li>`).join("");
     }
@@ -542,7 +579,7 @@
     }
     const seasons = AgriLoss.seasonRowsForCrop(data.by_season_crop, crop.crop);
     if (seasons.length) {
-      barChart("season-crop-chart", seasons.map((row) => `Season ${row.season}`), seasons.map((row) => row.stored_positive_share || 0), "Share stored", true);
+      groupedSeasonChart(seasons);
     }
   }
 
@@ -554,7 +591,7 @@
       const crop = AgriLoss.cropByName(data.by_crop, decodeURIComponent(route.parts[1] || ""));
       if (crop) bindCropPage(crop);
     }
-    if (route.path === "#/compare") {
+    if (route.path.startsWith("#/compare")) {
       barChart("season-chart", (data.by_season || []).map((row) => `Season ${row.season}`), (data.by_season || []).map((row) => row.records), "Records", false);
       const provinces = (data.by_province || []).filter((row) => row.stored_positive_share != null);
       barChart("province-chart", provinces.map((row) => row.province), provinces.map((row) => row.stored_positive_share), "Stored share", true);
@@ -563,13 +600,13 @@
       const processed = AgriLoss.rankCrops(data.by_crop, "transformed_positive_share").slice(0, 8);
       barChart("processed-chart", processed.map((row) => row.crop), processed.map((row) => row.transformed_positive_share), "Processed", true);
     }
-    if (route.path === "#/practices") {
+    if (route.path.startsWith("#/practices") && $("#link-practice") && $("#link-crop")) {
       const render = () => {
         const practice = $("#link-practice").value;
         const crop = $("#link-crop").value;
         const rows = AgriLoss.practicesForCrop(data.by_crop_practice, crop, practice);
         $("#link-table").innerHTML = rows.length
-          ? `<table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${row.status}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table>`
+          ? `<div class="table-wrap"><table><thead><tr><th>Answer</th><th>Records</th><th>Stored</th><th>Processed</th><th>Sold</th></tr></thead><tbody>${rows.map((row) => `<tr><td>${row.status}</td><td>${AgriLoss.count(row.records)}</td><td>${AgriLoss.percent(row.stored_positive_share)}</td><td>${AgriLoss.percent(row.transformed_positive_share)}</td><td>${AgriLoss.percent(row.sold_positive_share)}</td></tr>`).join("")}</tbody></table></div>`
           : `<p>No published Yes/No comparison for that crop and practice.</p>`;
       };
       $("#link-practice").addEventListener("change", render);
@@ -589,8 +626,23 @@
     if (!data) return;
     destroyCharts();
     const route = parseRoute();
-    $("#main-nav").innerHTML = navHtml(route.path.startsWith("#/crop") ? "#/crops" : route.path);
+    $("#main-nav").innerHTML = navHtml(route.path.startsWith("#/crop") ? "#/crops" : route.path.split("?")[0]);
+    $("#main-nav").classList.remove("open");
+    const results = $("#search-results");
+    if (results) results.classList.remove("open");
     const view = $("#view");
+    const titles = {
+      "": "AgriLoss Rwanda · After harvest, crop by crop",
+      crops: "Find a crop · AgriLoss Rwanda",
+      storage: "Storage · AgriLoss Rwanda",
+      processing: "Processing · AgriLoss Rwanda",
+      compare: "Compare · AgriLoss Rwanda",
+      practices: "Practices & markets · AgriLoss Rwanda",
+      plan: "Plan a follow-up · AgriLoss Rwanda",
+      about: "About the numbers · AgriLoss Rwanda",
+      crop: `${decodeURIComponent(route.parts[1] || "Crop")} · AgriLoss Rwanda`,
+    };
+    document.title = titles[route.parts[0] || ""] || titles[""];
     if (route.parts[0] === "crop") view.innerHTML = cropPage(decodeURIComponent(route.parts[1] || ""), route.params);
     else if (route.path.startsWith("#/crops")) view.innerHTML = cropsPage(route.params);
     else if (route.path.startsWith("#/storage")) view.innerHTML = trackPage("storage");
