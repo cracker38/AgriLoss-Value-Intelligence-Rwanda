@@ -14,7 +14,7 @@ flowchart TD
     H --> I[Planner, farmer, or cooperative verifies evidence and decides next steps]
 ```
 
-## Eight steps in the dashboard
+## Dashboard workflow
 
 1. **Open the system.** Farmers/producers, cooperative staff, agricultural planners, researchers, and other project partners can use the public prototype. The Start here tab introduces the SAS scope and current release status.
 2. **Select an agricultural challenge.** In Crop workspace, choose post-harvest collection/storage or processing/value addition.
