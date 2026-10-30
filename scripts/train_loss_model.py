@@ -17,6 +17,7 @@ from sklearn.metrics import (
     balanced_accuracy_score,
     confusion_matrix,
     f1_score,
+    precision_recall_curve,
     precision_score,
     recall_score,
     roc_auc_score,
@@ -30,6 +31,7 @@ from scripts.dashboard_data import ROOT, load_production_data
 
 MODEL_PATH = ROOT / "artifacts" / "loss_classifier.joblib"
 METRICS_PATH = ROOT / "artifacts" / "loss_model_metrics.json"
+PUBLIC_MODEL_CARD_PATH = ROOT / "public_data" / "model_card.json"
 CATEGORICAL_FEATURES = (
     "season",
     "s1q1",
@@ -130,6 +132,7 @@ def build_classifier() -> Pipeline:
                     learning_rate=0.08,
                     max_leaf_nodes=15,
                     l2_regularization=2.0,
+                    class_weight="balanced",
                     random_state=RANDOM_STATE,
                 ),
             ),
@@ -209,6 +212,156 @@ def _season_holdout_evaluation(
     }
 
 
+def choose_operating_threshold(target: pd.Series, probabilities: np.ndarray) -> dict[str, Any]:
+    """Pick a cutoff by maximum F1 on out-of-fold scores. 0.5 is kept for comparison."""
+    precision, recall, thresholds = precision_recall_curve(target, probabilities)
+    if thresholds.size == 0:
+        return {
+            "selection_rule": "Maximum F1 on out-of-fold predictions",
+            "threshold": 0.5,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+        }
+    denom = precision[:-1] + recall[:-1]
+    f1 = np.divide(
+        2 * precision[:-1] * recall[:-1],
+        denom,
+        out=np.zeros_like(thresholds, dtype=float),
+        where=denom > 0,
+    )
+    index = int(np.argmax(f1))
+    return {
+        "selection_rule": "Maximum F1 on out-of-fold predictions",
+        "threshold": float(thresholds[index]),
+        "f1": float(f1[index]),
+        "precision": float(precision[index]),
+        "recall": float(recall[index]),
+    }
+
+
+def _crop_group_metrics(
+    features: pd.DataFrame,
+    target: pd.Series,
+    probabilities: np.ndarray,
+    threshold: float,
+    minimum_records: int = 400,
+    minimum_positives: int = 30,
+) -> list[dict[str, Any]]:
+    """Grouped out-of-fold skill by crop. Never a farmer score."""
+    rows: list[dict[str, Any]] = []
+    crop_values = features["s2q4"].astype("string").to_numpy()
+    labels = target.to_numpy()
+    for name in pd.unique(crop_values):
+        mask = crop_values == name
+        group_labels = labels[mask]
+        if mask.sum() < minimum_records or int(group_labels.sum()) < minimum_positives:
+            continue
+        if np.unique(group_labels).size != 2:
+            continue
+        scores = probabilities[mask]
+        predictions = (scores >= threshold).astype("int8")
+        try:
+            auc = float(roc_auc_score(group_labels, scores))
+        except ValueError:
+            continue
+        rows.append(
+            {
+                "crop": str(name),
+                "records": int(mask.sum()),
+                "positive_rows": int(group_labels.sum()),
+                "roc_auc": round(auc, 4),
+                "recall": round(float(recall_score(group_labels, predictions, zero_division=0)), 4),
+                "average_precision": round(float(average_precision_score(group_labels, scores)), 4),
+            }
+        )
+    rows.sort(key=lambda item: item["records"], reverse=True)
+    return rows
+
+
+def _top_feature_importances(classifier: Pipeline, limit: int = 12) -> list[dict[str, Any]]:
+    model = classifier.named_steps["classifier"]
+    if not hasattr(model, "feature_importances_"):
+        return []
+    preprocess = classifier.named_steps["preprocess"]
+    encoder = preprocess.named_transformers_["categorical"].named_steps["encode"]
+    names = list(encoder.get_feature_names_out(list(CATEGORICAL_FEATURES))) + list(
+        NUMERIC_FEATURES
+    )
+    importances = model.feature_importances_
+    if len(names) != len(importances):
+        return []
+    ranked = sorted(zip(names, importances), key=lambda item: item[1], reverse=True)[:limit]
+    return [{"feature": name, "importance": float(value)} for name, value in ranked]
+
+
+def export_public_model_card(result: dict[str, Any]) -> dict[str, Any]:
+    """Write a respondent-free methods card for the public website."""
+    operating = result.get("operating_point") or {"threshold": result.get("threshold", 0.5)}
+    metrics = result["metrics"]
+    baseline = result["majority_class_baseline"]
+    card = {
+        "schema_version": 1,
+        "public_safe": True,
+        "title": "Exploratory reported-loss classifier",
+        "model": result.get("model"),
+        "status": "retrospective research; not an operational alert or farmer score",
+        "target": result.get("target_definition"),
+        "training": {
+            "seasons": result.get("training_seasons"),
+            "season_c_excluded": result.get("season_c_excluded"),
+            "rows_evaluated": result.get("rows_evaluated"),
+            "positive_rows": result.get("positive_rows"),
+            "negative_rows": result.get("negative_rows"),
+            "positive_prevalence": round(float(result.get("positive_prevalence") or 0), 4),
+            "plot_groups": result.get("groups"),
+            "evaluation": result.get("evaluation"),
+            "features": result.get("features"),
+            "leakage_controls": result.get("leakage_controls"),
+        },
+        "operating_point": operating,
+        "out_of_fold_metrics": {
+            key: round(float(metrics[key]), 4)
+            for key in (
+                "accuracy",
+                "precision",
+                "recall",
+                "f1",
+                "balanced_accuracy",
+                "roc_auc",
+                "average_precision",
+            )
+        },
+        "always_negative_baseline": {
+            key: round(float(baseline[key]), 4)
+            for key in (
+                "accuracy",
+                "precision",
+                "recall",
+                "f1",
+                "balanced_accuracy",
+                "roc_auc",
+                "average_precision",
+            )
+        },
+        "season_holdout": result.get("season_holdout_evaluation"),
+        "crop_group_out_of_fold": result.get("crop_group_out_of_fold", []),
+        "top_features": result.get("top_features", []),
+        "reading_for_users": [
+            "Accuracy is high because most records report zero. That does not mean the model finds most positive-loss records.",
+            "Compare ROC AUC and average precision with the always-negative baseline. Ranking skill can exist even when recall at 0.5 is low.",
+            "This is a same-survey classification, not a prediction of next season’s loss, and not a score of farmers.",
+            "Crop pages use survey shares and a transparent follow-up signal, not this classifier’s individual probabilities.",
+        ],
+        "hackathon_use": "Shown only as grouped methods evidence for Track 1.",
+    }
+    PUBLIC_MODEL_CARD_PATH.parent.mkdir(parents=True, exist_ok=True)
+    PUBLIC_MODEL_CARD_PATH.write_text(
+        json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    return card
+
+
 def train_and_evaluate() -> dict[str, Any]:
     data = load_production_data(("A", "B"))
     features, target, groups = prepare_model_data(data)
@@ -224,8 +377,16 @@ def train_and_evaluate() -> dict[str, Any]:
         method="predict_proba",
         n_jobs=1,
     )[:, 1]
-    predictions = (probabilities >= 0.5).astype("int8")
+    operating_point = choose_operating_threshold(target, probabilities)
+    operating_threshold = float(operating_point["threshold"])
+    predictions = (probabilities >= operating_threshold).astype("int8")
     model_metrics = _classification_metrics(target, predictions, probabilities)
+    metrics_at_half = _classification_metrics(
+        target, (probabilities >= 0.5).astype("int8"), probabilities
+    )
+    crop_group_out_of_fold = _crop_group_metrics(
+        features, target, probabilities, operating_threshold
+    )
 
     baseline_predictions = np.zeros(len(target), dtype="int8")
     baseline_metrics = _classification_metrics(
@@ -237,6 +398,7 @@ def train_and_evaluate() -> dict[str, Any]:
     classifier.fit(features, target)
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(classifier, MODEL_PATH)
+    top_features = _top_feature_importances(classifier)
 
     result: dict[str, Any] = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -255,7 +417,11 @@ def train_and_evaluate() -> dict[str, Any]:
         "evaluation": "5-fold stratified group cross-validation",
         "grouping": "Segment_ID + s2q1 plot key; plot groups do not cross folds.",
         "season_holdout_evaluation": season_holdout,
-        "threshold": 0.5,
+        "operating_point": operating_point,
+        "threshold": operating_threshold,
+        "metrics_at_0_5": metrics_at_half,
+        "crop_group_out_of_fold": crop_group_out_of_fold,
+        "top_features": top_features,
         "rows_evaluated": int(len(target)),
         "positive_rows": int(target.sum()),
         "negative_rows": int((target == 0).sum()),
@@ -273,7 +439,7 @@ def train_and_evaluate() -> dict[str, Any]:
             "learning_rate": 0.08,
             "max_leaf_nodes": 15,
             "l2_regularization": 2.0,
-            "positive_class_weighting": False,
+            "positive_class_weighting": "balanced",
         },
         "metrics": model_metrics,
         "majority_class_baseline": baseline_metrics,
@@ -287,6 +453,7 @@ def train_and_evaluate() -> dict[str, Any]:
     METRICS_PATH.write_text(
         json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    export_public_model_card(result)
     return result
 
 

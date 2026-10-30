@@ -280,6 +280,60 @@
     return [...new Set(checks)];
   }
 
+  function followUpSignal(crop, overall, track) {
+    const reasons = [];
+    let points = 0;
+    const path = cropPathway(crop);
+    if (crop.is_priority_crop) {
+      points += 2;
+      reasons.push("This crop is among NST2 priority food crops (maize, beans, potatoes, rice, cassava, wheat, bananas).");
+    }
+    if (track === "storage") {
+      if (
+        isNumber(crop.stored_positive_share) &&
+        isNumber(overall && overall.stored_positive_share) &&
+        crop.stored_positive_share >= overall.stored_positive_share * 1.5 &&
+        crop.stored_positive_share - overall.stored_positive_share >= 0.03
+      ) {
+        points += 2;
+        reasons.push("Stored harvest is reported more often than in the overall sample.");
+      }
+      if (isNumber(crop.storage_loss_positive_share) && crop.storage_loss_positive_share >= 0.02) {
+        points += 1;
+        reasons.push("Storage-stage loss answers are not rare in this crop group.");
+      }
+      if (path.id === "processing" || path.id === "sales") {
+        reasons.push("After-harvest use is not storage-led. Confirm storage is the local bottleneck.");
+      }
+    } else {
+      if (
+        isNumber(crop.transformed_positive_share) &&
+        isNumber(overall && overall.transformed_positive_share) &&
+        crop.transformed_positive_share >= overall.transformed_positive_share * 1.4 &&
+        crop.transformed_positive_share - overall.transformed_positive_share >= 0.08
+      ) {
+        points += 2;
+        reasons.push("Home processing is reported more often than in the overall sample.");
+      }
+      if (
+        isNumber(crop.sold_positive_share) &&
+        isNumber(overall && overall.sold_positive_share) &&
+        crop.sold_positive_share >= Math.max(0.7, overall.sold_positive_share)
+      ) {
+        points += 1;
+        reasons.push("Sales are reported often. Check today’s buyers before treating this as a processing plan.");
+      }
+      if (path.id === "storage") {
+        reasons.push("This crop is storage-led in the sample. Confirm processing is the local issue.");
+      }
+    }
+    if ((crop.stored_missing_records || 0) > 0 || (crop.sold_with_zero_price_records || 0) > 0) {
+      reasons.push("Data-quality flags still need a local check.");
+    }
+    const band = points >= 4 ? "High sample signal" : points >= 2 ? "Moderate sample signal" : "Low sample signal";
+    return { points, band, reasons, path };
+  }
+
   function reviewSignal(crop, sortLabel, rank, total) {
     return `${crop.crop} is ${rank} of ${total} named crop groups for “${sortLabel}”. This is a sample signal for follow-up, not a ranking of farmers or a list of projects to build.`;
   }
@@ -289,11 +343,12 @@
     return `${province.province}: ${count(province.records)} survey records, and ${percent(province.stored_positive_share)} of complete storage answers reported storing some harvest. These province numbers are not combined with this crop.`;
   }
 
-  function followUpBrief({ crop, track, sortLabel, rank, total, releaseNote, province, localCondition, localNotes }) {
+  function followUpBrief({ crop, track, sortLabel, rank, total, releaseNote, province, localCondition, localNotes, overall }) {
     const title = track === "storage" ? "After harvest: collection and storage" : "Processing and adding value";
     const why = track === "storage" ? storageReading(crop) : valueReading(crop);
     const checks = followUpChecks(crop, track, localCondition || "Not specified");
     const pathway = cropPathway(crop);
+    const signal = followUpSignal(crop, overall, track);
     const priority = crop.is_priority_crop
       ? "Yes — this crop is among national priority food crops (maize, beans, potatoes, rice, cassava, wheat, bananas)."
       : "Not listed here as a national priority food crop.";
@@ -304,6 +359,10 @@ ${title}
 
 ## After-harvest pattern in this sample
 ${pathway.short}: ${pathway.label}
+
+## Sample follow-up signal
+${signal.band} (${signal.points} of 5 sample points). Not a ranking of farmers.
+${signal.reasons.map((item) => `- ${item}`).join("\n") || "- No extra sample flags beyond the crop being in the published file."}
 
 ## Why this crop is on the list
 ${reviewSignal(crop, sortLabel, rank, total)}
@@ -408,6 +467,7 @@ Source: NISR Rwanda Seasonal Agricultural Survey 2024. Status: ${releaseNote}
     storageReading,
     valueReading,
     followUpChecks,
+    followUpSignal,
     reviewSignal,
     followUpBrief,
     seasonRowsForCrop,

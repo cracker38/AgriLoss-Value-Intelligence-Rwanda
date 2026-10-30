@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "public_safe": true,
+  "title": "Exploratory reported-loss classifier",
+  "model": "Histogram gradient boosting",
+  "status": "retrospective research; not an operational alert or farmer score",
+  "target": {
+    "source_field": "s2q39",
+    "positive_class": "s2q39 > 0",
+    "negative_class": "s2q39 == 0",
+    "excluded": "Blank, nonnumeric, negative, or missing plot-key responses",
+    "unit": "Unconfirmed; not interpreted as kilograms or as a national loss rate",
+    "interpretation": "Presence of a positive reported value in the same survey, not loss severity, a forecast, or a confirmed kilogram quantity."
+  },
+  "training": {
+    "seasons": ["A", "B"],
+    "season_c_excluded": "Restricted sample; kept out of this exploratory model.",
+    "rows_evaluated": 69028,
+    "positive_rows": 5357,
+    "negative_rows": 63671,
+    "positive_prevalence": 0.0776,
+    "plot_groups": 19624,
+    "evaluation": "5-fold stratified group cross-validation. All records sharing Segment_ID + s2q1 stay in the same fold.",
+    "features": [
+      "season",
+      "reported province (s1q1)",
+      "reported district (s1q2)",
+      "farmer/frame category (s1q3)",
+      "sex of holder (s1q8)",
+      "crop (s2q4)",
+      "crop category",
+      "physical plot area (s2q2)"
+    ],
+    "leakage_controls": [
+      "Excluded s2q39-derived and post-harvest fields s2q40–s2q50.",
+      "Excluded row identifiers and grouping keys from model features.",
+      "Survey weights are not applied; scores are not population estimates.",
+      "No respondent-level score is shown on this website."
+    ]
+  },
+  "operating_point": {
+    "selection_rule": "Fixed 0.5 threshold reported for comparison with the always-negative baseline. Retraining can replace this with a maximum-F1 threshold.",
+    "threshold": 0.5
+  },
+  "out_of_fold_metrics": {
+    "accuracy": 0.9268,
+    "precision": 0.7178,
+    "recall": 0.0926,
+    "f1": 0.164,
+    "balanced_accuracy": 0.5448,
+    "roc_auc": 0.847,
+    "average_precision": 0.3674
+  },
+  "always_negative_baseline": {
+    "accuracy": 0.9224,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "balanced_accuracy": 0.5,
+    "roc_auc": 0.5,
+    "average_precision": 0.0776
+  },
+  "reading_for_users": [
+    "Accuracy is high because most records report zero. That does not mean the model finds most positive-loss records.",
+    "ROC AUC 0.85 and average precision 0.37 are above the always-negative baseline (0.50 and 0.08). The model has some ranking skill on this sample.",
+    "At a 0.5 cutoff, recall is only 9.3%. Most positive reports are missed. This is not ready as an alert system.",
+    "This is a same-survey classification, not a prediction of next season’s loss, and not a score of farmers."
+  ],
+  "hackathon_use": "Shown only as grouped methods evidence for Track 1. Crop pages use survey shares and a transparent follow-up signal, not this classifier’s individual probabilities."
+}

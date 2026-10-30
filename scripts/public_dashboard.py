@@ -71,7 +71,7 @@ def _bar_chart(
         title=title,
         labels={x: "", y: y_label},
         color_discrete_sequence=[color],
-    )
+        )
     if percent_axis:
         figure.update_yaxes(tickformat=".0%")
         figure.update_traces(
@@ -265,20 +265,20 @@ def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
         ].map(_percent)
     else:
         display = frame.head(10)[
-            [
-                "crop",
+        [
+            "crop",
                 "is_priority_crop",
-                "records",
+            "records",
                 "transformed_positive_records",
                 "transformed_positive_share",
                 "transformed_median_positive_kg",
                 "sold_positive_records",
                 "sold_positive_share",
                 "sold_median_positive_kg",
-                "median_reported_harvest_kg",
-            ]
-        ].rename(
-            columns={
+            "median_reported_harvest_kg",
+        ]
+    ].rename(
+        columns={
                 "crop": "Crop",
                 "is_priority_crop": "NST2 priority",
                 "records": "Survey records",
@@ -293,7 +293,7 @@ def _crop_review_table(frame: pd.DataFrame, track: str) -> pd.DataFrame:
         )
         display["Share transformed (valid s2q25)"] = display[
             "Share transformed (valid s2q25)"
-        ].map(_percent)
+    ].map(_percent)
         display["Share sold (valid s2q26)"] = display["Share sold (valid s2q26)"].map(_percent)
     display["NST2 priority"] = display["NST2 priority"].map(lambda flag: "Yes" if flag else "—")
     return display
@@ -480,11 +480,11 @@ def _render_crop_review(
     if track == "storage":
         crop_metrics[0].metric("Stored quantity > 0", f"{_int(crop_row['stored_positive_records']):,}")
         crop_metrics[1].metric("Share of valid stored answers", _percent(crop_row["stored_positive_share"]))
-        crop_metrics[2].metric(
+    crop_metrics[2].metric(
             "Median stored (when > 0)",
             _kg(crop_row["stored_median_positive_kg"]),
-        )
-        crop_metrics[3].metric(
+    )
+    crop_metrics[3].metric(
             "Storage-stage loss > 0",
             f"{_int(crop_row['storage_loss_positive_records']):,} · {_percent(crop_row['storage_loss_positive_share'])}",
         )
@@ -623,7 +623,7 @@ def _render_workspace(
     st.markdown("### Crop workspace")
     track_label = st.radio(
         "Challenge in focus",
-        options=[
+            options=[
             "Post-harvest collection and storage",
             "Processing and value addition",
         ],
@@ -651,13 +651,13 @@ def _render_workspace(
         _named_crops(crops),
         sort_columns[review_lens],
     )
-    if review_queue.empty:
+        if review_queue.empty:
         st.info("No named crop groups have a published value for this sort.")
         return
-    _render_crop_review(
-        review_queue,
-        review_lens,
-        release_note,
+            _render_crop_review(
+                review_queue,
+                review_lens,
+                release_note,
         track,
         provinces,
     )
@@ -671,26 +671,26 @@ def _render_explore_tab(
     selected_provinces: list[str],
 ) -> None:
     st.markdown("### Look around the sample")
-    left, right = st.columns(2)
-    with left:
+        left, right = st.columns(2)
+        with left:
         season_view = seasons[seasons["season"].astype(str).isin(selected_seasons)].copy()
         if season_view.empty:
             st.info("Select at least one season in the sidebar.")
         else:
-            st.plotly_chart(
-                _bar_chart(
-                    season_view,
-                    x="season",
-                    y="records",
-                    title="Production records by season",
+                st.plotly_chart(
+                    _bar_chart(
+                        season_view,
+                        x="season",
+                        y="records",
+                        title="Production records by season",
                     y_label="Production records",
-                ),
-                width="stretch",
-            )
-    with right:
-        province_view = provinces[
-            provinces["province"].astype(str).isin(selected_provinces)
-        ].sort_values("records", ascending=False)
+                    ),
+                    width="stretch",
+                )
+        with right:
+            province_view = provinces[
+                provinces["province"].astype(str).isin(selected_provinces)
+            ].sort_values("records", ascending=False)
         if province_view.empty:
             st.info("Select at least one province in the sidebar.")
         else:
@@ -701,10 +701,10 @@ def _render_explore_tab(
             y_column = "stored_positive_share" if has_published_shares else "records"
             if has_published_shares:
                 province_view = province_view.dropna(subset=[y_column])
-            st.plotly_chart(
-                _bar_chart(
-                    province_view,
-                    x="province",
+                st.plotly_chart(
+                    _bar_chart(
+                        province_view,
+                        x="province",
                     y=y_column,
                     title="Stored quantity > 0 by province"
                     if y_column == "stored_positive_share"
@@ -714,8 +714,8 @@ def _render_explore_tab(
                     else "Production records",
                     percent_axis=y_column == "stored_positive_share",
                     color="#c9862a",
-                ),
-                width="stretch",
+                    ),
+                    width="stretch",
             )
 
     named = _named_crops(crops)
@@ -753,12 +753,12 @@ def _render_explore_tab(
             )
 def _render_methods_tab(seasons: pd.DataFrame, selected_seasons: list[str]) -> None:
     st.markdown("### Data and methods")
-    st.markdown(
+        st.markdown(
         "**Primary data:** [NISR Rwanda Seasonal Agricultural Survey 2024 production module]"
         "(https://microdata.statistics.gov.rw/index.php/catalog/113). "
         "The hosted app reads grouped totals only. It does not load farmer or plot rows."
-    )
-    quality_columns = [
+        )
+        quality_columns = [
         column
         for column in (
             "season",

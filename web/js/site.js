@@ -2,6 +2,8 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
   let data = null;
+  let context = null;
+  let modelCard = null;
   let charts = [];
 
   const ROUTES = [
@@ -199,6 +201,22 @@
           <article class="card"><div class="step-num">3</div><h3>Download a follow-up note</h3><p>Add your local situation and take a short note to a meeting. It does not approve a project.</p></article>
         </div>
       </section>
+      <section class="section">
+        <div class="section-head">
+          <div>
+            <h2>National priorities this tool supports</h2>
+            <p class="stat-note">These policy rates come from NST2, Vision 2050, and PSTA 5. They are not calculated from the SAS 2024 sample on this website.</p>
+          </div>
+          <a class="btn btn-line" href="#/about">Methods and model</a>
+        </div>
+        <div class="grid grid-3">
+          ${(context && context.national_priorities ? context.national_priorities : [
+            { framework: "NST2 (2024–2029)", relevance: "Cut food-crop post-harvest losses from 13.8% to 4.8% and raise productivity on priority food crops." },
+            { framework: "Vision 2050", relevance: "A food-secure, market-oriented agriculture sector. Less food wasted after harvest and more value before sale." },
+            { framework: "PSTA 5 / MINAGRI", relevance: "A 2023 study cited in PSTA 5 reports value-chain losses of 13.8% for maize, 12.4% for rice, and 11.3% for beans." },
+          ]).map((item) => `<article class="card"><div class="kicker" style="font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--forest-2);font-weight:800">Policy context</div><h3>${AgriLoss.escapeHtml(item.framework)}</h3><p>${AgriLoss.escapeHtml([item.relevance, item.indicator].filter(Boolean).join(" "))}</p></article>`).join("")}
+        </div>
+      </section>
       <section class="section grid grid-3">
         <article class="card"><div class="icon-bubble">1</div><h3>Who it is for</h3><p>Farmers, cooperatives, agricultural planners, researchers, and partners who need a first, honest look at the survey.</p></article>
         <article class="card"><div class="icon-bubble">2</div><h3>What you can do</h3><p>Search a crop, compare storage and processing, add your local situation, and download a short follow-up note.</p></article>
@@ -314,6 +332,7 @@
     const path = AgriLoss.cropPathway(crop);
     const contrast = AgriLoss.contrastLines(crop, data.overall);
     const flags = AgriLoss.qualityFlags(crop);
+    const signal = AgriLoss.followUpSignal(crop, data.overall, track);
     return `
       <section class="hero hero-compact">
         <div class="crumb"><a href="#/crops">Crops</a> / ${AgriLoss.escapeHtml(crop.crop)}</div>
@@ -338,6 +357,11 @@
         <div class="card"><div class="stat-label">Loss in storage</div><div class="stat-value">${AgriLoss.percent(crop.storage_loss_positive_share)}</div><div class="stat-note">${AgriLoss.count(crop.storage_loss_negative_records)} negative values flagged</div></div>
         <div class="card"><div class="stat-label">Processed some harvest</div><div class="stat-value">${AgriLoss.percent(crop.transformed_positive_share)}</div><div class="stat-note">Food ${AgriLoss.percent(crop.transformed_food_positive_share)} · drink ${AgriLoss.percent(crop.transformed_drink_positive_share)}</div></div>
         <div class="card"><div class="stat-label">Sold some harvest</div><div class="stat-value">${AgriLoss.percent(crop.sold_positive_share)}</div><div class="stat-note">Typical harvest ${AgriLoss.kg(crop.median_reported_harvest_kg)}</div></div>
+      </section>
+      <section class="section card">
+        <h3>${signal.band}</h3>
+        <p class="stat-note">Transparent sample points for this challenge — not a farmer score and not a project ranking.</p>
+        <ul class="checks">${signal.reasons.map((item) => `<li>${AgriLoss.escapeHtml(item)}</li>`).join("") || "<li>This crop is in the published sample. Use the readings below, then check locally.</li>"}</ul>
       </section>
       <section class="section grid grid-2">
         <article class="card"><h3>In plain language: storage</h3><p class="reading">${AgriLoss.storageReading(crop)}</p></article>
