@@ -776,6 +776,49 @@ def _render_crop_season_comparison(
     )
 
 
+def _planning_location_label(
+    province: str,
+    district: str,
+    cooperative_or_market: str,
+) -> str:
+    parts = (
+        ("Province", province),
+        ("District", district),
+        ("Cooperative / market group", cooperative_or_market),
+    )
+    return " · ".join(
+        f"{label}: {value.strip()}"
+        for label, value in parts
+        if value.strip()
+    )
+
+
+def _planning_capacity_check(
+    supply_kg: float | None,
+    capacity_kg: float | None,
+    capacity_label: str,
+) -> str:
+    if supply_kg is None and capacity_kg is None:
+        return "Not calculated; no supply or capacity values were supplied."
+    if supply_kg is None or capacity_kg is None:
+        return "Not calculated; enter both expected supply and available capacity."
+    if supply_kg > capacity_kg:
+        gap_kg = supply_kg - capacity_kg
+        uncovered_share = gap_kg / supply_kg if supply_kg else 0.0
+        return (
+            f"Entered supply exceeds {capacity_label} by {gap_kg:,.2f} kg; "
+            f"{uncovered_share:.1%} of the entered supply is not covered. "
+            "This is a user-input planning check, not a forecast."
+        )
+    utilization = supply_kg / capacity_kg if capacity_kg else 0.0
+    remaining_kg = capacity_kg - supply_kg
+    return (
+        f"Entered {capacity_label} covers the stated supply, with "
+        f"{remaining_kg:,.2f} kg remaining ({utilization:.1%} utilization). "
+        "This is a user-input planning check, not a forecast."
+    )
+
+
 def _storage_reading(crop_row: pd.Series) -> str:
     crop = str(crop_row["crop"])
     stored_share = crop_row["stored_positive_share"]
@@ -944,6 +987,19 @@ def _follow_up_brief(
             if value is not None
             else f"- {label}: Not supplied"
         )
+    capacity_key = (
+        "storage_capacity_kg" if track == "storage" else "processing_capacity_kg"
+    )
+    capacity_label = (
+        "usable storage capacity"
+        if track == "storage"
+        else "processing capacity"
+    )
+    capacity_check = _planning_capacity_check(
+        local_inputs.get("available_supply_kg"),
+        local_inputs.get(capacity_key),
+        capacity_label,
+    )
     if province_context:
         province_name = str(province_context["province"])
         province_description = (
@@ -990,10 +1046,13 @@ The planning location is user-entered context. Crop evidence is not filtered to 
 
 These entries are user-supplied planning context and are not matched to SAS records. The current SAS release has no verified cost data, so AgriLoss does not estimate costs, margins, or profitability. Validate any quoted prices and costs locally.
 
+## Planning capacity check
+{capacity_check}
+
 ## Local follow-up actions
 {chr(10).join(f"- {action}" for action in condition_actions) or "No local conditions selected. Add relevant conditions before using this report to guide field work."}
 
-## Survey data-quality checks
+## Recommended evidence checks
 {chr(10).join(f"- {check}" for check in checks)}
 
 ## Sample snapshot (unweighted production records)
@@ -1095,21 +1154,31 @@ def _render_crop_review(
             "Your role",
             options=USER_ROLE_OPTIONS,
         )
-        location_column, period_column = st.columns(2)
-        planning_location = location_column.text_input(
-            "Planning location (district, cooperative, or market)",
-            max_chars=120,
-            help="Enter the area or group this plan concerns. This does not filter the survey results.",
+        province_column, district_column, group_column = st.columns(3)
+        selected_province = province_column.selectbox(
+            "Province / area",
+            options=province_options,
+            help="Province figures are separate sample context, not a crop-by-province result.",
         )
-        planning_period = period_column.text_input(
+        district = district_column.text_input(
+            "District",
+            max_chars=80,
+            help="Enter the district for this planning case. District-level survey results are not available.",
+        )
+        cooperative_or_market = group_column.text_input(
+            "Cooperative / market group",
+            max_chars=120,
+            help="Optional name or description for the group this plan concerns.",
+        )
+        planning_location = _planning_location_label(
+            "" if selected_province == "Not specified" else selected_province,
+            district,
+            cooperative_or_market,
+        )
+        planning_period = st.text_input(
             "Planning season or period (optional)",
             max_chars=80,
             help="For example, the upcoming season or a planned assessment period.",
-        )
-        selected_province = st.selectbox(
-            "Province survey context (optional)",
-            options=province_options,
-            help="Province figures are a separate sample summary and are not joined to the selected crop.",
         )
         local_conditions = st.multiselect(
             "Conditions to investigate locally",
@@ -1183,7 +1252,7 @@ def _render_crop_review(
         st.caption("Submit the planning context to review the crop recommendation and prepare a follow-up report.")
         return
     if not planning_location.strip():
-        st.error("Enter the planning location or group before reviewing the recommendation.")
+        st.error("Enter a province, district, or cooperative / market group before reviewing the recommendation.")
         return
 
     local_inputs: dict[str, float | None] = {
@@ -1249,6 +1318,23 @@ def _render_crop_review(
         "The SAS 2024 aggregate contains no verified cost data. AgriLoss does not calculate cost, margin, or profitability estimates."
     )
 
+    capacity_key = (
+        "storage_capacity_kg" if track == "storage" else "processing_capacity_kg"
+    )
+    capacity_label = (
+        "usable storage capacity"
+        if track == "storage"
+        else "processing capacity"
+    )
+    st.markdown("#### Planning capacity check")
+    st.info(
+        _planning_capacity_check(
+            local_inputs.get("available_supply_kg"),
+            local_inputs.get(capacity_key),
+            capacity_label,
+        )
+    )
+
     st.markdown("#### Local actions prompted by your conditions")
     if local_actions:
         for action in local_actions:
@@ -1256,7 +1342,7 @@ def _render_crop_review(
     else:
         st.info("No local conditions were selected. Add relevant constraints before using the report to guide field work.")
 
-    st.markdown("#### Survey data-quality checks")
+    st.markdown("#### Recommended evidence checks")
     for check in checks:
         st.markdown(f"- {check}")
 

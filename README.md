@@ -18,7 +18,7 @@ The tool is an exploratory prototype, not an operational early-warning or farmer
 ## What is in the dashboard
 
 - **Start here:** unweighted SAS 2024 sample indicators, data scope, and the eight-step user workflow.
-- **Crop workspace:** choose a challenge, SAS season, and crop; enter your role, planning location, optional period, local conditions, and relevant supply/storage/processing/market values. Review crop evidence and field actions, compare the crop across seasons, then preview and download the report. Province evidence remains separate from crop evidence.
+- **Crop workspace:** choose a challenge, SAS season, and crop; enter your role, province, district, cooperative or market group, optional period, local conditions, and relevant supply/storage/processing/market values. When both supply and capacity are provided, review their simple arithmetic coverage or gap. Review crop evidence and field actions, compare the crop across seasons, then preview and download the report. Province evidence remains separate from crop evidence; district and cooperative entries are not survey filters.
 - **SAS module links:** compare crop and post-harvest patterns with Season A agricultural-practice and fertilizer/pesticide responses, and inspect production-linked sales channels and historical SAS prices by crop. These comparisons are descriptive and unweighted.
 - **Explore the sample:** independent season, province, crop, and harvest summaries. Crop-by-season views are available in Crop workspace; province and crop values are not cross-tabulated.
 - **Data and methods:** source, cleaning rules, and interpretation limits.
