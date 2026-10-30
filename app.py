@@ -34,13 +34,35 @@ st.markdown(
 
 def _website_html() -> str:
     html = INDEX.read_text(encoding="utf-8")
+    assets = (
+        (
+            '<link rel="stylesheet" href="web/css/site.css">',
+            ROOT / "web" / "css" / "site.css",
+            "style",
+        ),
+        (
+            '<script src="web/js/logic.js"></script>',
+            ROOT / "web" / "js" / "logic.js",
+            "script",
+        ),
+        (
+            '<script src="web/js/site.js"></script>',
+            ROOT / "web" / "js" / "site.js",
+            "script",
+        ),
+    )
+    for reference, asset_path, tag in assets:
+        if reference not in html:
+            raise ValueError(f"Could not find website asset reference: {reference}")
+        asset = asset_path.read_text(encoding="utf-8")
+        html = html.replace(reference, f"<{tag}>\n{asset}\n</{tag}>", 1)
+
     payload = json.dumps(load_public_dashboard_data(), ensure_ascii=False)
     injection = f"<script>window.AGRILOSS_DATA = {payload};</script>"
-    return html.replace(
-        "<script>window.AGRILOSS_DATA = window.AGRILOSS_DATA || null;</script>",
-        injection,
-        1,
-    )
+    data_placeholder = "<script>window.AGRILOSS_DATA = window.AGRILOSS_DATA || null;</script>"
+    if data_placeholder not in html:
+        raise ValueError("Could not find the public dashboard data placeholder")
+    return html.replace(data_placeholder, injection, 1)
 
 
 if not PUBLIC_DASHBOARD_PATH.is_file() or not INDEX.is_file():

@@ -411,7 +411,7 @@
       </section>
       <section class="section card">
         <h3>Sources</h3>
-        <p>Survey data: <a href="https://microdata.statistics.gov.rw/index.php/catalog/113">NISR SAS 2024 catalog</a>. Policy context: NST2, Vision 2050, and PSTA 5. Those policy rates are not calculated from this sample.</p>
+        <p>Survey data: <a href="https://microdata.statistics.gov.rw/index.php/catalog/113" target="_blank" rel="noopener noreferrer">NISR SAS 2024 catalog</a>. Policy context: NST2, Vision 2050, and PSTA 5. Those policy rates are not calculated from this sample.</p>
       </section>
     `;
   }
